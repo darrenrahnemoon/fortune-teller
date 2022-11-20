@@ -1,0 +1,95 @@
+import pandas
+import time
+import os
+import requests
+import logging
+
+from lib.broker.broker import Broker
+from lib.chart import LineChart, Chart
+from lib.interval import Interval
+
+logger = logging.getLogger(__file__)
+
+class AlphaVantageBroker(Broker):
+	intervals = {
+		Interval.Day: 'daily',
+		Interval.Week: 'weekly',
+		Interval.Month: 'monthly',
+		Interval.Quarter: 'quarterly',
+		Interval.Month(6) : 'semiannual',
+		Interval.Year: 'annual',
+
+		# For Maturity
+		Interval.Month(3): '3month',
+		Interval.Year(2): '2year',
+		Interval.Year(5): '5year',
+		Interval.Year(7): '7year',
+		Interval.Year(10): '10year',
+		Interval.Year(30): '30year',
+	}
+
+	available_data = {
+		'REAL_GDP': { LineChart: { 'interval': [ Interval.Year, Interval.Quarter ] } },
+		'REAL_GDP_PER_CAPITA': { LineChart: { 'interval': [ Interval.Quarter ] } },
+		'TREASURY_YIELD': { 
+			LineChart: {
+				'interval': [ Interval.Day, Interval.Week, Interval.Month ],
+				'maturity': [ Interval.Month(3), Interval.Year(2), Interval.Year(5), Interval.Year(7), Interval.Year(10), Interval.Year(30) ]
+			} 
+		},
+		'FEDERAL_FUNDS_RATE': { LineChart: { 'interval': [ Interval.Day, Interval.Week, Interval.Month ] } },
+		'CPI' : { LineChart: { 'interval': [ Interval.Month, Interval.Month(6) ] } },
+		'INFLATION' : { LineChart: { 'interval': [ Interval.Year ] } },
+		'INFLATION_EXPECTATION' : { LineChart: { 'interval': [ Interval.Month ] } },
+		'CONSUMER_SENTIMENT' : { LineChart: { 'interval': [ Interval.Month ] } },
+		'RETAIL_SALES' : { LineChart: { 'interval': [ Interval.Month ] } },
+		'DURABLES' : { LineChart: { 'interval' : [ Interval.Month ] } },
+		'UNEMPLOYMENT' : { LineChart: { 'interval' : [ Interval.Month ] } },
+		'NONFARM_PAYROLL' : { LineChart: { 'interval' : [ Interval.Month ] } },
+	}
+
+	def __init__(
+		self,
+		apikey: str = os.getenv('ALPHAVANTAGE_API_KEY')
+	) -> None:
+		super().__init__()
+		self.apikey = apikey
+
+	def read(self, chart: Chart):
+		if type(chart) != LineChart:
+			logger.error(f"Unsupported chart type '{chart}'...")
+			return chart
+
+		params = dict(
+			apikey= self.apikey,
+			datatype= 'json',
+			outputsize= 'full',
+			function= chart.symbol,
+		)
+		for key in self.available_data[chart.symbol][type(chart)]:
+			value = getattr(chart, key)
+			if value in self.intervals:
+				value = value.to_broker(self)
+			params[key] = value
+
+		response = requests.get('https://www.alphavantage.co/query', params=params).json()
+		# SHOULD DO: find a less naive way to know if rate limit is reached
+		if 'Note' in response and response['Note'].startswith('Thank you'):
+			logger.warn('Rate limit reached. Waiting for 1 minute...')
+			time.sleep(60) # Alphavantage only allows 5 requests per minute
+			return self.read(chart)
+
+		data = response['data']
+		logger.debug(f"Converting records to dataframe. Row sample:\n{data[0] if len(data) else None}")
+		dataframe = pandas.DataFrame.from_records(data, index='date')
+
+		# Value-related transformations
+		dataframe = dataframe[dataframe['value'] != '.']
+		dataframe['value'] = dataframe['value'].astype(float)
+
+		# Timestamp-related transformations
+		dataframe.index = pandas.to_datetime(dataframe.index)
+		dataframe.index.name = 'timestamp'
+
+		logger.debug(f'Converted dataframe: \n{dataframe}')
+		chart.load_dataframe(dataframe)

@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  database:
+    image: mongo:6.0.3
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - trading-database:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+volumes:
+  trading-database:
+    name: trading-database
