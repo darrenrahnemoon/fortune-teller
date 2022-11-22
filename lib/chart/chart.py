@@ -3,6 +3,7 @@ import pathlib
 import pandas
 import inspect
 import typing
+import logging
 
 if typing.TYPE_CHECKING:
 	from lib.indicator import Indicator
@@ -11,10 +12,11 @@ if typing.TYPE_CHECKING:
 from lib.utils.cls import ensureattr
 from lib.utils.time import normalize_timestamp
 
+logger = logging.getLogger(__name__)
+
 class Chart:
-	broker: 'Broker' # Globally set a default broker for a chart
 	query_fields: list[str] = [ 'symbol' ]
-	value_fields: list[str] = [ 'timestamp' ]
+	value_fields: list[str] = []
 
 	def __init__(self,
 		symbol: str = None,
@@ -22,15 +24,11 @@ class Chart:
 		to_timestamp: pandas.Timestamp = None,
 		dataframe: pandas.DataFrame = None, 
 		indicators: dict[str, 'Indicator' or type['Indicator']] = dict(),
-		broker: 'Broker' = None,
 		**kwargs
 	):
 		self.symbol = symbol
 		self.from_timestamp = normalize_timestamp(from_timestamp)
 		self.to_timestamp = normalize_timestamp(to_timestamp)
-
-		if broker:
-			self.broker = broker
 
 		for key in self.query_fields:
 			ensureattr(self, key, kwargs.get(key, None))
@@ -44,41 +42,46 @@ class Chart:
 			self.add_indicator(indicator, name=name)
 
 	def __repr__(self) -> str:
-		return f"{type(self).__name__}({', '.join([ f'{key}={getattr(self, key)}' for key in self.query_fields ])})"
+		return f"{type(self).__name__}({', '.join([ f'{key}={getattr(self, key)}' for key in self.query_fields + [ 'from_timestamp', 'to_timestamp' ] if getattr(self, key) != None ])})"
 
 	def __len__(self) -> int:
 		return len(self.dataframe) if type(self.dataframe) == pandas.DataFrame else 0
 
 	@functools.cached_property
-	def name(self):
-		return f"{type(self).__name__}_{'_'.join([ str(getattr(self, key)) for key in self.query_fields ])}"
+	def _name(self):
+		return f"{type(self).__name__}.{'.'.join([ str(getattr(self, key)) for key in self.query_fields ])}"
 
 	@property
 	def data(self):
-		if len(self.value_fields) == 2: # first column is always timestamp
-			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
-		return self.dataframe[self.symbol, self.name]
+		if len(self.value_fields) == 1:
+			return self.dataframe[self.symbol, self._name, self.value_fields[-1]]
+		return self.dataframe[self.symbol, self._name]
 
-	def read(self):
-		self.broker.read(self)
+	def read_from(self, broker: 'Broker'):
+		broker.read(self)
+		return self
+
+	def write_to(self, broker: 'Broker'):
+		broker.write(self)
 		return self
 
 	def load_dataframe(self, dataframe: pandas.DataFrame):
+		if type(dataframe) != pandas.DataFrame:
+			logger.error(f'Invalid parameter was passed to `load_dataframe`: {dataframe}')
+			return
+
 		if len(dataframe) == 0:
 			dataframe = pandas.DataFrame(columns=self.value_fields)
 
 		if dataframe.index.name != 'timestamp':
-			timestamp_column = next(column for column in dataframe.columns if 'time' in column or 'date' in column)
-			dataframe['timestamp'] = pandas.to_datetime(dataframe[timestamp_column])
-			if timestamp_column != 'timestamp':
-				dataframe.drop(columns=[timestamp_column], inplace=True)
+			dataframe['timestamp'] = pandas.to_datetime(dataframe['timestamp'])
 			dataframe.set_index('timestamp', inplace=True, drop=True)
 			dataframe.index.name = 'timestamp' # probably unnecessary someone check
 
 		if type(dataframe.columns) != pandas.MultiIndex:
-			dataframe = dataframe[[ key for key in self.value_fields if key != 'timestamp' ]]
+			dataframe = dataframe[[ key for key in self.value_fields ]]
 			dataframe.columns = pandas.MultiIndex.from_tuples(
-				[ (self.symbol, self.name, column) for column in dataframe.columns ],
+				[ (self.symbol, self._name, column) for column in dataframe.columns ],
 				names=[ 'symbol', 'timeseries', 'feature' ]
 			)
 
@@ -98,15 +101,19 @@ class Chart:
 
 	def add_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):
 		if inspect.isclass(indicator):
-			indicator()
-		indicator.name = name
+			indicator = indicator()
+
+		indicator.name = name or repr(indicator)
+		self.indicators[name or type(indicator)] = indicator
+
 		indicator.apply(self)
-		self.indicators[indicator.name] = indicator
-		return self
+		return indicator
 
 	def remove_indicator(self, name: str):
+		indicator = self.indicators[name]
+		indicator.chart = None
+		self.dataframe.drop((self.symbol, indicator.name), axis=1, inplace=True)
 		del self.indicators[name]
-		self.dataframe.drop((self.symbol, name), axis=1, inplace=True)
 
 	def refresh_indicators(self, force: bool = False):
 		for indicator in self.indicators.values():

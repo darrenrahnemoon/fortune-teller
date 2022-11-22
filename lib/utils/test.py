@@ -45,11 +45,12 @@ class TestManager:
 		indentation = self.settings['indentation'] * indent
 		for message in tests:
 			test = tests[message]
+			filter_includes_message = filter_message.lower() in message.lower()
 			if (type(test) == dict):
 				print(termcolor.colored(f"\n{indentation}{self.settings['group_symbol']} {message}", self.settings['group_color']))
-				self.run_tests(test, indent=indent + 1, filter_message='' if filter_message in message else filter_message)
+				self.run_tests(test, indent=indent + 1, filter_message='' if filter_includes_message else filter_message)
 			else:
-				if filter_message in message:
+				if filter_includes_message:
 					formatted_message = f"{indentation}{self.settings['case_symbol']} {message}:"
 					print(termcolor.colored(formatted_message, self.settings['case_color']), end='\r')
 					start_time = time.time()

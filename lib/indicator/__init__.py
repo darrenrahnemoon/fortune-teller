@@ -1,2 +1,2 @@
-from lib.common.indicator.indicator import Indicator
-from lib.common.indicator.macd import MACDIndicator
+from lib.indicator.indicator import Indicator
+from lib.indicator.macd import MACDIndicator

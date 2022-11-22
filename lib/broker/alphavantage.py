@@ -8,7 +8,7 @@ from lib.broker.broker import Broker
 from lib.chart import LineChart, Chart
 from lib.interval import Interval
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 class AlphaVantageBroker(Broker):
 	intervals = {
@@ -29,15 +29,15 @@ class AlphaVantageBroker(Broker):
 	}
 
 	available_data = {
-		'REAL_GDP': { LineChart: { 'interval': [ Interval.Year(), Interval.Quarter(1) ] } },
+		'REAL_GDP': { LineChart: { 'interval': [ Interval.Year(1), Interval.Quarter(1) ] } },
 		'REAL_GDP_PER_CAPITA': { LineChart: { 'interval': [ Interval.Quarter(1) ] } },
 		'TREASURY_YIELD': { 
 			LineChart: {
-				'interval': [ Interval.Day(), Interval.Week(), Interval.Month(1) ],
+				'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ],
 				'maturity': [ Interval.Month(3), Interval.Year(2), Interval.Year(5), Interval.Year(7), Interval.Year(10), Interval.Year(30) ]
 			} 
 		},
-		'FEDERAL_FUNDS_RATE': { LineChart: { 'interval': [ Interval.Day(), Interval.Week(), Interval.Month(1) ] } },
+		'FEDERAL_FUNDS_RATE': { LineChart: { 'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ] } },
 		'CPI': { LineChart: { 'interval': [ Interval.Month(1), Interval.Month(6) ] } },
 		'INFLATION': { LineChart: { 'interval': [ Interval.Year(1) ] } },
 		'INFLATION_EXPECTATION': { LineChart: { 'interval': [ Interval.Month(1) ] } },
@@ -80,7 +80,6 @@ class AlphaVantageBroker(Broker):
 			return self.read(chart)
 
 		data = response['data']
-		logger.debug(f"Converting records to dataframe. Row sample:\n{data[0] if len(data) else None}")
 		dataframe = pandas.DataFrame.from_records(data, index='date')
 
 		# Value-related transformations
@@ -90,6 +89,6 @@ class AlphaVantageBroker(Broker):
 		# Timestamp-related transformations
 		dataframe.index = pandas.to_datetime(dataframe.index)
 		dataframe.index.name = 'timestamp'
+		dataframe = dataframe.reindex(index=dataframe.index[::-1])
 
-		logger.debug(f'Converted dataframe: \n{dataframe}')
 		chart.load_dataframe(dataframe)

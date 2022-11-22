@@ -3,35 +3,33 @@ import logging
 
 from lib.chart import Chart
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 class Indicator:
-	def __init__(self, name: str = None, **kwargs) -> None:
-		self.name = name
+	query_fields: list[str] = []
+	value_fields: list[str] = []
+
+	def __init__(self, **kwargs) -> None:
 		self.chart: Chart = None
+		self.name: str = None
 		for key, value in kwargs.items():
 			setattr(self, key, value)
 
-	@property
-	def name(self):
-		return self._name or type(self).__name__
+	def __repr__(self) -> str:
+		return f"{type(self).__name__}({', '.join([ f'{key}={getattr(self, key)}' for key in self.query_fields if getattr(self, key) != None ])})"
 
-	@name.setter
-	def name(self, value: str):
-		self._name = value
+	def __len__(self) -> int:
+		data = self.data
+		return len(data) if type(data) in [ pandas.DataFrame, pandas.Series ] else 0
 
 	@property
 	def data(self):
 		if not self.chart:
 			logger.error('Indicator is not attached to any chart but data was requested.')
 			return
-		data = self.chart.dataframe[self.chart.symbol, self.name]
-		if len(data.columns) == 1:
-			default_column = data.columns[0]
-			series = data[default_column]
-			series.name = default_column
-			return series
-		return 
+		if len(self.value_fields) == 1:
+			return self.chart.dataframe[self.chart.symbol, self.name, self.value_fields[-1]]
+		return self.chart.dataframe[self.chart.symbol, self.name]
 
 	def apply(self, chart: Chart, force = False):
 		self.chart = chart
@@ -44,7 +42,7 @@ class Indicator:
 			value = self.run(self.chart.data)
 
 			if (type(value) != dict):
-				value = { 'value' : value }
+				value = { self.value_fields[-1] : value }
 			for key, value in value.items():
 				self.chart.dataframe[self.chart.symbol, self.name, key] = value
 

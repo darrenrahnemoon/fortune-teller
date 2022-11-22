@@ -15,7 +15,7 @@ from lib.interval import Interval
 from lib.utils.time import normalize_timestamp
 from lib.utils.collection import ensure_list
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 class SimulationBroker(Broker):
 	def __init__(
@@ -28,39 +28,28 @@ class SimulationBroker(Broker):
 
 	def read(self, chart: Chart):
 		self.ensure_timestamp(chart)
-
 		records = self.repository.read(chart)
-
-		logger.debug(f'Converting records to dataframe. Row sample:\n{records[0] if len(records) else None}')
-		dataframe = pandas.DataFrame.from_records(records, columns=chart.value_fields)
-		logger.debug(f'Converted dataframe: \n{dataframe}')
-
+		dataframe = pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
 		chart.load_dataframe(dataframe)
-		logger.debug(f'Successfully read {chart} from database.')
 		return chart
 
 	def write(self, chart: Chart):
 		data = chart.data
 		if len(data) == 0:
-			logger.warn(f'Attempted to write an empty {chart} into database. Aborting...')
+			logger.warn(f'Attempted to write an empty {chart} into database. Skipping...')
 			return
 
-		logger.debug(f'Writing {chart} to database...')
 		self.repository.write(chart)
-		logger.debug(f'Successfully wrote {chart} into database.')
 		return chart
 
+	def remove_historical_data(self, chart: Chart):
+		self.repository.drop_collection_for(chart)
+
 	def get_max_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		logger.debug(f'Getting the maximum timestamp available for {chart}...')
-		max_timestamp = self.repository.get_max_timestamp(chart)
-		logger.debug(f'Result: {max_timestamp}')
-		return max_timestamp
+		return self.repository.get_max_timestamp(chart)
 
 	def get_min_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		logger.debug(f'Getting the minimum timestamp available for {chart}...')
-		min_timestamp = self.get_min_timestamp(chart)
-		logger.debug(f'Result: {min_timestamp}')
-		return min_timestamp
+		return self.repository.get_min_timestamp(chart)
 
 	def backtest(
 		self,
@@ -79,11 +68,9 @@ class SimulationBroker(Broker):
 			records = self.repository.read(trigger)
 			self.timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
 		elif isinstance(trigger, Interval):
-			self.timesteps = pandas.date_range(self.from_timestamp, self.to_timestamp, freq=trigger.to_pandas_frequency, name='timesteps')
+			self.timesteps = pandas.date_range(self.from_timestamp, self.to_timestamp, freq=trigger.to_pandas_frequency(), name='timesteps')
 		else:
-			raise Exception(f'Cannot process trigger: {trigger}')
-
-		logger.debug(f'Timesteps:\n{self.timesteps}')
+			logger.critical(f'Invalid trigger for backtesting: {trigger}')
 
 		self.latency = latency
 		self.scheduler = Scheduler()

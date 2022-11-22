@@ -6,7 +6,6 @@ if typing.TYPE_CHECKING:
 	from lib.broker import Broker
 
 class Interval:
-	amount: float = 1
 	multiplier: float = 1
 
 	pandas_timedelta_unit: str = None
@@ -25,7 +24,7 @@ class Interval:
 	Year: type['Interval'] = None
 	# ----------------------------
 
-	def __init__(self, amount: float = 1) -> None:
+	def __init__(self, amount: float) -> None:
 		self.amount = amount
 
 	def __hash__(self) -> int:
@@ -47,15 +46,12 @@ class Interval:
 	def unit(self):
 		return type(self).__name__
 
-	@property
 	def to_pandas_timedelta(self) -> pandas.Timedelta:
 		return pandas.Timedelta(self.real_amount, self.pandas_timedelta_unit)
 
-	@property
 	def to_pandas_frequency(self) -> str:
 		return f'{self.real_amount}{self.pandas_frequency_unit}'
 
-	@property
 	def to_numpy_timedelta(self) -> str:
 		return numpy.timedelta64(self.real_amount, self.numpy_timedelta_unit)
 

@@ -8,7 +8,7 @@ from lib.utils.command import Command, map_dict_to_argument
 from lib.utils.module import import_module
 from lib.utils.collection import ensure_list
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 class BackfillHistoricalDataCommand(Command):
 	brokers = {
@@ -70,5 +70,6 @@ class BackfillHistoricalDataCommand(Command):
 						from_timestamp=self.args.from_timestamp,
 						to_timestamp=self.args.to_timestamp,
 						**combination
-					).read()
-					to_broker.write(chart)
+					)\
+					.read_from(from_broker)\
+					.write_to(to_broker)

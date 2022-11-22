@@ -1,3 +1,4 @@
+import logging
 import pandas
 import functools
 
@@ -5,6 +6,8 @@ from lib.broker.broker import Broker
 from lib.chart import CandleStickChart, TickChart, Chart
 from lib.interval import Interval
 from lib.utils.module import import_module
+
+logger = logging.getLogger(__name__)
 
 class MetaTraderBroker(Broker):
 	api = None
@@ -56,7 +59,7 @@ class MetaTraderBroker(Broker):
 	def read(self, chart: Chart):
 		self.ensure_timestamp(chart)
 
-		if type(chart) == CandleStickChart:
+		if isinstance(chart, CandleStickChart):
 			dataframe = self.api.copy_rates_range(
 				chart.symbol,
 				chart.interval.to_broker(self),
@@ -69,7 +72,7 @@ class MetaTraderBroker(Broker):
 				dataframe['timestamp'] = pandas.to_datetime(dataframe['time'], unit='s', utc=True)
 				dataframe.drop(columns='time', inplace=True)
 
-		elif type(chart) == TickChart:
+		elif isinstance(chart, TickChart):
 			dataframe = self.api.copy_ticks_range(
 				chart.symbol,
 				chart.from_timestamp.to_pydatetime(),
@@ -91,6 +94,7 @@ class MetaTraderBroker(Broker):
 			raise Exception(f"Unsupported chart type '{chart}'.")
 
 		chart.load_dataframe(dataframe)
+
 
 # tick copy flags
 COPY_TICKS_ALL                      = -1
