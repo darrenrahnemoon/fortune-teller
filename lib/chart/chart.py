@@ -51,7 +51,7 @@ class Chart:
 
 	@functools.cached_property
 	def name(self):
-		return f"{type(self).__name__}_{'_'.join([ repr(getattr(self, key)) for key in self.query_fields ])}"
+		return f"{type(self).__name__}_{'_'.join([ str(getattr(self, key)) for key in self.query_fields ])}"
 
 	@property
 	def data(self):

@@ -6,7 +6,8 @@ if typing.TYPE_CHECKING:
 	from lib.broker import Broker
 
 class Interval:
-	_multiplier = 1
+	amount: float = 1
+	multiplier: float = 1
 
 	pandas_timedelta_unit: str = None
 	pandas_frequency_unit: str = None
@@ -25,10 +26,10 @@ class Interval:
 	# ----------------------------
 
 	def __init__(self, amount: float = 1) -> None:
-		self._amount = amount
+		self.amount = amount
 
 	def __hash__(self) -> int:
-		return hash((self.amount, self.unit))
+		return hash((self.real_amount, self.unit))
 
 	def __repr__(self) -> str:
 		return f'{self.unit}({self.amount})'
@@ -39,8 +40,8 @@ class Interval:
 		return self.amount == other.amount and self.unit == other.unit
 
 	@property
-	def amount(self):
-		return self._amount * self._multiplier
+	def real_amount(self):
+		return self.amount * self.multiplier
 
 	@property
 	def unit(self):
@@ -48,15 +49,15 @@ class Interval:
 
 	@property
 	def to_pandas_timedelta(self) -> pandas.Timedelta:
-		return pandas.Timedelta(self.amount, self.pandas_timedelta_unit)
+		return pandas.Timedelta(self.real_amount, self.pandas_timedelta_unit)
 
 	@property
 	def to_pandas_frequency(self) -> str:
-		return f'{self.amount}{self.pandas_frequency_unit}'
+		return f'{self.real_amount}{self.pandas_frequency_unit}'
 
 	@property
 	def to_numpy_timedelta(self) -> str:
-		return numpy.timedelta64(self.amount, self.numpy_timedelta_unit)
+		return numpy.timedelta64(self.real_amount, self.numpy_timedelta_unit)
 
 	def to_broker(self, broker: type['Broker'] or 'Broker' = None):
 		return broker.intervals[self]
@@ -99,11 +100,11 @@ Interval.Week = Week
 
 # Pandas/Numpy and others don't have a definition for month as its amount is variable depending on the month so we naively assume 30 days 
 class Month(Day):
-	_multiplier = 30
+	multiplier = 30
 Interval.Month = Month
 
 class Quarter(Month):
-	_multiplier = 3
+	multiplier = 3
 Interval.Quarter = Quarter
 
 class Year(Interval):

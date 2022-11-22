@@ -71,4 +71,4 @@ class BackfillHistoricalDataCommand(Command):
 						to_timestamp=self.args.to_timestamp,
 						**combination
 					).read()
-					# to_broker.write(chart)
+					to_broker.write(chart)

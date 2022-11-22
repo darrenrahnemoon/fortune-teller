@@ -12,12 +12,12 @@ logger = logging.getLogger(__file__)
 
 class AlphaVantageBroker(Broker):
 	intervals = {
-		Interval.Day: 'daily',
-		Interval.Week: 'weekly',
-		Interval.Month: 'monthly',
-		Interval.Quarter: 'quarterly',
+		Interval.Day(1): 'daily',
+		Interval.Week(1): 'weekly',
+		Interval.Month(1): 'monthly',
+		Interval.Quarter(1): 'quarterly',
 		Interval.Month(6) : 'semiannual',
-		Interval.Year: 'annual',
+		Interval.Year(1): 'annual',
 
 		# For Maturity
 		Interval.Month(3): '3month',
@@ -29,28 +29,28 @@ class AlphaVantageBroker(Broker):
 	}
 
 	available_data = {
-		'REAL_GDP': { LineChart: { 'interval': [ Interval.Year, Interval.Quarter ] } },
-		'REAL_GDP_PER_CAPITA': { LineChart: { 'interval': [ Interval.Quarter ] } },
+		'REAL_GDP': { LineChart: { 'interval': [ Interval.Year(), Interval.Quarter(1) ] } },
+		'REAL_GDP_PER_CAPITA': { LineChart: { 'interval': [ Interval.Quarter(1) ] } },
 		'TREASURY_YIELD': { 
 			LineChart: {
-				'interval': [ Interval.Day, Interval.Week, Interval.Month ],
+				'interval': [ Interval.Day(), Interval.Week(), Interval.Month(1) ],
 				'maturity': [ Interval.Month(3), Interval.Year(2), Interval.Year(5), Interval.Year(7), Interval.Year(10), Interval.Year(30) ]
 			} 
 		},
-		'FEDERAL_FUNDS_RATE': { LineChart: { 'interval': [ Interval.Day, Interval.Week, Interval.Month ] } },
-		'CPI' : { LineChart: { 'interval': [ Interval.Month, Interval.Month(6) ] } },
-		'INFLATION' : { LineChart: { 'interval': [ Interval.Year ] } },
-		'INFLATION_EXPECTATION' : { LineChart: { 'interval': [ Interval.Month ] } },
-		'CONSUMER_SENTIMENT' : { LineChart: { 'interval': [ Interval.Month ] } },
-		'RETAIL_SALES' : { LineChart: { 'interval': [ Interval.Month ] } },
-		'DURABLES' : { LineChart: { 'interval' : [ Interval.Month ] } },
-		'UNEMPLOYMENT' : { LineChart: { 'interval' : [ Interval.Month ] } },
-		'NONFARM_PAYROLL' : { LineChart: { 'interval' : [ Interval.Month ] } },
+		'FEDERAL_FUNDS_RATE': { LineChart: { 'interval': [ Interval.Day(), Interval.Week(), Interval.Month(1) ] } },
+		'CPI': { LineChart: { 'interval': [ Interval.Month(1), Interval.Month(6) ] } },
+		'INFLATION': { LineChart: { 'interval': [ Interval.Year(1) ] } },
+		'INFLATION_EXPECTATION': { LineChart: { 'interval': [ Interval.Month(1) ] } },
+		'CONSUMER_SENTIMENT': { LineChart: { 'interval': [ Interval.Month(1) ] } },
+		'RETAIL_SALES': { LineChart: { 'interval': [ Interval.Month(1) ] } },
+		'DURABLES': { LineChart: { 'interval': [ Interval.Month(1) ] } },
+		'UNEMPLOYMENT': { LineChart: { 'interval': [ Interval.Month(1) ] } },
+		'NONFARM_PAYROLL': { LineChart: { 'interval': [ Interval.Month(1) ] } },
 	}
 
 	def __init__(
 		self,
-		apikey: str = os.getenv('ALPHAVANTAGE_API_KEY')
+		apikey: str = os.getenv('ALPHAVANTAGE_API_KEY', None)
 	) -> None:
 		super().__init__()
 		self.apikey = apikey

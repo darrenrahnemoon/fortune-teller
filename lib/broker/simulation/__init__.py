@@ -1,87 +1,69 @@
-from inspect import isclass
+import logging
 import typing
-import numpy
 import pandas
 import random
 
 from lib.broker.broker import Broker
 from lib.broker.simulation.scheduler import Scheduler
+from lib.broker.simulation.repository import Repository
 
 from lib.order import Order
 from lib.position import Position
-from lib.strategy import Strategy
 from lib.chart import Chart
 
 from lib.interval import Interval
 from lib.utils.time import normalize_timestamp
 from lib.utils.collection import ensure_list
 
+logger = logging.getLogger(__file__)
+
 class SimulationBroker(Broker):
+	def __init__(
+		self,
+		repository: Repository = Repository(),
+		**kwargs
+	) -> None:
+		super().__init__(**kwargs)
+		self.repository = repository
+
 	def read(self, chart: Chart):
 		self.ensure_timestamp(chart)
-		logger = self.logger.getChild('read')
-		logger.info(f'Reading {chart} from database...')
-		query = select(*[ getattr(chart.model, key) for key in chart.value_fields ])\
-			.where(*[ getattr(chart.model, key) == getattr(chart, key) for key in chart.query_fields ])\
-			.where(chart.model.timestamp.between(chart.from_timestamp, chart.to_timestamp))
-		compiled_query = query.compile()
-		logger.debug(f'Query:\n{compiled_query}\n\nParams:\n{compiled_query.params}')
-		result = database.engine.execute(query).all()
-		logger.debug(f'Converting records to dataframe. Row sample:\n{result[0] if len(result) else None}')
-		dataframe = pandas.DataFrame.from_records(result, columns=chart.value_fields)
+
+		records = self.repository.read(chart)
+
+		logger.debug(f'Converting records to dataframe. Row sample:\n{records[0] if len(records) else None}')
+		dataframe = pandas.DataFrame.from_records(records, columns=chart.value_fields)
 		logger.debug(f'Converted dataframe: \n{dataframe}')
+
 		chart.load_dataframe(dataframe)
-		logger.info(f'Successfully read {chart} from database.')
+		logger.debug(f'Successfully read {chart} from database.')
 		return chart
 
-	def write(self, chart: Chart, batch_size=1000):
-		logger = self.logger.getChild('write')
+	def write(self, chart: Chart):
 		data = chart.data
 		if len(data) == 0:
 			logger.warn(f'Attempted to write an empty {chart} into database. Aborting...')
 			return
 
-		logger.info(f'Writing {chart} to database...')
-		query_fields = { key: getattr(chart, key) for key in chart.query_fields }
-		batch_count = int(len(data) / batch_size) or 1
-		batches = numpy.array_split(data, batch_count)
-		logger.debug(f'{data}\nBatch Size: {batch_size}, Batch Count: {batch_count}')
-		for batch in batches:
-			rows = [
-				dict(zip(chart.value_fields, row), **query_fields)
-				for row in (batch.itertuples() if type(data) == pandas.DataFrame else batch.items())
-			]
-			insert_statement = insert(chart.table).values(rows)
-			update_statement = insert_statement.on_duplicate_key_update({ x.name: x for x in insert_statement.inserted })
-			database.engine.execute(update_statement)
-
-		logger.info(f'Successfully wrote {chart} into database.')
+		logger.debug(f'Writing {chart} to database...')
+		self.repository.write(chart)
+		logger.debug(f'Successfully wrote {chart} into database.')
 		return chart
 
 	def get_max_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		logger = self.logger.getChild('get_max_timestamp')
-		logger.info(f'Getting the maximum timestamp available for {chart}...')
-		select_statement = select(func.max(chart.model.timestamp))\
-			.where(*[ getattr(chart.model, key) == getattr(chart, key) for key in chart.query_fields ])
-
-		logger.debug(str(select_statement.compile()))
-		result = database.engine.execute(select_statement).fetchone()[0]
-		logger.info(f'Result: {result}')
-		return result
+		logger.debug(f'Getting the maximum timestamp available for {chart}...')
+		max_timestamp = self.repository.get_max_timestamp(chart)
+		logger.debug(f'Result: {max_timestamp}')
+		return max_timestamp
 
 	def get_min_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		logger = self.logger.getChild('get_min_timestamp')
-		logger.info(f'Getting the minimum timestamp available for {chart}...')
-		select_statement = select(func.min(chart.model.timestamp))\
-			.where(*[ getattr(chart.model, key) == getattr(chart, key) for key in chart.query_fields ])
-		logger.debug(str(select_statement.compile()))
-		result = database.engine.execute(select_statement).fetchone()[0]
-		logger.info(f'Result: {result}')
-		return result
+		logger.debug(f'Getting the minimum timestamp available for {chart}...')
+		min_timestamp = self.get_min_timestamp(chart)
+		logger.debug(f'Result: {min_timestamp}')
+		return min_timestamp
 
 	def backtest(
 		self,
-		strategy: Strategy = None,
 		from_timestamp: pandas.Timestamp or str = None,
 		to_timestamp: pandas.Timestamp or str = None,
 		trigger: Chart or Interval = None,
@@ -93,17 +75,15 @@ class SimulationBroker(Broker):
 		self.now = None
 		self.from_timestamp = normalize_timestamp(from_timestamp)
 		self.to_timestamp = normalize_timestamp(to_timestamp)
-
 		if isinstance(trigger, Chart):
-			# HACK: bypass chart.load and only read the timestamps
-			query = select(trigger.model.timestamp)\
-				.where(*[ getattr(trigger.model, key) == getattr(trigger, key) for key in trigger.query_fields ])\
-				.where(trigger.model.timestamp.between(self.from_timestamp, self.to_timestamp))
-			self.timesteps = pandas.DatetimeIndex([ step[0] for step in database.engine.execute(query).fetchall() ])
+			records = self.repository.read(trigger)
+			self.timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
 		elif isinstance(trigger, Interval):
 			self.timesteps = pandas.date_range(self.from_timestamp, self.to_timestamp, freq=trigger.to_pandas_frequency, name='timesteps')
 		else:
-			raise Exception('Each strategy needs to define at least one trigger.')
+			raise Exception(f'Cannot process trigger: {trigger}')
+
+		logger.debug(f'Timesteps:\n{self.timesteps}')
 
 		self.latency = latency
 		self.scheduler = Scheduler()
@@ -114,9 +94,6 @@ class SimulationBroker(Broker):
 
 		self.positions: list[Position] = []
 		self.orders: list[Order] = []
-
-		if isclass(strategy):
-			strategy = strategy(broker=self)
 
 		for self.now in self.timesteps:
 			self.scheduler.run_as_of(self.now)
@@ -150,11 +127,12 @@ class SimulationBroker(Broker):
 					)
 				):
 					self.close_position(position, price=price)
-			try:
-				if not strategy.is_aborted:
-					strategy.handler()
-			except Exception as exception:
-				self.logger.error(f'Strategy {strategy} encountered an exception. Safely continuing...\n{exception}')
+			for strategy in self.strategies:
+				try:
+					if not strategy.is_aborted:
+						strategy.handler()
+				except Exception as exception:
+					logger.error(f'Strategy {strategy} encountered an exception. Safely continuing...\n{exception}')
 			self.equity_curve[self.now] = self.equity
 
 	@property
@@ -214,7 +192,7 @@ class SimulationBroker(Broker):
 
 	def place_order(self, order: Order) -> Order:
 		if order.id != None:
-			self.logger.warn(f'Order is already placed: {order}')
+			logger.warn(f'Order is already placed: {order}')
 			return
 
 		order.id = random.randint(0, 1000000000)
@@ -225,7 +203,7 @@ class SimulationBroker(Broker):
 
 	def fill_order(self, order: Order):
 		if order.status != 'open':
-			self.logger.warn(f"Cannot fill an order with status '{order.status}': {order}")
+			logger.warn(f"Cannot fill an order with status '{order.status}': {order}")
 			return
 
 		order.position = Position(
@@ -247,7 +225,7 @@ class SimulationBroker(Broker):
 
 	def cancel_order(self, order: Order):
 		if order.status == 'filled':
-			self.logger.warning(f'Cannot cancel an order that has been filled: {order}')
+			logger.warning(f'Cannot cancel an order that has been filled: {order}')
 			return
 
 		order.status = 'cancelled'
@@ -255,7 +233,7 @@ class SimulationBroker(Broker):
 
 	def close_position(self, position: Position, price=None):
 		if position.status == 'closed':
-			self.logger.warning(f'Cannot close a position that is already closed: {position}')
+			logger.warning(f'Cannot close a position that is already closed: {position}')
 			return
 
 		position.exit_timestamp = self.now
