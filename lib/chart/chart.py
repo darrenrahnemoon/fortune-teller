@@ -57,11 +57,11 @@ class Chart:
 			return self.dataframe[self.symbol, self._name, self.value_fields[-1]]
 		return self.dataframe[self.symbol, self._name]
 
-	def read_from(self, broker: 'Broker'):
+	def read(self, broker: 'Broker'):
 		broker.read(self)
 		return self
 
-	def write_to(self, broker: 'Broker'):
+	def write(self, broker: 'Broker'):
 		broker.write(self)
 		return self
 

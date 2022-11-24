@@ -1,3 +1,4 @@
+from lib.chart.candlestick import CandleStickChart
 import logging
 import typing
 import pandas
@@ -9,7 +10,7 @@ from lib.broker.simulation.repository import Repository
 
 from lib.order import Order
 from lib.position import Position
-from lib.chart import Chart
+from lib.chart import Chart, TickChart
 
 from lib.interval import Interval
 from lib.utils.time import normalize_timestamp
@@ -53,24 +54,14 @@ class SimulationBroker(Broker):
 
 	def backtest(
 		self,
-		from_timestamp: pandas.Timestamp or str = None,
-		to_timestamp: pandas.Timestamp or str = None,
-		trigger: Chart or Interval = None,
+		chart: Chart,
 		initial_cash: float = 1000.,
 		leverage: float = 1.,
-		latency: Interval = Interval.Millisecond(1),
+		latency: Interval = Interval.Millisecond(2),
 	):
-		# Time progression parameters
-		self.now = None
-		self.from_timestamp = normalize_timestamp(from_timestamp)
-		self.to_timestamp = normalize_timestamp(to_timestamp)
-		if isinstance(trigger, Chart):
-			records = self.repository.read(trigger)
-			self.timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
-		elif isinstance(trigger, Interval):
-			self.timesteps = pandas.date_range(self.from_timestamp, self.to_timestamp, freq=trigger.to_pandas_frequency(), name='timesteps')
-		else:
-			logger.critical(f'Invalid trigger for backtesting: {trigger}')
+		records = self.repository.read(chart)
+		self.timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
+		del records # free up memory since this variable can potentially be huge
 
 		self.latency = latency
 		self.scheduler = Scheduler()
@@ -85,13 +76,10 @@ class SimulationBroker(Broker):
 		for self.now in self.timesteps:
 			self.scheduler.run_as_of(self.now)
 
-			# Reduce db calls by caching this iteration's last prices
-			last_prices = dict()
-
 			for order in self.get_orders(status='open'):
-				price = last_prices[order.symbol] = last_prices[order.symbol] if order.symbol in last_prices else self.get_last_price(order.symbol)
-				if (order.type == 'long' and price >= order.stop) \
-					or (order.type == 'short' and price <= order.stop):
+				price = self.get_last_price(order.symbol)
+				if (order.type == 'long' and order.stop and price >= order.stop) \
+					or (order.type == 'short' and order.stop and price <= order.stop):
 					order.stop = None
 				if order.stop == None \
 					and (order.is_market_order \
@@ -101,7 +89,7 @@ class SimulationBroker(Broker):
 					self.fill_order(order)
 
 			for position in self.get_positions(status='open'):
-				price = last_prices[position.symbol] = last_prices[position.symbol] if position.symbol in last_prices else self.get_last_price(position.symbol)
+				price = self.get_last_price(position.symbol)
 				if (
 					position.type == 'long' and (
 						(position.sl and price <= position.sl) or 
@@ -115,11 +103,8 @@ class SimulationBroker(Broker):
 				):
 					self.close_position(position, price=price)
 			for strategy in self.strategies:
-				try:
-					if not strategy.is_aborted:
-						strategy.handler()
-				except Exception as exception:
-					logger.error(f'Strategy {strategy} encountered an exception. Safely continuing...\n{exception}')
+				if not strategy.is_aborted:
+					strategy.handler()
 			self.equity_curve[self.now] = self.equity
 
 	@property
@@ -128,18 +113,16 @@ class SimulationBroker(Broker):
 
 	@now.setter
 	def now(self, value: pandas.Timestamp):
-		self._now = value
+		self._now = normalize_timestamp(value)
 
 	def get_last_price(self, symbol: str) -> float:
-		pass
-		# query = select(Tick.bid, Tick.ask)\
-		# 	.where(Tick.symbol == symbol)\
-		# 	.where(Tick.timestamp <= self.now)\
-		# 	.order_by(Tick.timestamp.desc())\
-		# 	.limit(1)
-		# print(f'{query.compile()} {query.compile().params}')
-		# result = database.engine.execute(query).fetchone()
-		# return (result[0] + result[1]) / 2
+		tick = self.repository.read(
+			# TickChart(symbol=symbol, to_timestamp=self.now),
+			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), to_timestamp=self.now),
+			limit=1,
+		)[0]
+		return tick['close']
+		# return (tick['bid'] + tick['ask']) / 2
 
 	def get_orders(
 		self,
@@ -153,10 +136,10 @@ class SimulationBroker(Broker):
 		return [
 			order
 			for order in self.orders
-			if (symbol and order.symbol == symbol) \
-				or (from_timestamp and order.open_timestamp >= from_timestamp) \
-				or (to_timestamp and order.close_timestamp >= to_timestamp)
-				or (status and order.status in status)
+			if ((not symbol) or order.symbol == symbol) \
+				and ((not from_timestamp) or order.open_timestamp >= from_timestamp) \
+				and ((not to_timestamp) or order.open_timestamp <= to_timestamp)
+				and ((not status) or order.status in status)
 		]
 
 	def get_positions(
@@ -171,13 +154,17 @@ class SimulationBroker(Broker):
 		return [
 			position
 			for position in self.positions
-			if (symbol and position.symbol == symbol) \
-				or (from_timestamp and position.open_timestamp >= from_timestamp) \
-				or (to_timestamp and position.close_timestamp >= to_timestamp)
-				or (status and position.status in status)
+			if ((not symbol) or position.symbol == symbol) \
+				and ((not from_timestamp) or position.open_timestamp >= from_timestamp) \
+				and ((not to_timestamp) or position.open_timestamp <= to_timestamp)
+				and ((not status) or position.status in status)
 		]
 
-	def place_order(self, order: Order) -> Order:
+	def place_order(self, order: Order, schedule=True) -> Order:
+		if schedule:
+			self.schedule_action(self.place_order, order, schedule=False)
+			return
+
 		if order.id != None:
 			logger.warn(f'Order is already placed: {order}')
 			return
@@ -188,6 +175,18 @@ class SimulationBroker(Broker):
 		self.orders.append(order)
 		return order
 
+	def cancel_order(self, order: Order, schedule=True):
+		if schedule:
+			self.schedule_action(self.cancel_order, order, schedule=False)
+			return
+
+		if order.status == 'filled':
+			logger.warning(f'Cannot cancel an order that has been filled: {order}')
+			return
+
+		order.status = 'cancelled'
+		order.close_timestamp = self.now
+
 	def fill_order(self, order: Order):
 		if order.status != 'open':
 			logger.warn(f"Cannot fill an order with status '{order.status}': {order}")
@@ -197,10 +196,10 @@ class SimulationBroker(Broker):
 			id=random.randint(0, 1000000000),
 			broker=self,
 			symbol=order.symbol,
-			position_type=order.type,
+			type=order.type,
 			size=order.size,
 			entry_price=self.get_last_price(order.symbol),
-			entry_timestamp=self.now,
+			open_timestamp=self.now,
 			tp=order.tp,
 			sl=order.sl,
 			order=order
@@ -210,23 +209,19 @@ class SimulationBroker(Broker):
 		self.positions.append(order.position)
 		return order.position
 
-	def cancel_order(self, order: Order):
-		if order.status == 'filled':
-			logger.warning(f'Cannot cancel an order that has been filled: {order}')
+	def close_position(self, position: Position, schedule=True):
+		if schedule:
+			self.schedule_action(self.close_position, position, schedule=False)
 			return
 
-		order.status = 'cancelled'
-		order.close_timestamp = self.now
-
-	def close_position(self, position: Position, price=None):
 		if position.status == 'closed':
 			logger.warning(f'Cannot close a position that is already closed: {position}')
 			return
 
-		position.exit_timestamp = self.now
-		position.exit_price = price or self.get_last_price(position.symbol)
+		position.close_timestamp = self.now
+		position.exit_price = self.get_last_price(position.symbol)
 
-	def call_with_latency(
+	def schedule_action(
 		self,
 		action: typing.Callable,
 		*args,
@@ -234,9 +229,9 @@ class SimulationBroker(Broker):
 	):
 		self.scheduler.add(
 			action=action,
-			timestamp=self.now + self.latency,
-			*args,
-			**kwargs
+			timestamp=self.now + self.latency.to_pandas_timedelta(),
+			args=args,
+			kwargs=kwargs
 		)
 
 	@property

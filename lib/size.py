@@ -1,3 +1,6 @@
+import typing
+
+
 class Size:
 	@staticmethod
 	def Lot(lot: float):

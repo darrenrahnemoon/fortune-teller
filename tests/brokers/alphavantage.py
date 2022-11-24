@@ -12,7 +12,7 @@ def _():
 			symbol='TREASURY_YIELD',
 			interval=Interval.Day(1),
 			maturity=Interval.Year(30)
-		).read_from(alphavantage)
+		).read(alphavantage)
 
 		assert len(chart) != 0
 		assert chart.data['2022-10-28'] == 4.15

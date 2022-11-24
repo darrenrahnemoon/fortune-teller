@@ -1,3 +1,4 @@
+import typing
 import pandas
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -9,12 +10,12 @@ class Position:
 		id = None,
 		broker: 'Broker' = None,
 		symbol: str = None,
-		position_type: str = None,
+		type: typing.Literal['long', 'short'] = None,
 		size: int = None,
 		entry_price: float = None,
-		entry_timestamp: pandas.Timestamp = None,
 		exit_price: float = None,
-		exit_timestamp: pandas.Timestamp = None,
+		open_timestamp: pandas.Timestamp = None,
+		close_timestamp: pandas.Timestamp = None,
 		tp: float = None,
 		sl: float = None,
 		order = None,
@@ -22,18 +23,19 @@ class Position:
 		self.id = id
 		self.broker = broker
 		self.symbol = symbol
-		self.type = position_type
+		self.type = type
 		self.entry_price = entry_price
-		self.entry_timestamp = entry_timestamp
+		self.open_timestamp = open_timestamp
 		self.exit_price = exit_price
-		self.exit_timestamp = exit_timestamp
+		self.close_timestamp = close_timestamp
 		self.sl = sl
 		self.tp = tp
 		self.order = order
 		self.size = size
 
 	def close(self):
-		pass
+		self.broker.close_position(self)
+		return self
 
 	@property
 	def profit(self) -> float:
@@ -62,5 +64,5 @@ class Position:
 		return self.profit < 0
 
 	@property
-	def status(self) -> bool:
+	def status(self):
 		return 'closed' if self.exit_price else 'open'

@@ -1,3 +1,4 @@
+from pymongo import collection
 from lib.utils.time import normalize_timestamp
 import os
 import pandas
@@ -12,14 +13,18 @@ class Repository:
 	def __init__(self) -> None:
 		self.client = pymongo.MongoClient(os.getenv('DB_URI'), tz_aware=True)
 
-	def read(self, chart: Chart) -> list[dict]:
+	def read(
+		self,
+		chart: Chart,
+		limit=0,
+	) -> list[dict]:
 		collection = self.get_collection_for(chart)
-		cursor = collection.find({
-			'timestamp': {
-				'$gte': chart.from_timestamp,
-				'$lte': chart.to_timestamp,
-			}
-		})
+		_filter = { 'timestamp' : {} }
+		if chart.from_timestamp:
+			_filter['timestamp']['$gte'] = chart.from_timestamp
+		if chart.to_timestamp:
+			_filter['timestamp']['$lte'] = chart.to_timestamp
+		cursor = collection.find(_filter, limit=limit)
 		return list(cursor)
 
 	def write(self, chart: Chart):
@@ -32,25 +37,28 @@ class Repository:
 				dict(timestamp=timestamp, value=value)
 				for timestamp, value in data.to_dict().items() 
 			]
-		rows = [ 
-			pymongo.UpdateOne(
-				{ 'timestamp': row['timestamp'] },
-				{ '$set' : row },
-				upsert=True
-			)
-			for row in rows
-		]
-		collection.bulk_write(rows)
+		try:
+			collection.insert_many(rows)
+		except:
+			rows = [
+				pymongo.UpdateOne(
+					{ 'timestamp': row['timestamp'] },
+					{ '$set' : row },
+					upsert=True
+				)
+				for row in rows
+			]
+			collection.bulk_write(rows)
 
 	def get_max_timestamp(self, chart: Chart):
 		collection = self.get_collection_for(chart)
-		cursor = collection.find_one(sort=[('timestamp', pymongo.DESCENDING)])
-		return normalize_timestamp(cursor['timestamp']) if cursor else None
+		record = collection.find_one(sort=[('timestamp', pymongo.DESCENDING)])
+		return normalize_timestamp(record['timestamp']) if record else None
 
 	def get_min_timestamp(self, chart: Chart):
 		collection = self.get_collection_for(chart)
-		cursor = collection.find_one(sort=[('timestamp', pymongo.ASCENDING)])
-		return normalize_timestamp(cursor['timestamp']) if cursor else None
+		record = collection.find_one(sort=[('timestamp', pymongo.ASCENDING)])
+		return normalize_timestamp(record['timestamp']) if record else None
 
 	def get_collection_for(self, chart: Chart):
 		database = os.getenv('DB_NAME', 'trading')

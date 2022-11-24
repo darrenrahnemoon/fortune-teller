@@ -10,8 +10,8 @@ class Scheduler:
 		self,
 		action: typing.Callable = None,
 		timestamp: pandas.Timestamp = None,
-		*args,
-		**kwargs
+		args = [],
+		kwargs = {},
 	):
 		self.queue.append((
 			timestamp,
