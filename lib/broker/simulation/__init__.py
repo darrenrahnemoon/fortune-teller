@@ -32,8 +32,7 @@ class SimulationBroker(Broker):
 	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
 		records = self.repository.read_chart(chart)
-		dataframe = pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
-		chart.load_dataframe(dataframe)
+		chart.dataframe = pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
 		return chart
 
 	def write_chart(self, chart: Chart):

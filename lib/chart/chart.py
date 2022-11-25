@@ -33,9 +33,9 @@ class Chart:
 		for key in self.query_fields:
 			ensureattr(self, key, kwargs.get(key, None))
 
-		self.dataframe: pandas.DataFrame = None
+		self._dataframe: pandas.DataFrame = None
 		if dataframe:
-			self.load_dataframe(dataframe)
+			self.dataframe = dataframe
 
 		self.indicators: dict[str, 'Indicator'] = dict()
 		for name, indicator in indicators.items():
@@ -48,14 +48,14 @@ class Chart:
 		return len(self.dataframe) if type(self.dataframe) == pandas.DataFrame else 0
 
 	@functools.cached_property
-	def _name(self):
+	def name(self):
 		return f"{type(self).__name__}.{'.'.join([ str(getattr(self, key)) for key in self.query_fields ])}"
 
 	@property
 	def data(self):
 		if len(self.value_fields) == 1:
-			return self.dataframe[self.symbol, self._name, self.value_fields[-1]]
-		return self.dataframe[self.symbol, self._name]
+			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
+		return self.dataframe[self.symbol, self.name]
 
 	def read(self, broker: 'Broker'):
 		broker.read_chart(self)
@@ -65,13 +65,19 @@ class Chart:
 		broker.write_chart(self)
 		return self
 
-	def load_dataframe(self, dataframe: pandas.DataFrame):
+	@property
+	def dataframe(self):
+		return self._dataframe
+
+	@dataframe.setter
+	def dataframe(self, dataframe: pandas.DataFrame):
+		logger.debug(f'{self} setting dataframe to:\n{dataframe}')
 		if type(dataframe) != pandas.DataFrame:
-			logger.error(f'Invalid parameter was passed to `load_dataframe`: {dataframe}')
+			logger.error(f'Invalid dataframe was assigned to {self}: {dataframe}')
 			return
 
 		if len(dataframe) == 0:
-			dataframe = pandas.DataFrame(columns=self.value_fields)
+			dataframe = pandas.DataFrame(columns=self.value_fields + [ 'timestamp' ])
 
 		if dataframe.index.name != 'timestamp':
 			dataframe['timestamp'] = pandas.to_datetime(dataframe['timestamp'])
@@ -81,23 +87,12 @@ class Chart:
 		if type(dataframe.columns) != pandas.MultiIndex:
 			dataframe = dataframe[[ key for key in self.value_fields ]]
 			dataframe.columns = pandas.MultiIndex.from_tuples(
-				[ (self.symbol, self._name, column) for column in dataframe.columns ],
+				[ (self.symbol, self.name, column) for column in dataframe.columns ],
 				names=[ 'symbol', 'timeseries', 'feature' ]
 			)
 
-		if type(self.dataframe) == pandas.DataFrame:
-			self.dataframe = pandas.concat([ dataframe, self.dataframe ], axis=1, copy=False)
-		else:
-			self.dataframe = dataframe
+		self._dataframe = dataframe
 		self.refresh_indicators()
-
-	def load_csv(self, path: pathlib.Path or str):
-		path = str(path)
-		dataframe = pandas.read_csv(path)
-		dataframe.columns = [ column.lower() for column in dataframe.columns ]
-		self.load_dataframe(dataframe)
-		self.to_timestamp = dataframe.index[-1]
-		self.from_timestamp = dataframe.index[0]
 
 	def add_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):
 		if inspect.isclass(indicator):

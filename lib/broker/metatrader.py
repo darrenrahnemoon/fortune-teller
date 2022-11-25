@@ -93,7 +93,7 @@ class MetaTraderBroker(Broker):
 		else:
 			raise Exception(f"Unsupported chart type '{chart}'.")
 
-		chart.load_dataframe(dataframe)
+		chart.dataframe = dataframe
 
 
 # tick copy flags

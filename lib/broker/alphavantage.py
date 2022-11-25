@@ -91,4 +91,4 @@ class AlphaVantageBroker(Broker):
 		dataframe.index.name = 'timestamp'
 		dataframe = dataframe.reindex(index=dataframe.index[::-1])
 
-		chart.load_dataframe(dataframe)
+		chart.dataframe = dataframe

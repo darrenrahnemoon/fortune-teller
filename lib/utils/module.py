@@ -12,7 +12,8 @@ def import_module(path: str):
 	Returns:
 		module: the imported module
 	"""
-	module_name = '.'.join(path.split('/'))
+	directory_separator = '/' if '/' in path else '\\'
+	module_name = '.'.join(path.split(directory_separator))
 	if '.py' in path:
 		module_name = module_name.replace('.py', '')
 		spec = importlib.util.spec_from_file_location(module_name, path)
