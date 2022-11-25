@@ -56,7 +56,7 @@ class MetaTraderBroker(Broker):
 		}
 		return { symbol.name: availability for symbol in self.api.symbols_get() }
 
-	def read(self, chart: Chart):
+	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
 
 		if isinstance(chart, CandleStickChart):

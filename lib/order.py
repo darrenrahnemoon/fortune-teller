@@ -37,20 +37,15 @@ class Order:
 		self.status = status
 
 	def __repr__(self) -> str:
-		return f"Order({', '.join([ f'{key}={getattr(self, key)}' for key in [ 'id', 'type', 'symbol', 'size', 'limit', 'stop', 'sl', 'tp', 'status' ] if getattr(self, key) != None ])})"
-
-	@property
-	def size(self):
-		if callable(self._size):
-			self._size = self._size(self)
-		return self._size
-
-	@size.setter
-	def size(self, value):
-		self._size = value
+		return f"Order({', '.join([ f'{key}={repr(getattr(self, key))}' for key in [ 'id', 'type', 'symbol', 'size', 'limit', 'stop', 'sl', 'tp', 'status' ] if getattr(self, key) != None ])})"
 
 	def place(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker
+
+		# Calculate size if size is a broker-dependant function
+		if callable(self.size):
+			self.size = self.size(self)
+
 		broker.place_order(self)
 		return self
 
@@ -61,3 +56,9 @@ class Order:
 	@property
 	def is_market_order(self):
 		return self.limit == None and self.stop == None 
+
+	@property
+	def duration(self) -> pandas.Timedelta:
+		if not self.close_timestamp:
+			return None
+		return self.close_timestamp - self.open_timestamp

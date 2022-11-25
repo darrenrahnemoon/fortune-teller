@@ -33,6 +33,9 @@ class Position:
 		self.order = order
 		self.size = size
 
+	def __repr__(self) -> str:
+		return f"Position({', '.join([ f'{key}={repr(getattr(self, key))}' for key in [ 'id', 'type', 'symbol', 'size', 'sl', 'tp', 'status', 'open_timestamp', 'close_timestamp' ] if getattr(self, key) != None ])})"
+
 	def close(self):
 		self.broker.close_position(self)
 		return self
@@ -66,3 +69,9 @@ class Position:
 	@property
 	def status(self):
 		return 'closed' if self.exit_price else 'open'
+
+	@property
+	def duration(self) -> pandas.Timedelta:
+		if not self.close_timestamp:
+			return None
+		return self.close_timestamp - self.open_timestamp

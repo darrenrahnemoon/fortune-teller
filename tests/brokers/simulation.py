@@ -34,13 +34,13 @@ def _():
 			chart = LineChart(symbol='INFLATION', interval=Interval.Year(1))
 
 			simulation_broker.remove_historical_data(chart)
-			assert simulation_broker.get_min_timestamp(chart) == None
-			assert simulation_broker.get_max_timestamp(chart) == None
+			assert simulation_broker.get_min_available_timestamp_for_chart(chart) == None
+			assert simulation_broker.get_max_available_timestamp_for_chart(chart) == None
 
 			chart.read(alphavantage).write(simulation_broker)
 
-			assert simulation_broker.get_min_timestamp(chart).date() == chart.data.index[0].date()
-			assert simulation_broker.get_max_timestamp(chart).date() == chart.data.index[-1].date()
+			assert simulation_broker.get_min_available_timestamp_for_chart(chart).date() == chart.data.index[0].date()
+			assert simulation_broker.get_max_available_timestamp_for_chart(chart).date() == chart.data.index[-1].date()
 
 	@describe('backtesting')
 	def _():
@@ -77,13 +77,13 @@ def _():
 					if self.count == 0:
 						Order(type='long', symbol='EURUSD', size=Size.Lot(20)).place(simulation_broker)
 
-					elif self.count == 1:
+					elif self.count == 5:
 						positions = self.broker.get_positions('EURUSD', status='open')
 						assert len(positions) == 1, 'Should have placed a market order in the next tick.'
 						positions[-1].close()
 						Order(type='long', symbol='EURUSD', size=Size.PercentageOfBalance(2), limit=10).place(simulation_broker)
 
-					elif self.count == 2:
+					elif self.count == 10:
 						orders = self.broker.get_orders('EURUSD')
 						assert len(orders) == 2, 'Should show all orders'
 
@@ -98,10 +98,10 @@ def _():
 					self.count += 1
 			simulation_broker.add_strategy(TestStrategy)
 			simulation_broker.backtest(
-				chart=CandleStickChart(
+				timesteps=CandleStickChart(
 					symbol='EURUSD',
 					interval=Interval.Minute(1),
-					from_timestamp='2021-01-29 12:01',
-					to_timestamp='2021-01-29 14:10'
+					from_timestamp='2021-05-15 12:00',
+					to_timestamp='2021-05-15 14:10'
 				)
 			)

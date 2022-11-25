@@ -55,7 +55,7 @@ class AlphaVantageBroker(Broker):
 		super().__init__()
 		self.apikey = apikey
 
-	def read(self, chart: Chart):
+	def read_chart(self, chart: Chart):
 		if type(chart) != LineChart:
 			logger.error(f"Unsupported chart type '{chart}'...")
 			return chart
@@ -77,7 +77,7 @@ class AlphaVantageBroker(Broker):
 		if 'Note' in response and response['Note'].startswith('Thank you'):
 			logger.warn('Rate limit reached. Waiting for 1 minute...')
 			time.sleep(60) # Alphavantage only allows 5 requests per minute
-			return self.read(chart)
+			return self.read_chart(chart)
 
 		data = response['data']
 		dataframe = pandas.DataFrame.from_records(data, index='date')

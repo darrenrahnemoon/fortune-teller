@@ -53,10 +53,10 @@ class Broker:
 			chart.to_timestamp = self.now
 		return chart
 
-	def read(self, chart: Chart) -> Chart:
+	def read_chart(self, chart: Chart) -> Chart:
 		raise NotImplemented()
 
-	def write(self, chart: Chart) -> Chart:
+	def write_chart(self, chart: Chart) -> Chart:
 		raise NotImplemented()
 
 	def place_order(self, order: Order) -> Order:

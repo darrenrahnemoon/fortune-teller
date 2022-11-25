@@ -70,6 +70,6 @@ class BackfillHistoricalDataCommand(Command):
 						from_timestamp=self.args.from_timestamp,
 						to_timestamp=self.args.to_timestamp,
 						**combination
-					)\
-					.read(from_broker)\
-					.write(to_broker)
+					)
+					logger.info(f'Backfilling {chart}...')
+					chart.read(from_broker).write(to_broker)

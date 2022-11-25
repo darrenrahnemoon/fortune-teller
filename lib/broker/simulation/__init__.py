@@ -1,8 +1,10 @@
-from lib.chart.candlestick import CandleStickChart
+import functools
 import logging
 import typing
 import pandas
+import numpy
 import random
+import operator
 
 from lib.broker.broker import Broker
 from lib.broker.simulation.scheduler import Scheduler
@@ -10,10 +12,10 @@ from lib.broker.simulation.repository import Repository
 
 from lib.order import Order
 from lib.position import Position
-from lib.chart import Chart, TickChart
+from lib.chart import Chart, CandleStickChart, TickChart
 
 from lib.interval import Interval
-from lib.utils.time import normalize_timestamp
+from lib.utils.time import normalize_timestamp, now
 from lib.utils.collection import ensure_list
 
 logger = logging.getLogger(__name__)
@@ -27,53 +29,54 @@ class SimulationBroker(Broker):
 		super().__init__(**kwargs)
 		self.repository = repository
 
-	def read(self, chart: Chart):
+	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
-		records = self.repository.read(chart)
+		records = self.repository.read_chart(chart)
 		dataframe = pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
 		chart.load_dataframe(dataframe)
 		return chart
 
-	def write(self, chart: Chart):
+	def write_chart(self, chart: Chart):
 		data = chart.data
 		if len(data) == 0:
 			logger.warn(f'Attempted to write an empty {chart} into database. Skipping...')
 			return
 
-		self.repository.write(chart)
+		self.repository.write_chart(chart)
 		return chart
 
 	def remove_historical_data(self, chart: Chart):
-		self.repository.drop_collection_for(chart)
+		self.repository.drop_collection_for_chart(chart)
 
-	def get_max_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		return self.repository.get_max_timestamp(chart)
+	def get_max_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
+		return self.repository.get_max_available_timestamp_for_chart(chart)
 
-	def get_min_timestamp(self, chart: Chart) -> pandas.Timestamp:
-		return self.repository.get_min_timestamp(chart)
+	def get_min_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
+		return self.repository.get_min_available_timestamp_for_chart(chart)
 
 	def backtest(
 		self,
-		chart: Chart,
+		timesteps: Chart or pandas.DatetimeIndex,
 		initial_cash: float = 1000.,
 		leverage: float = 1.,
 		latency: Interval = Interval.Millisecond(2),
 	):
-		records = self.repository.read(chart)
-		self.timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
-		del records # free up memory since this variable can potentially be huge
+		if isinstance(timesteps, Chart):
+			records = self.repository.read_chart(timesteps)
+			timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
+			del records # free up memory since this variable can potentially be huge
 
 		self.latency = latency
 		self.scheduler = Scheduler()
 
 		self.leverage = float(leverage)
 		self.initial_cash = float(initial_cash)
-		self.equity_curve = pandas.Series(index=self.timesteps, dtype='float', name='equity')
+		equity_curve = pandas.Series(index=timesteps, dtype='float', name='equity')
 
 		self.positions: list[Position] = []
 		self.orders: list[Order] = []
 
-		for self.now in self.timesteps:
+		for self.now in timesteps:
 			self.scheduler.run_as_of(self.now)
 
 			for order in self.get_orders(status='open'):
@@ -105,7 +108,44 @@ class SimulationBroker(Broker):
 			for strategy in self.strategies:
 				if not strategy.is_aborted:
 					strategy.handler()
-			self.equity_curve[self.now] = self.equity
+			equity_curve[self.now] = self.equity
+
+		report = dict()
+		report['date'] = now()
+		report['strategy'] = self.strategies[0]
+		report['timesteps'] = {
+			'from_timestamp': timesteps[0],
+			'to_timestamp': timesteps[-1],
+			'sample': list(timesteps[:5]) + [ '...' ] + list(timesteps[-5:])
+		}
+		report['equity'] = {
+			'open': self.initial_cash,
+			'high': equity_curve.max(),
+			'low': equity_curve.min(),
+			'close': self.balance,
+			'curve': equity_curve,
+			'max_draw_down_percentage': max(1 - equity_curve / numpy.maximum.accumulate(equity_curve))
+		}
+		report['equity']['return_percentage'] = report['equity']['open'] / report['equity']['close'] * 100 - 100
+
+		def compute_field_stats(report: dict, collection: str, field: str):
+			items = [ getattr(item, field) for item in getattr(self, collection) if getattr(item, field) != None ]
+			report[collection][field] = {
+				'min': min(items),
+				'max': max(items),
+				'average': functools.reduce(operator.add, items) / len(items)
+			}
+
+		report['orders'] = dict()
+		report['positions'] = dict()
+		# Common stats between positions and orders
+		for collection in [ 'positions', 'orders' ]:
+			report[collection]['list'] = getattr(self, collection)
+			compute_field_stats(report, collection, 'duration')
+		compute_field_stats(report, 'positions', 'profit')
+		report['positions']['win_rate'] = len([ position for position in self.positions if position.is_in_profit ]) / len(self.positions) * 100
+
+		self.repository.write_backtest_report(report)
 
 	@property
 	def now(self) -> pandas.Timestamp:
@@ -116,7 +156,7 @@ class SimulationBroker(Broker):
 		self._now = normalize_timestamp(value)
 
 	def get_last_price(self, symbol: str) -> float:
-		tick = self.repository.read(
+		tick = self.repository.read_chart(
 			# TickChart(symbol=symbol, to_timestamp=self.now),
 			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), to_timestamp=self.now),
 			limit=1,
