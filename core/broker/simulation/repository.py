@@ -29,6 +29,7 @@ class Repository:
 	def write_chart(self, chart: Chart):
 		collection = self.ensure_collection_for_chart(chart)
 		data = chart.data
+
 		if type(data) == pandas.DataFrame:
 			rows = data.reset_index().to_dict(orient='records')
 		else:
@@ -36,9 +37,20 @@ class Repository:
 				dict(timestamp=timestamp, value=value)
 				for timestamp, value in data.to_dict().items() 
 			]
+
+		duplicates = set()
+		rows = [
+			row for row in rows 
+			if not (
+				row['timestamp'] in duplicates 
+				or duplicates.add(row['timestamp'])
+			)
+		]
+
 		try:
 			collection.insert_many(rows)
 		except:
+			logger.debug('InsertMany failed. Reverting to individual upserts...')
 			rows = [
 				pymongo.UpdateOne(
 					{ 'timestamp': row['timestamp'] },
@@ -47,7 +59,7 @@ class Repository:
 				)
 				for row in rows
 			]
-			collection.bulk_write_chart(rows)
+			collection.bulk_write(rows)
 
 	def get_collection_for_chart(self, chart: Chart):
 		table = f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"

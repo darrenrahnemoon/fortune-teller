@@ -1,5 +1,7 @@
 import itertools
 import logging
+from numpy import e
+import pandas
 
 from core.interval import Interval # Needed for `eval`
 from core.chart import CandleStickChart, TickChart, LineChart
@@ -7,6 +9,7 @@ from core.broker import SimulationBroker
 from core.utils.command import Command, map_dict_to_argument
 from core.utils.module import import_module
 from core.utils.collection import ensure_list
+from core.utils.time import normalize_timestamp, now
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,8 @@ class BackfillHistoricalDataCommand(Command):
 		self.parser.add_argument('symbol', nargs='*')
 		self.parser.add_argument('--chart', nargs="+", **map_dict_to_argument(self.charts))
 		self.parser.add_argument('--broker', **map_dict_to_argument(self.brokers))
-		self.parser.add_argument('--from', dest='from_timestamp')
-		self.parser.add_argument('--to', dest='to_timestamp')
+		self.parser.add_argument('--from', dest='from_timestamp', type=normalize_timestamp)
+		self.parser.add_argument('--to', dest='to_timestamp', default=now(), type=normalize_timestamp)
 
 		# Additional chart query fields that are being manually maintained for now until we find a better solution
 		self.parser.add_argument('--interval', nargs='+', type=lambda interval: eval(f'Interval.{interval}'))
@@ -62,14 +65,24 @@ class BackfillHistoricalDataCommand(Command):
 					if override_value and key in combinations:
 						combinations[key] = override_value
 
-				for combination in itertools.product(*combinations.values()):
-					combination = dict(zip(combinations.keys(), combination))
-					chart = chart_class(
-						broker=from_broker,
-						symbol=symbol,
-						from_timestamp=self.args.from_timestamp,
-						to_timestamp=self.args.to_timestamp,
-						**combination
+				if chart_class == TickChart:
+					increments = pandas.date_range(
+						start=self.args.from_timestamp,
+						end=self.args.to_timestamp,
+						freq='MS' # "Month Start"
 					)
-					logger.info(f'Backfilling {chart}...')
-					chart.read(from_broker).write(to_broker)
+				else:
+					increments = [ self.args.from_timestamp, self.args.to_timestamp ]
+
+				for index in range(1, len(increments)):
+					for combination in itertools.product(*combinations.values()):
+						combination = dict(zip(combinations.keys(), combination))
+						chart = chart_class(
+							broker=from_broker,
+							symbol=symbol,
+							from_timestamp=increments[index - 1],
+							to_timestamp=increments[index],
+							**combination
+						)
+						logger.info(f'Backfilling {chart}...')
+						chart.read(from_broker).write(to_broker)
