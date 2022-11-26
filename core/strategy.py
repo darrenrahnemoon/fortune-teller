@@ -1,7 +1,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-	from lib.broker import Broker
+	from core.broker import Broker
 
 class Strategy:
 	def __init__(self,broker: 'Broker' = None,**kwargs):

@@ -1,7 +1,7 @@
 import argparse
 import inspect
 
-from lib.utils.module import import_module
+from core.utils.module import import_module
 
 class Command:
 	def __init__(self) -> None:

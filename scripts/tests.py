@@ -1,5 +1,5 @@
-from lib.utils.command import Command
-from lib.utils.test import TestManager
+from core.utils.command import Command
+from core.utils.test import TestManager
 
 class TestsCommand(Command):
 	def config(self):

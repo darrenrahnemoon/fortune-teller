@@ -1,7 +1,7 @@
 import pandas
 import logging
 
-from lib.chart import Chart
+from core.chart import Chart
 
 logger = logging.getLogger(__name__)
 

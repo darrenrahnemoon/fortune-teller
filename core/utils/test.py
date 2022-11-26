@@ -3,7 +3,7 @@ import time
 import traceback
 import termcolor
 
-from lib.utils.module import import_modules
+from core.utils.module import import_modules
 
 class TestManager:
 	settings = {

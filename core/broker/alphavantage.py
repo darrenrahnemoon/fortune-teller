@@ -4,9 +4,9 @@ import os
 import requests
 import logging
 
-from lib.broker.broker import Broker
-from lib.chart import LineChart, Chart
-from lib.interval import Interval
+from core.broker.broker import Broker
+from core.chart import LineChart, Chart
+from core.interval import Interval
 
 logger = logging.getLogger(__name__)
 

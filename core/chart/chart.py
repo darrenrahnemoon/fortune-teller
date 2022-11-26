@@ -1,16 +1,15 @@
 import functools
-import pathlib
 import pandas
 import inspect
 import typing
 import logging
 
 if typing.TYPE_CHECKING:
-	from lib.indicator import Indicator
-	from lib.broker import Broker
+	from core.indicator import Indicator
+	from core.broker import Broker
 
-from lib.utils.cls import ensureattr
-from lib.utils.time import normalize_timestamp
+from core.utils.cls import ensureattr
+from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +23,13 @@ class Chart:
 		to_timestamp: pandas.Timestamp = None,
 		dataframe: pandas.DataFrame = None, 
 		indicators: dict[str, 'Indicator' or type['Indicator']] = dict(),
+		broker: 'Broker' = None,
 		**kwargs
 	):
 		self.symbol = symbol
 		self.from_timestamp = normalize_timestamp(from_timestamp)
 		self.to_timestamp = normalize_timestamp(to_timestamp)
+		self.broker = broker
 
 		for key in self.query_fields:
 			ensureattr(self, key, kwargs.get(key, None))
@@ -57,8 +58,9 @@ class Chart:
 			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
 		return self.dataframe[self.symbol, self.name]
 
-	def read(self, broker: 'Broker'):
-		broker.read_chart(self)
+	def read(self, broker: 'Broker' = None):
+		self.broker = broker or self.broker
+		self.broker.read_chart(self)
 		return self
 
 	def write(self, broker: 'Broker'):
@@ -71,7 +73,7 @@ class Chart:
 
 	@dataframe.setter
 	def dataframe(self, dataframe: pandas.DataFrame):
-		logger.debug(f'{self} setting dataframe to:\n{dataframe}')
+		logger.debug(f'Setting dataframe for chart...\n{self}\n\n{dataframe}')
 		if type(dataframe) != pandas.DataFrame:
 			logger.error(f'Invalid dataframe was assigned to {self}: {dataframe}')
 			return
@@ -91,7 +93,11 @@ class Chart:
 				names=[ 'symbol', 'timeseries', 'feature' ]
 			)
 
-		self._dataframe = dataframe
+		if type(self._dataframe) != pandas.DataFrame:
+			self._dataframe = dataframe
+		else:
+			self._dataframe = pandas.concat([ self._dataframe, dataframe ], axis=1, copy=False)
+
 		self.refresh_indicators()
 
 	def add_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):

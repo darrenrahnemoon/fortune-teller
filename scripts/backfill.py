@@ -1,19 +1,19 @@
 import itertools
 import logging
 
-from lib.interval import Interval # Needed for `eval`
-from lib.chart import CandleStickChart, TickChart, LineChart
-from lib.broker import SimulationBroker
-from lib.utils.command import Command, map_dict_to_argument
-from lib.utils.module import import_module
-from lib.utils.collection import ensure_list
+from core.interval import Interval # Needed for `eval`
+from core.chart import CandleStickChart, TickChart, LineChart
+from core.broker import SimulationBroker
+from core.utils.command import Command, map_dict_to_argument
+from core.utils.module import import_module
+from core.utils.collection import ensure_list
 
 logger = logging.getLogger(__name__)
 
 class BackfillHistoricalDataCommand(Command):
 	brokers = {
-		'MetaTrader'  : lambda: import_module('lib.broker.metatrader').MetaTraderBroker,
-		'AlphaVantage': lambda: import_module('lib.broker.alphavantage').AlphaVantageBroker,
+		'MetaTrader'  : lambda: import_module('core.broker.metatrader').MetaTraderBroker,
+		'AlphaVantage': lambda: import_module('core.broker.alphavantage').AlphaVantageBroker,
 	}
 	charts = {
 		'Line': LineChart,

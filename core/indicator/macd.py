@@ -1,6 +1,6 @@
 import pandas
 
-from lib.indicator.indicator import Indicator
+from core.indicator.indicator import Indicator
 
 class MACDIndicator(Indicator):
 	query_fields = Indicator.query_fields + [ 'window_slow', 'window_fast' ]

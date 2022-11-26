@@ -3,8 +3,8 @@ import pandas
 import typing 
 
 if typing.TYPE_CHECKING:
-	from lib.broker import Broker
-	from lib.position import Position
+	from core.broker import Broker
+	from core.position import Position
 
 class Order:
 	def __init__(self,

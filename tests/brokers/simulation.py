@@ -1,12 +1,12 @@
-from lib.chart import CandleStickChart, LineChart, TickChart
-from lib.broker import SimulationBroker, AlphaVantageBroker
-from lib.strategy import Strategy
-from lib.order import Order
-from lib.interval import Interval
-from lib.size import Size
+from core.chart import CandleStickChart, LineChart
+from core.broker import SimulationBroker, AlphaVantageBroker
+from core.strategy import Strategy
+from core.order import Order
+from core.interval import Interval
+from core.size import Size
 
-from lib.utils.time import normalize_timestamp
-from lib.utils.test import it, describe
+from core.utils.time import normalize_timestamp
+from core.utils.test import it, describe
 
 @describe('SimulationBroker')
 def _():

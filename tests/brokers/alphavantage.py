@@ -1,7 +1,7 @@
-from lib.interval import Interval
-from lib.broker import AlphaVantageBroker
-from lib.chart import LineChart
-from lib.utils.test import it, describe
+from core.interval import Interval
+from core.broker import AlphaVantageBroker
+from core.chart import LineChart
+from core.utils.test import it, describe
 
 @describe('AlphaVantageBroker')
 def _():

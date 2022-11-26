@@ -1,7 +1,7 @@
 import logging
 
-from lib.chart.chart import Chart
-from lib.interval import Interval
+from core.chart.chart import Chart
+from core.interval import Interval
 
 logger = logging.getLogger(__name__)
 

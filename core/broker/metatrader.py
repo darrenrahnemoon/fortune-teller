@@ -2,10 +2,10 @@ import logging
 import pandas
 import functools
 
-from lib.broker.broker import Broker
-from lib.chart import CandleStickChart, TickChart, Chart
-from lib.interval import Interval
-from lib.utils.module import import_module
+from core.broker.broker import Broker
+from core.chart import CandleStickChart, TickChart, Chart
+from core.interval import Interval
+from core.utils.module import import_module
 
 logger = logging.getLogger(__name__)
 

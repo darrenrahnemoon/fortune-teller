@@ -2,11 +2,11 @@ import inspect
 import pandas
 import typing
 
-from lib.order import Order
-from lib.position import Position
-from lib.chart import Chart
-from lib.strategy import Strategy
-from lib.utils.time import now
+from core.order import Order
+from core.position import Position
+from core.chart import Chart
+from core.strategy import Strategy
+from core.utils.time import now
 
 class Broker:
 	timezone = 'UTC'

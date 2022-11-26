@@ -6,17 +6,17 @@ import numpy
 import random
 import operator
 
-from lib.broker.broker import Broker
-from lib.broker.simulation.scheduler import Scheduler
-from lib.broker.simulation.repository import Repository
+from core.broker.broker import Broker
+from core.broker.simulation.scheduler import Scheduler
+from core.broker.simulation.repository import Repository
 
-from lib.order import Order
-from lib.position import Position
-from lib.chart import Chart, CandleStickChart, TickChart
+from core.order import Order
+from core.position import Position
+from core.chart import Chart, CandleStickChart, TickChart
 
-from lib.interval import Interval
-from lib.utils.time import normalize_timestamp, now
-from lib.utils.collection import ensure_list
+from core.interval import Interval
+from core.utils.time import normalize_timestamp, now
+from core.utils.collection import ensure_list
 
 logger = logging.getLogger(__name__)
 

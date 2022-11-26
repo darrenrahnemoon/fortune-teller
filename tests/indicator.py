@@ -1,9 +1,9 @@
-from lib.broker import SimulationBroker
-from lib.chart import CandleStickChart
-from lib.indicator import MACDIndicator
+from core.broker import SimulationBroker
+from core.chart import CandleStickChart
+from core.indicator import MACDIndicator
 
-from lib.interval import Interval
-from lib.utils.test import it, describe
+from core.interval import Interval
+from core.utils.test import it, describe
 
 @describe('Indicator')
 def _():

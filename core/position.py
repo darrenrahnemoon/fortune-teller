@@ -2,7 +2,7 @@ import typing
 import pandas
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-	from lib.broker import Broker
+	from core.broker import Broker
 
 class Position:
 	def __init__(

@@ -3,8 +3,8 @@ import pandas
 import pymongo
 import logging
 
-from lib.chart import Chart
-from lib.utils.time import normalize_timestamp
+from core.chart import Chart
+from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
 

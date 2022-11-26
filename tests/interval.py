@@ -1,8 +1,8 @@
 import numpy
 import pandas
-from lib.interval import Interval
-from lib.utils.test import it, describe
-from lib.broker import MetaTraderBroker
+from core.interval import Interval
+from core.utils.test import it, describe
+from core.broker import MetaTraderBroker
 
 @describe('Interval')
 def _():

@@ -3,7 +3,7 @@ import pandas
 import typing
 
 if typing.TYPE_CHECKING:
-	from lib.broker import Broker
+	from core.broker import Broker
 
 class Interval:
 	multiplier: float = 1
