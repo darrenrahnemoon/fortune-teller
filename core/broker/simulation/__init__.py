@@ -12,7 +12,7 @@ from core.broker.simulation.repository import Repository
 
 from core.order import Order
 from core.position import Position
-from core.chart import Chart, CandleStickChart, TickChart
+from core.chart import Chart, CandleStickChart
 
 from core.interval import Interval
 from core.utils.time import normalize_timestamp, now
@@ -46,6 +46,10 @@ class SimulationBroker(Broker):
 
 	def remove_historical_data(self, chart: Chart):
 		self.repository.drop_collection_for_chart(chart)
+
+	@property
+	def available_data(self) -> dict[str, dict[Chart, dict[str, typing.Any]]]:
+		return self.repository.get_available_charts()
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
 		return self.repository.get_max_available_timestamp_for_chart(chart)

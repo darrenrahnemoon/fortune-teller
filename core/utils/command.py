@@ -2,6 +2,7 @@ import argparse
 import inspect
 
 from core.utils.module import import_module
+from core.utils.cls import instance_to_repr
 
 class Command:
 	def __init__(self) -> None:
@@ -10,7 +11,7 @@ class Command:
 		self.config()
 
 	def __repr__(self) -> str:
-		return f'{type(self).__name__}()'
+		return instance_to_repr(self)
 
 	def run(self):
 		self.args = self.parser.parse_args()

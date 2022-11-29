@@ -2,6 +2,7 @@ import pandas
 import logging
 
 from core.chart import Chart
+from core.utils.cls import instance_to_repr
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class Indicator:
 			setattr(self, key, value)
 
 	def __repr__(self) -> str:
-		return f"{type(self).__name__}({', '.join([ f'{key}={getattr(self, key)}' for key in self.query_fields if getattr(self, key) != None ])})"
+		return instance_to_repr(self, self.query_fields)
 
 	def __len__(self) -> int:
 		data = self.data

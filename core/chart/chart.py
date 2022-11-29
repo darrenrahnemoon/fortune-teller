@@ -1,3 +1,4 @@
+import re
 import functools
 import pandas
 import inspect
@@ -8,7 +9,7 @@ if typing.TYPE_CHECKING:
 	from core.indicator import Indicator
 	from core.broker import Broker
 
-from core.utils.cls import ensureattr
+from core.utils.cls import ensureattr, instance_to_repr
 from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ class Chart:
 			self.add_indicator(indicator, name=name)
 
 	def __repr__(self) -> str:
-		return f"{type(self).__name__}({', '.join([ f'{key}={repr(getattr(self, key))}' for key in self.query_fields + [ 'from_timestamp', 'to_timestamp' ] if getattr(self, key) != None ])})"
+		return instance_to_repr(self, self.query_fields + [ 'from_timestamp', 'to_timestamp' ])
 
 	def __len__(self) -> int:
 		return len(self.dataframe) if type(self.dataframe) == pandas.DataFrame else 0
@@ -57,6 +58,8 @@ class Chart:
 		if len(self.value_fields) == 1:
 			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
 		return self.dataframe[self.symbol, self.name]
+
+
 
 	def read(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker

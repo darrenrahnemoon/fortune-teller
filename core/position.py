@@ -3,6 +3,7 @@ import pandas
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 	from core.broker import Broker
+from core.utils.cls import instance_to_repr
 
 class Position:
 	def __init__(
@@ -34,7 +35,7 @@ class Position:
 		self.size = size
 
 	def __repr__(self) -> str:
-		return f"Position({', '.join([ f'{key}={repr(getattr(self, key))}' for key in [ 'id', 'type', 'symbol', 'size', 'sl', 'tp', 'status', 'open_timestamp', 'close_timestamp' ] if getattr(self, key) != None ])})"
+		return instance_to_repr(self, [ 'id', 'type', 'symbol', 'size', 'sl', 'tp', 'status', 'open_timestamp', 'close_timestamp' ])
 
 	def close(self):
 		self.broker.close_position(self)

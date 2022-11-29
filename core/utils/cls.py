@@ -29,3 +29,9 @@ class hybridmethod(classmethod):
 	def __get__(self, instance, type_):
 		descriptor_get = super().__get__ if instance is None else self.__func__.__get__
 		return descriptor_get(instance, type_)
+
+def instance_to_repr(
+	instance,
+	keys = [],
+) -> str:
+	return f"{type(instance).__name__}({', '.join([ f'{key}={repr(getattr(instance, key))}' for key in keys if getattr(instance, key) != None ])})"

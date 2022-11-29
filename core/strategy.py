@@ -1,3 +1,4 @@
+from core.utils.cls import instance_to_repr
 import typing
 
 if typing.TYPE_CHECKING:
@@ -15,7 +16,7 @@ class Strategy:
 		self.setup()
 
 	def __repr__(self) -> str:
-		return f"{type(self).__name__}({', '.join([ f'{key}={repr(value)}' for key, value in self.__dict__.items() if value != None ])})"
+		return instance_to_repr(self, self.__dict__.keys())
 
 	def setup(self):
 		pass

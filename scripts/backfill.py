@@ -3,7 +3,7 @@ import logging
 from numpy import e
 import pandas
 
-from core.interval import Interval # Needed for `eval`
+from core.interval import * # Needed for `eval`
 from core.chart import CandleStickChart, TickChart, LineChart
 from core.broker import SimulationBroker
 from core.utils.command import Command, map_dict_to_argument
@@ -31,13 +31,14 @@ class BackfillHistoricalDataCommand(Command):
 		self.parser.add_argument('--to', dest='to_timestamp', default=now(), type=normalize_timestamp)
 
 		# Additional chart query fields that are being manually maintained for now until we find a better solution
-		self.parser.add_argument('--interval', nargs='+', type=lambda interval: eval(f'Interval.{interval}'))
-		self.parser.add_argument('--maturity', nargs='+', type=lambda interval: eval(f'Interval.{interval}'))
+		self.parser.add_argument('--interval', nargs='+', type=lambda interval: eval(interval))
+		self.parser.add_argument('--maturity', nargs='+', type=lambda interval: eval(interval))
 
 	def handler(self):
 		if not self.args.broker:
 			logger.error('You need to specify a broker to backfill from.')
 			return
+
 		# called twice: once for lambda to import, once for construction of broker instance 
 		from_broker = self.args.broker()()
 		available_data = from_broker.available_data
@@ -65,13 +66,14 @@ class BackfillHistoricalDataCommand(Command):
 					if override_value and key in combinations:
 						combinations[key] = override_value
 
+				increments = []
 				if chart_class == TickChart:
 					increments = pandas.date_range(
 						start=self.args.from_timestamp,
 						end=self.args.to_timestamp,
 						freq='MS' # "Month Start"
 					)
-				else:
+				if len(increments) == 0:
 					increments = [ self.args.from_timestamp, self.args.to_timestamp ]
 
 				for index in range(1, len(increments)):

@@ -7,6 +7,7 @@ from core.position import Position
 from core.chart import Chart
 from core.strategy import Strategy
 from core.utils.time import now
+from core.utils.cls import instance_to_repr
 
 class Broker:
 	timezone = 'UTC'
@@ -20,6 +21,10 @@ class Broker:
 		for strategy in strategies:
 			self.add_strategy(strategy)
 
+	@classmethod
+	def from_repr(cls, _repr: str):
+		return next(broker for broker in cls.__subclasses__() if broker.__name__ in _repr)
+
 	@property
 	def name(self):
 		return type(self).__name__
@@ -28,7 +33,7 @@ class Broker:
 		return self.name
 
 	def __repr__(self) -> str:
-		return f'{self.name}()'
+		return instance_to_repr(self)
 
 	def add_strategy(self, strategy: Strategy or type[Strategy]):
 		if inspect.isclass(strategy):

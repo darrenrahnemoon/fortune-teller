@@ -6,6 +6,8 @@ if typing.TYPE_CHECKING:
 	from core.broker import Broker
 	from core.position import Position
 
+from core.utils.cls import instance_to_repr
+
 class Order:
 	def __init__(self,
 		type: typing.Literal['long', 'short'] = None, 
@@ -37,7 +39,7 @@ class Order:
 		self.status = status
 
 	def __repr__(self) -> str:
-		return f"Order({', '.join([ f'{key}={repr(getattr(self, key))}' for key in [ 'id', 'type', 'symbol', 'size', 'limit', 'stop', 'sl', 'tp', 'status' ] if getattr(self, key) != None ])})"
+		return instance_to_repr(self, [ 'id', 'type', 'symbol', 'size', 'limit', 'stop', 'sl', 'tp', 'status' ])
 
 	def place(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker

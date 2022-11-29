@@ -1,9 +1,11 @@
 import os
+import sys
 import pandas
 import pymongo
 import logging
 
-from core.chart import Chart
+from core.interval import *
+from core.chart import *
 from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,7 @@ class Repository:
 		chart: Chart,
 		limit=0,
 	) -> list[dict]:
-		collection = self.get_collection_for_chart(chart)
+		collection = self.get_collection_from_chart(chart)
 		_filter = { 'timestamp' : {} }
 		if chart.from_timestamp:
 			_filter['timestamp']['$gte'] = chart.from_timestamp
@@ -47,42 +49,54 @@ class Repository:
 			)
 		]
 
+		self.upsert(collection, rows)
+
+	def upsert(self, collection, rows: list):
 		try:
 			collection.insert_many(rows)
 		except:
-			logger.debug('InsertMany failed. Reverting to individual upserts...')
-			rows = [
-				pymongo.UpdateOne(
-					{ 'timestamp': row['timestamp'] },
-					{ '$set' : row },
-					upsert=True
-				)
-				for row in rows
-			]
-			collection.bulk_write(rows)
+			index = sys.exc_info()[1].details['writeErrors'][0]['index']
+			failed_row = rows[index]
+			del failed_row['_id'] # Cannot upsert a new generated `_id` on existing document
 
-	def get_collection_for_chart(self, chart: Chart):
+			logger.debug(f'Duplicated row found. Upserting...\n{failed_row}')
+			collection.update_one({ 'timestamp': failed_row['timestamp'] }, { '$set' : failed_row })
+
+			start_from = index + 1
+			if start_from == len(rows):
+				return
+			self.write(collection, rows[start_from:])
+
+	def get_collection_from_chart(self, chart: Chart):
 		table = f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"
 		return self.client['trading'][table]
 
+	def get_chart_from_collection_name(self, name: str):
+		chunks = name.split('.')
+		return chunks
+
 	def ensure_collection_for_chart(self, chart: Chart):
-		collection = self.get_collection_for_chart(chart)
+		collection = self.get_collection_from_chart(chart)
 		index_information = collection.index_information()
 		if 'timestamp' not in index_information:
 			collection.create_index([('timestamp', pymongo.ASCENDING)], name='timestamp', unique=True)
 		return collection
 
 	def drop_collection_for_chart(self, chart: Chart):
-		collection = self.get_collection_for_chart(chart)
+		collection = self.get_collection_from_chart(chart)
 		collection.drop()
 
+	def get_available_charts(self):
+		collection_names = self.client['trading'].list_collection_names()
+		return [ self.get_chart_from_collection_name(name) for name in collection_names ]
+
 	def get_max_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.get_collection_for_chart(chart)
+		collection = self.get_collection_from_chart(chart)
 		record = collection.find_one(sort=[('timestamp', pymongo.DESCENDING)])
 		return normalize_timestamp(record['timestamp']) if record else None
 
 	def get_min_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.get_collection_for_chart(chart)
+		collection = self.get_collection_from_chart(chart)
 		record = collection.find_one(sort=[('timestamp', pymongo.ASCENDING)])
 		return normalize_timestamp(record['timestamp']) if record else None
 
