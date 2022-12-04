@@ -5,8 +5,6 @@ import typing
 if typing.TYPE_CHECKING:
 	from core.broker import Broker
 
-from core.utils.cls import instance_to_repr
-
 class Interval:
 	multiplier: float = 1
 
@@ -33,7 +31,7 @@ class Interval:
 		return hash((self.real_amount, self.unit))
 
 	def __repr__(self) -> str:
-		return instance_to_repr(self, [ 'amount' ])
+		return f'{self.unit}({self.amount})'
 
 	def __eq__(self, other: object) -> bool:
 		if not isinstance(other, Interval):
@@ -58,7 +56,7 @@ class Interval:
 		return numpy.timedelta64(self.real_amount, self.numpy_timedelta_unit)
 
 	def to_broker(self, broker: type['Broker'] or 'Broker' = None):
-		return broker.intervals[self]
+		return broker.serializers['interval'].serialize(self)
 
 class Millisecond(Interval):
 	pandas_timedelta_unit='ms'

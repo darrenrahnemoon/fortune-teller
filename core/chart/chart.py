@@ -1,50 +1,37 @@
-import re
 import functools
 import pandas
 import inspect
 import typing
 import logging
+from dataclasses import dataclass, field
 
 if typing.TYPE_CHECKING:
 	from core.indicator import Indicator
 	from core.broker import Broker
 
-from core.utils.cls import ensureattr, instance_to_repr
-from core.utils.time import normalize_timestamp
+from core.utils.time import TimeWindow
 
 logger = logging.getLogger(__name__)
 
-class Chart:
-	query_fields: list[str] = [ 'symbol' ]
-	value_fields: list[str] = []
+Symbol = str
 
-	def __init__(self,
-		symbol: str = None,
-		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = None,
-		dataframe: pandas.DataFrame = None, 
-		indicators: dict[str, 'Indicator' or type['Indicator']] = dict(),
-		broker: 'Broker' = None,
-		**kwargs
-	):
-		self.symbol = symbol
-		self.from_timestamp = normalize_timestamp(from_timestamp)
-		self.to_timestamp = normalize_timestamp(to_timestamp)
-		self.broker = broker
+@dataclass
+class Chart(TimeWindow):
+	query_fields: typing.ClassVar[list[str]] = [ 'symbol' ]
+	value_fields: typing.ClassVar[list[str]] = []
 
-		for key in self.query_fields:
-			ensureattr(self, key, kwargs.get(key, None))
+	symbol: Symbol = None
+	broker: 'Broker' = None
+	indicators: dict[str, 'Indicator' or type['Indicator']] = field(repr=False, default_factory=dict)
+	_dataframe: pandas.DataFrame = field(repr=False, init=False, default=None)
 
-		self._dataframe: pandas.DataFrame = None
-		if dataframe:
-			self.dataframe = dataframe
-
-		self.indicators: dict[str, 'Indicator'] = dict()
-		for name, indicator in indicators.items():
-			self.add_indicator(indicator, name=name)
-
-	def __repr__(self) -> str:
-		return instance_to_repr(self, self.query_fields + [ 'from_timestamp', 'to_timestamp' ])
+	def __post_init__(self):
+		super().__post_init__()
+		if len(self.indicators):
+			indicators = self.indicators
+			self.indicators = dict()
+			for name, indicator in indicators.items():
+				self.add_indicator(indicator, name=name)
 
 	def __len__(self) -> int:
 		return len(self.dataframe) if type(self.dataframe) == pandas.DataFrame else 0
@@ -58,8 +45,6 @@ class Chart:
 		if len(self.value_fields) == 1:
 			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
 		return self.dataframe[self.symbol, self.name]
-
-
 
 	def read(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker

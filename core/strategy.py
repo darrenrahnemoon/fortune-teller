@@ -1,22 +1,17 @@
-from core.utils.cls import instance_to_repr
-import typing
+import abc
+import forge
 
-if typing.TYPE_CHECKING:
-	from core.broker import Broker
+from dataclasses import dataclass
 
+from core.broker import Broker, SimulationBroker
+
+@dataclass
 class Strategy:
-	def __init__(self,broker: 'Broker' = None,**kwargs):
-		if broker:
-			self.broker: 'Broker' = broker
+	broker: 'Broker' = None
+	is_aborted: bool = False
 
-		self.is_aborted = False
-		for key, value in kwargs.items():
-			setattr(self, key, value)
-
+	def __post_init__(self):
 		self.setup()
-
-	def __repr__(self) -> str:
-		return instance_to_repr(self, self.__dict__.keys())
 
 	def setup(self):
 		pass
@@ -24,9 +19,17 @@ class Strategy:
 	def cleanup(self):
 		pass
 
+	@abc.abstractmethod
 	def handler(self):
 		pass
 
 	def abort(self):
-		self.is_aborted = True
 		self.cleanup()
+		raise Exception(f'{self} aborted.')
+
+	def run(self):
+		if type(self.broker) == SimulationBroker:
+			self.broker.backtest(self)
+		else:
+			while True:
+				self.handler()

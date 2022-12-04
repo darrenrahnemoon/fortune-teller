@@ -1,11 +1,10 @@
+from dataclasses import dataclass
+
 from core.chart.chart import Chart
+
+@dataclass
 class RenkoChart(Chart):
 	query_fields = Chart.query_fields + [ 'brick_size' ] 
 	value_fields = Chart.value_fields + [ 'open', 'high', 'low', 'close' ]
 
-	def __init__(self,
-		brick_size: float = None,
-		**kwargs
-	):
-		self.brick_size = brick_size
-		super().__init__(**kwargs)
+	brick_size: float = None

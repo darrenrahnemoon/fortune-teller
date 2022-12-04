@@ -1,43 +1,54 @@
 import logging
-import pandas
 import functools
+from dataclasses import dataclass
+
+from pandas.core import api
 
 from core.broker.broker import Broker
+from core.broker.metatrader.serializers import MetaTraderCandleStickChartDataFrameSerializer, MetaTraderTickChartDataFrameSerializer
 from core.chart import CandleStickChart, TickChart, Chart
 from core.interval import Interval
+
 from core.utils.module import import_module
+from core.utils.serializer import MappingSerializer
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class MetaTraderBroker(Broker):
 	api = None
 	timezone = 'UTC'
-	intervals = {
-		Interval.Minute(1) : 1,
-		Interval.Minute(2) : 2,
-		Interval.Minute(3) : 3,
-		Interval.Minute(4) : 4,
-		Interval.Minute(5) : 5,
-		Interval.Minute(6) : 6,
-		Interval.Minute(10) : 10,
-		Interval.Minute(12) : 12,
-		Interval.Minute(15) : 15,
-		Interval.Minute(20) : 20,
-		Interval.Minute(30) : 30,
-		Interval.Hour(1) : 1 | 0x4000,
-		Interval.Hour(2) : 2 | 0x4000,
-		Interval.Hour(4) : 4 | 0x4000,
-		Interval.Hour(3) : 3 | 0x4000,
-		Interval.Hour(6) : 6 | 0x4000,
-		Interval.Hour(8) : 8 | 0x4000,
-		Interval.Hour(12) : 12 | 0x4000,
-		Interval.Day(1) : 24| 0x4000,
-		Interval.Week(1) : 1 | 0x8000,
-		Interval.Month(1) : 1 | 0xC000,
+
+	serializers = {
+		CandleStickChart : MetaTraderCandleStickChartDataFrameSerializer(),
+		TickChart: MetaTraderTickChartDataFrameSerializer(),
+		'interval': MappingSerializer({
+			Interval.Minute(1) : 1,
+			Interval.Minute(2) : 2,
+			Interval.Minute(3) : 3,
+			Interval.Minute(4) : 4,
+			Interval.Minute(5) : 5,
+			Interval.Minute(6) : 6,
+			Interval.Minute(10) : 10,
+			Interval.Minute(12) : 12,
+			Interval.Minute(15) : 15,
+			Interval.Minute(20) : 20,
+			Interval.Minute(30) : 30,
+			Interval.Hour(1) : 1 | 0x4000,
+			Interval.Hour(2) : 2 | 0x4000,
+			Interval.Hour(4) : 4 | 0x4000,
+			Interval.Hour(3) : 3 | 0x4000,
+			Interval.Hour(6) : 6 | 0x4000,
+			Interval.Hour(8) : 8 | 0x4000,
+			Interval.Hour(12) : 12 | 0x4000,
+			Interval.Day(1) : 24| 0x4000,
+			Interval.Week(1) : 1 | 0x8000,
+			Interval.Month(1) : 1 | 0xC000,
+		})
 	}
 
-	def __init__(self):
-		super().__init__()
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
 		if self.api:
 			return
 
@@ -46,50 +57,42 @@ class MetaTraderBroker(Broker):
 		if not self.api.initialize():
 			raise self.api.last_error()
 
-	@functools.cached_property
-	def available_data(self):
-		availability = {
-			CandleStickChart : {
-				'interval' : list(self.intervals.keys())
-			},
-			TickChart : {},
+	@functools.cache
+	def get_available_chart_combinations(self):
+		symbols = self.api.symbols_get()
+		return {
+			CandleStickChart : [
+				{
+					'symbol': [ symbol.name ],
+					'interval' : list(self.serializers['interval'].mapping.keys())
+				}
+				for symbol in symbols
+			],
+			TickChart : [
+				{ 'symbol' : symbol.name }
+				for symbol in symbols
+			]
 		}
-		return { symbol.name: availability for symbol in self.api.symbols_get() }
 
 	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
 
 		if isinstance(chart, CandleStickChart):
-			dataframe = self.api.copy_rates_range(
+			raw = self.api.copy_rates_range(
 				chart.symbol,
 				chart.interval.to_broker(self),
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 			)
-			dataframe = pandas.DataFrame(dataframe)
-
-			if 'time' in dataframe.columns:
-				dataframe['timestamp'] = pandas.to_datetime(dataframe['time'], unit='s', utc=True)
-				dataframe.drop(columns='time', inplace=True)
-
+			dataframe = self.serializers[CandleStickChart].deserialize(raw)
 		elif isinstance(chart, TickChart):
-			dataframe = self.api.copy_ticks_range(
+			raw = self.api.copy_ticks_range(
 				chart.symbol,
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = pandas.DataFrame(dataframe)
-
-			if 'volume' in dataframe.columns and 'volume_real' in dataframe.columns:
-				dataframe.rename(columns={
-					'volume': 'tick_volume',
-					'volume_real': 'real_volume',
-				}, inplace=True)
-
-			if 'time_msc' in dataframe.columns and 'time' in dataframe.columns:
-				dataframe['timestamp'] = pandas.to_datetime(dataframe['time_msc'], unit='ms', utc=True)
-				dataframe.drop(columns=[ 'time', 'time_msc' ], inplace=True)
+			dataframe = self.serializers[TickChart].deserialize(raw)
 		else:
 			raise Exception(f"Unsupported chart type '{chart}'.")
 

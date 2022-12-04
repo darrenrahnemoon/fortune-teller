@@ -1,41 +1,31 @@
 import typing
 import pandas
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
+import typing
+from dataclasses import dataclass
+
+from core.chart import Symbol
+if typing.TYPE_CHECKING:
 	from core.broker import Broker
-from core.utils.cls import instance_to_repr
+	from core.order import Order
 
+PositionStatus = typing.Literal['open', 'closed']
+PositionType = typing.Literal['long', 'short']
+
+@dataclass
 class Position:
-	def __init__(
-		self,
-		id = None,
-		broker: 'Broker' = None,
-		symbol: str = None,
-		type: typing.Literal['long', 'short'] = None,
-		size: int = None,
-		entry_price: float = None,
-		exit_price: float = None,
-		open_timestamp: pandas.Timestamp = None,
-		close_timestamp: pandas.Timestamp = None,
-		tp: float = None,
-		sl: float = None,
-		order = None,
-	):
-		self.id = id
-		self.broker = broker
-		self.symbol = symbol
-		self.type = type
-		self.entry_price = entry_price
-		self.open_timestamp = open_timestamp
-		self.exit_price = exit_price
-		self.close_timestamp = close_timestamp
-		self.sl = sl
-		self.tp = tp
-		self.order = order
-		self.size = size
-
-	def __repr__(self) -> str:
-		return instance_to_repr(self, [ 'id', 'type', 'symbol', 'size', 'sl', 'tp', 'status', 'open_timestamp', 'close_timestamp' ])
+	id: str or int = None
+	broker: 'Broker' = None
+	symbol: Symbol = None
+	type: PositionType = None
+	size: int = None
+	entry_price: float = None
+	exit_price: float = None
+	open_timestamp: pandas.Timestamp = None
+	close_timestamp: pandas.Timestamp = None
+	tp: float = None
+	sl: float = None
+	status: PositionStatus = None
+	order: 'Order' = None
 
 	def close(self):
 		self.broker.close_position(self)
@@ -68,11 +58,7 @@ class Position:
 		return self.profit < 0
 
 	@property
-	def status(self):
-		return 'closed' if self.exit_price else 'open'
-
-	@property
 	def duration(self) -> pandas.Timedelta:
-		if not self.close_timestamp:
+		if (not self.close_timestamp) or (not self.open_timestamp):
 			return None
 		return self.close_timestamp - self.open_timestamp

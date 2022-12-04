@@ -1,110 +1,101 @@
-import inspect
-import pandas
-import typing
+import abc
+from dataclasses import dataclass
 
-from core.order import Order
-from core.position import Position
-from core.chart import Chart
-from core.strategy import Strategy
-from core.utils.time import now
-from core.utils.cls import instance_to_repr
+from core.order import Order, OrderStatus, OrderType
+from core.position import Position, PositionStatus, PositionType
+from core.chart import Chart, Symbol
+from core.utils.time import TimestampLike, now
+from core.utils.cls import product_dict
 
+ChartCombinations = dict[
+	type[Chart], dict[str, list]
+]
+
+@dataclass
 class Broker:
 	timezone = 'UTC'
-	intervals = {}
-
-	def __init__(
-		self,
-		strategies: list[Strategy or type[Strategy]] = []
-	) -> None:
-		self.strategies: list[Strategy] = []
-		for strategy in strategies:
-			self.add_strategy(strategy)
-
-	@classmethod
-	def from_repr(cls, _repr: str):
-		return next(broker for broker in cls.__subclasses__() if broker.__name__ in _repr)
-
-	@property
-	def name(self):
-		return type(self).__name__
-
-	def __str__(self) -> str:
-		return self.name
-
-	def __repr__(self) -> str:
-		return instance_to_repr(self)
-
-	def add_strategy(self, strategy: Strategy or type[Strategy]):
-		if inspect.isclass(strategy):
-			strategy = strategy()
-		if not isinstance(strategy, Strategy):
-			raise Exception('Invalid argument passed to strategy. Must be either a Strategy subclass or instance.')
-		strategy.broker = self
-		self.strategies.append(strategy)
 
 	@property
 	def now(self):
 		return now(self.timezone)
 
-	@property
-	def available_data(self) -> dict[str, dict[Chart, dict[str, typing.Any]]]:
-		raise NotImplemented()
+	@abc.abstractmethod
+	def get_available_chart_combinations(self) -> ChartCombinations:
+		pass
+
+	def get_available_charts(self, **filter):
+		charts = []
+		for chart, combinations in self.get_available_chart_combinations().items():
+			if filter['chart'] and not issubclass(chart, filter['chart']):
+				continue
+
+			for combination in product_dict(combinations):
+				if filter.items() <= combination.items():
+					charts.append(chart(**combination))
+		return charts
 
 	def ensure_timestamp(self, chart: Chart):
-		if not chart.from_timestamp:
-			raise Exception("'from_timestamp' is required.")
 		if not chart.to_timestamp:
 			chart.to_timestamp = self.now
 		return chart
 
+	@abc.abstractmethod
 	def read_chart(self, chart: Chart) -> Chart:
-		raise NotImplemented()
+		pass
 
+	@abc.abstractmethod
 	def write_chart(self, chart: Chart) -> Chart:
-		raise NotImplemented()
+		pass
 
+	@abc.abstractmethod
 	def place_order(self, order: Order) -> Order:
-		raise NotImplemented()
+		pass
 
+	@abc.abstractmethod
 	def cancel_order(self, order: Order) -> Order:
-		raise NotImplemented()
+		pass
 
+	@abc.abstractmethod
 	def close_position(self, position: Position):
-		raise NotImplemented()
+		pass
 
-	def get_last_price(self, symbol: str) -> float:
-		raise NotImplemented()
+	@abc.abstractmethod
+	def get_last_price(self, symbol: Symbol) -> float:
+		pass
 
+	@abc.abstractmethod
 	def get_orders(
 		self,
-		symbol: str = None,
-		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = None,
-		status: str = None, # 'open', 'filled', 'cancelled'
+		symbol: Symbol = None,
+		type: OrderType = None,
+		from_timestamp: TimestampLike = None,
+		to_timestamp: TimestampLike = None,
+		status: OrderStatus = None,
 	) -> list[Order]:
-		raise NotImplemented()
+		pass
 
+	@abc.abstractmethod
 	def get_positions(
 		self,
-		symbol: str = None,
-		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = None,
-		status: str = None, # 'open', 'closed'
+		symbol: Symbol = None,
+		type: PositionType = None,
+		from_timestamp: TimestampLike = None,
+		to_timestamp: TimestampLike = None,
+		status: PositionStatus = None,
 	) -> list[Position]:
-		raise NotImplemented()
+		pass
 
-	@property
+	@abc.abstractproperty
 	def balance(self) -> float:
-		raise NotImplemented()
+		pass
 
-	@property
+	@abc.abstractproperty
 	def equity(self) -> float:
-		raise NotImplemented()
+		pass
 
-	@property
+	@abc.abstractproperty
 	def leverage(self) -> float:
-		raise NotImplemented()
+		pass
 
 	@property
 	def margin(self) -> float:

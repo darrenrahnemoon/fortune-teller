@@ -1,4 +1,5 @@
 import functools
+import itertools
 
 def ensureattr(__obj, __name, __default):
 	"""Check if an attribute exists on object and if not set it to default
@@ -30,8 +31,5 @@ class hybridmethod(classmethod):
 		descriptor_get = super().__get__ if instance is None else self.__func__.__get__
 		return descriptor_get(instance, type_)
 
-def instance_to_repr(
-	instance,
-	keys = [],
-) -> str:
-	return f"{type(instance).__name__}({', '.join([ f'{key}={repr(getattr(instance, key))}' for key in keys if getattr(instance, key) != None ])})"
+def product_dict(combinations: dict[list]):
+	return (dict(zip(combinations.keys(), combination)) for combination in itertools.product(*combinations.values()))

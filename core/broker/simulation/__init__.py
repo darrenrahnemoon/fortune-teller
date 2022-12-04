@@ -1,54 +1,73 @@
-import functools
 import logging
 import typing
 import pandas
-import numpy
 import random
-import operator
+from dataclasses import dataclass, field
 
 from core.broker.broker import Broker
+from core.broker.simulation.report import BacktestReport
 from core.broker.simulation.scheduler import Scheduler
 from core.broker.simulation.repository import Repository
 
-from core.order import Order
-from core.position import Position
-from core.chart import Chart, CandleStickChart
+if typing.TYPE_CHECKING:
+	from core.strategy import Strategy
+from core.order import Order, OrderStatus, OrderType
+from core.position import Position, PositionStatus, PositionType
+from core.chart import Chart, CandleStickChart, Symbol
 
 from core.interval import Interval
-from core.utils.time import normalize_timestamp, now
+from core.utils.time import normalize_timestamp, now, TimestampLike
 from core.utils.collection import ensure_list
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class SimulationBroker(Broker):
-	def __init__(
-		self,
-		repository: Repository = Repository(),
-		**kwargs
-	) -> None:
-		super().__init__(**kwargs)
-		self.repository = repository
+	repository = Repository()
+	scheduler: Scheduler = field(default_factory=Scheduler, init=False, repr=False)
+
+	_timesteps: pandas.DatetimeIndex = field(init=False, repr=False)
+	equity_curve: pandas.Series = field(init=False, repr=False)
+
+	initial_cash: float = 1000.
+	leverage: float = 1.
+	latency: Interval = Interval.Millisecond(2)
+
+	positions: list[Position] = field(default_factory=list, init=False, repr=False)
+	orders: list[Order] = field(default_factory=list, init=False, repr=False)
+
+	@property
+	def timesteps(self):
+		return self._timesteps
+
+	@timesteps.setter
+	def timesteps(self, value: Chart or pandas.DatetimeIndex):
+		if isinstance(value, Chart):
+			records = self.repository.read_chart(value)
+			self._timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
+		else:
+			self._timesteps = value
+		self.equity_curve = pandas.Series(index=self._timesteps, dtype='float', name='equity')
+
+	@property
+	def now(self) -> pandas.Timestamp:
+		return self._now or super().now
+
+	@now.setter
+	def now(self, value: TimestampLike):
+		self._now = normalize_timestamp(value)
 
 	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
-		records = self.repository.read_chart(chart)
-		chart.dataframe = pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
-		return chart
+		self.repository.read_chart(chart, inplace=True)
 
 	def write_chart(self, chart: Chart):
-		data = chart.data
-		if len(data) == 0:
-			logger.warn(f'Attempted to write an empty {chart} into database. Skipping...')
-			return
-
 		self.repository.write_chart(chart)
-		return chart
 
 	def remove_historical_data(self, chart: Chart):
 		self.repository.drop_collection_for_chart(chart)
 
-	@property
-	def available_data(self) -> dict[str, dict[Chart, dict[str, typing.Any]]]:
+	def get_available_charts(self, include_timestamps=False) -> list[Chart]:
 		return self.repository.get_available_charts()
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
@@ -57,29 +76,8 @@ class SimulationBroker(Broker):
 	def get_min_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
 		return self.repository.get_min_available_timestamp_for_chart(chart)
 
-	def backtest(
-		self,
-		timesteps: Chart or pandas.DatetimeIndex,
-		initial_cash: float = 1000.,
-		leverage: float = 1.,
-		latency: Interval = Interval.Millisecond(2),
-	):
-		if isinstance(timesteps, Chart):
-			records = self.repository.read_chart(timesteps)
-			timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
-			del records # free up memory since this variable can potentially be huge
-
-		self.latency = latency
-		self.scheduler = Scheduler()
-
-		self.leverage = float(leverage)
-		self.initial_cash = float(initial_cash)
-		equity_curve = pandas.Series(index=timesteps, dtype='float', name='equity')
-
-		self.positions: list[Position] = []
-		self.orders: list[Order] = []
-
-		for self.now in timesteps:
+	def backtest(self, strategy: 'Strategy'):
+		for self.now in self.timesteps:
 			self.scheduler.run_as_of(self.now)
 
 			for order in self.get_orders(status='open'):
@@ -108,74 +106,30 @@ class SimulationBroker(Broker):
 					)
 				):
 					self.close_position(position, price=price)
-			for strategy in self.strategies:
-				if not strategy.is_aborted:
-					strategy.handler()
-			equity_curve[self.now] = self.equity
+			strategy.handler()
+			self.equity_curve[self.now] = self.equity
 
-		report = dict()
-		report['date'] = now()
-		report['strategy'] = self.strategies[0]
-		report['timesteps'] = {
-			'from_timestamp': timesteps[0],
-			'to_timestamp': timesteps[-1],
-			'sample': list(timesteps[:5]) + [ '...' ] + list(timesteps[-5:])
-		}
-		report['equity'] = {
-			'open': self.initial_cash,
-			'high': equity_curve.max(),
-			'low': equity_curve.min(),
-			'close': self.balance,
-			'curve': equity_curve,
-			'max_draw_down_percentage': max(1 - equity_curve / numpy.maximum.accumulate(equity_curve))
-		}
-		report['equity']['return_percentage'] = report['equity']['open'] / report['equity']['close'] * 100 - 100
-
-		def compute_field_stats(report: dict, collection: str, field: str):
-			items = [ getattr(item, field) for item in getattr(self, collection) if getattr(item, field) != None ]
-			report[collection][field] = {
-				'min': min(items),
-				'max': max(items),
-				'average': functools.reduce(operator.add, items) / len(items)
-			}
-
-		report['orders'] = dict()
-		report['positions'] = dict()
-		# Common stats between positions and orders
-		for collection in [ 'positions', 'orders' ]:
-			report[collection]['list'] = getattr(self, collection)
-			compute_field_stats(report, collection, 'duration')
-		compute_field_stats(report, 'positions', 'profit')
-		report['positions']['win_rate'] = len([ position for position in self.positions if position.is_in_profit ]) / len(self.positions) * 100
-
+		report = BacktestReport.from_strategy(strategy)
 		self.repository.write_backtest_report(report)
 
-	@property
-	def now(self) -> pandas.Timestamp:
-		return self._now or super().now
-
-	@now.setter
-	def now(self, value: pandas.Timestamp):
-		self._now = normalize_timestamp(value)
-
-	def get_last_price(self, symbol: str) -> float:
-		tick = self.repository.read_chart(
-			# TickChart(symbol=symbol, to_timestamp=self.now),
+	def get_last_price(self, symbol: Symbol) -> float:
+		data = self.repository.read_chart(
 			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), to_timestamp=self.now),
 			limit=1,
 		)[0]
-		return tick['close']
-		# return (tick['bid'] + tick['ask']) / 2
+		return data['close']
 
 	def get_orders(
 		self,
-		symbol: str = None,
-		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = None,
-		status: str = None, 
+		symbol: Symbol = None,
+		type: OrderType = None,
+		from_timestamp: TimestampLike = None,
+		to_timestamp: TimestampLike = None,
+		status: OrderStatus = None, 
 	) -> list[Order]:
 		status = ensure_list(status)
-		to_timestamp = to_timestamp or self.now
+		from_timestamp = normalize_timestamp(from_timestamp)
+		to_timestamp = normalize_timestamp(to_timestamp or self.now)
 		return [
 			order
 			for order in self.orders
@@ -183,17 +137,20 @@ class SimulationBroker(Broker):
 				and ((not from_timestamp) or order.open_timestamp >= from_timestamp) \
 				and ((not to_timestamp) or order.open_timestamp <= to_timestamp)
 				and ((not status) or order.status in status)
+				and ((not type) or order.type == type)
 		]
 
 	def get_positions(
 		self,
-		symbol: str = None,
-		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = None,
-		status: str = None, 
-	) -> list[Order]:
+		symbol: Symbol = None,
+		type: PositionType = None,
+		from_timestamp: TimestampLike = None,
+		to_timestamp: TimestampLike = None,
+		status: PositionStatus = None,
+	) -> list[Position]:
 		status = ensure_list(status)
-		to_timestamp = to_timestamp or self.now
+		from_timestamp = normalize_timestamp(from_timestamp)
+		to_timestamp = normalize_timestamp(to_timestamp or self.now)
 		return [
 			position
 			for position in self.positions
@@ -201,6 +158,7 @@ class SimulationBroker(Broker):
 				and ((not from_timestamp) or position.open_timestamp >= from_timestamp) \
 				and ((not to_timestamp) or position.open_timestamp <= to_timestamp)
 				and ((not status) or position.status in status)
+				and ((not type) or position.type == type)
 		]
 
 	def place_order(self, order: Order, schedule=True) -> Order:
@@ -236,16 +194,17 @@ class SimulationBroker(Broker):
 			return
 
 		order.position = Position(
-			id=random.randint(0, 1000000000),
-			broker=self,
-			symbol=order.symbol,
-			type=order.type,
-			size=order.size,
-			entry_price=self.get_last_price(order.symbol),
-			open_timestamp=self.now,
-			tp=order.tp,
-			sl=order.sl,
-			order=order
+			id = random.randint(0, 1000000000),
+			broker = self,
+			symbol = order.symbol,
+			type = order.type,
+			size = order.size,
+			entry_price = self.get_last_price(order.symbol),
+			open_timestamp = self.now,
+			tp = order.tp,
+			sl = order.sl,
+			status = 'open',
+			order = order,
 		)
 		order.status = 'filled'
 		order.close_timestamp = self.now
@@ -261,6 +220,7 @@ class SimulationBroker(Broker):
 			logger.warning(f'Cannot close a position that is already closed: {position}')
 			return
 
+		position.status = 'closed'
 		position.close_timestamp = self.now
 		position.exit_price = self.get_last_price(position.symbol)
 
@@ -271,10 +231,10 @@ class SimulationBroker(Broker):
 		**kwargs,
 	):
 		self.scheduler.add(
-			action=action,
-			timestamp=self.now + self.latency.to_pandas_timedelta(),
-			args=args,
-			kwargs=kwargs
+			action = action,
+			timestamp = self.now + self.latency.to_pandas_timedelta(),
+			args = args,
+			kwargs = kwargs
 		)
 
 	@property

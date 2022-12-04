@@ -2,16 +2,12 @@ import argparse
 import inspect
 
 from core.utils.module import import_module
-from core.utils.cls import instance_to_repr
 
 class Command:
 	def __init__(self) -> None:
 		self.parser = argparse.ArgumentParser()
 		self.parser.add_argument('_') # to ignore the run.py
 		self.config()
-
-	def __repr__(self) -> str:
-		return instance_to_repr(self)
 
 	def run(self):
 		self.args = self.parser.parse_args()

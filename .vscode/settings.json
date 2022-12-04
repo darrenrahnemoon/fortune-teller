@@ -2,9 +2,13 @@
 	"cSpell.words": [
 		"alphavantage",
 		"backtesting",
+		"cachedclassproperty",
 		"dataframe",
 		"ensureattr",
+		"hybridmethod",
+		"pymongo",
 		"termcolor",
 		"timesteps"
-	]
+	],
+	"python.linting.enabled": true
 }
