@@ -3,9 +3,11 @@
 		"alphavantage",
 		"backtesting",
 		"cachedclassproperty",
+		"caseconverter",
 		"dataframe",
 		"ensureattr",
 		"hybridmethod",
+		"kebabcase",
 		"pymongo",
 		"termcolor",
 		"timesteps"

@@ -67,8 +67,8 @@ class SimulationBroker(Broker):
 	def remove_historical_data(self, chart: Chart):
 		self.repository.drop_collection_for_chart(chart)
 
-	def get_available_charts(self, include_timestamps=False) -> list[Chart]:
-		return self.repository.get_available_charts()
+	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:
+		return self.repository.get_available_charts(filter=filter, include_timestamps=include_timestamps)
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
 		return self.repository.get_max_available_timestamp_for_chart(chart)

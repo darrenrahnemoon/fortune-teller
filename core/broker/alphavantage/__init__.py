@@ -1,5 +1,4 @@
 import functools
-import pandas
 import time
 import os
 import requests
@@ -37,6 +36,7 @@ chart_maturity_serializer = MappingSerializer({
 class AlphaVantageBroker(Broker):
 	api_key: str = field(default_factory=lambda: os.getenv('ALPHAVANTAGE_API_KEY'))
 
+	@classmethod
 	@functools.cache
 	def get_available_chart_combinations(self) -> ChartCombinations:
 		return {

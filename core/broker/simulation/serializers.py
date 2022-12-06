@@ -1,6 +1,5 @@
 
 import pandas
-from pymongo.common import SERVER_SELECTION_TIMEOUT
 from pymongo.database import Database
 from pymongo.collection import Collection
 from dataclasses import dataclass

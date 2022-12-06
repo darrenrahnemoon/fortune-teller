@@ -23,10 +23,11 @@ class Broker:
 	def get_available_chart_combinations(self) -> ChartCombinations:
 		pass
 
-	def get_available_charts(self, **filter):
+	@classmethod
+	def get_available_charts(self, filter = {}):
 		charts = []
 		for chart, combinations in self.get_available_chart_combinations().items():
-			if filter['chart'] and not issubclass(chart, filter['chart']):
+			if 'chart' in filter and not issubclass(chart, filter['chart']):
 				continue
 
 			for combination in product_dict(combinations):

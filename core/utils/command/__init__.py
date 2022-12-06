@@ -1,16 +1,18 @@
 import argparse
 import inspect
+import sys
+import caseconverter
 
 from core.utils.module import import_module
+from .serializers import *
 
 class Command:
 	def __init__(self) -> None:
 		self.parser = argparse.ArgumentParser()
-		self.parser.add_argument('_') # to ignore the run.py
 		self.config()
 
 	def run(self):
-		self.args = self.parser.parse_args()
+		self.args = self.parser.parse_args(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
 		self.handler()
 
 	def config(self):
@@ -20,6 +22,16 @@ class Command:
 	def handler(self):
 		"""Runs when the `Command` is being executed. Can access the arguments from `self.args`"""
 		pass
+
+	def add_arguments_from_class(self, cls: type[object], fields = []):
+		fields = fields if len(fields) else cls.__annotations__.keys()
+		for field_name in fields:
+			option_string = f'--{caseconverter.kebabcase(field_name)}'
+			if is_any_of(self.parser._actions, lambda action: option_string in action.option_strings):
+				continue
+
+			field_type = cls.__annotations__[field_name]
+			self.parser.add_argument(option_string, type=CommandArgumentSerializer(field_type).deserialize)
 
 	@staticmethod
 	def run_from_path(path: str):

@@ -77,10 +77,11 @@ class Repository:
 		self.chart_collection_serializer.serialize(chart).drop()
 
 	def get_available_chart_combinations(self) -> ChartCombinations: 
-		collection_names = self.client['trading'].list_collection_names().sort()
+		collection_names = self.client['trading'].list_collection_names()
+		collection_names.sort()
 		available_data = dict()
 		for name in collection_names:
-			chart = self.get_chart_from_collection_name(name)
+			chart = self.chart_collection_serializer.deserialize(name)
 			combinations = available_data.setdefault(type(chart), [])
 			symbol_combinations = next((combination for combination in combinations if chart.symbol in combination['symbol'] ), None)
 			if symbol_combinations == None:
@@ -94,15 +95,19 @@ class Repository:
 					field_combinations.append(field_value)
 			return available_data
 
-	def get_available_charts(self, include_timestamps = False) -> list[Chart]:
-		collection_names = self.client['trading'].list_collection_names().sort()
-		def to_chart(name: str):
-			chart = chart_dataframe_serializer.deserialize(name)
+	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:
+		collection_names = self.client['trading'].list_collection_names()
+		collection_names.sort()
+		charts = []
+		for name in collection_names:
+			chart = self.chart_collection_serializer.deserialize(name)
+			if not filter.items() <= chart.__dict__.items():
+				continue
 			if include_timestamps:
 				chart.from_timestamp = self.get_min_available_timestamp_for_chart(chart)
 				chart.to_timestamp = self.get_max_available_timestamp_for_chart(chart)
-			return chart
-		return [ to_chart(name) for name in collection_names ]
+			charts.append(chart)
+		return charts
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart):
 		collection = self.chart_collection_serializer.serialize(chart)
