@@ -1,47 +1,44 @@
+import abc
+from dataclasses import dataclass
+import typing
 import pandas
 import logging
 
+from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.chart import Chart
 
 logger = logging.getLogger(__name__)
 
-class Indicator:
-	query_fields: list[str] = []
-	value_fields: list[str] = []
+@dataclass
+class Indicator(SharedDataFrameContainer):
+	value_fields: typing.ClassVar[list[str]] = []
 
-	def __init__(self, **kwargs) -> None:
+	def __post_init__(self) -> None:
 		self.chart: Chart = None
-		self.name: str = None
-		for key, value in kwargs.items():
-			setattr(self, key, value)
-
-	def __len__(self) -> int:
-		data = self.data
-		return len(data) if type(data) in [ pandas.DataFrame, pandas.Series ] else 0
 
 	@property
-	def data(self):
-		if not self.chart:
-			logger.error('Indicator is not attached to any chart but data was requested.')
-			return
-		if len(self.value_fields) == 1:
-			return self.chart.dataframe[self.chart.symbol, self.name, self.value_fields[-1]]
-		return self.chart.dataframe[self.chart.symbol, self.name]
+	def name(self):
+		return f'{super().name}({self.chart.name})'
 
-	def apply(self, chart: Chart, force = False):
+	@property
+	def dataframe(self):
+		if self.chart:
+			return self.chart.dataframe
+		return None
+
+	def attach(self, chart: Chart):
 		self.chart = chart
-		if type(chart.dataframe) != pandas.DataFrame:
+		if len(chart) == 0:
 			return
+		self.refresh()
 
-		if force\
-			or self.name not in self.chart.dataframe.columns.get_level_values(1)\
-			or self.chart.dataframe[self.chart.symbol, self.name].isna().values.any():
-			value = self.run(self.chart.data)
+	def detach(self):
+		self.chart.dataframe.drop(self.name, axis=1, inplace=True)
+		self.chart = None
 
-			if (type(value) != dict):
-				value = { self.value_fields[-1] : value }
-			for key, value in value.items():
-				self.chart.dataframe[self.chart.symbol, self.name, key] = value
+	def refresh(self):
+		self.data = self.run(self.chart.data)
 
-	def run(self, dataframe: pandas.DataFrame) -> dict[str, pandas.Series] or pandas.Series:
+	@abc.abstractmethod
+	def run(self, dataframe: pandas.DataFrame) -> pandas.DataFrame:
 		pass

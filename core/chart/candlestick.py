@@ -6,6 +6,7 @@ from core.interval import Interval
 @dataclass
 class CandleStickChart(Chart):
 	query_fields = Chart.query_fields + [ 'interval' ]
-	value_fields = Chart.value_fields + [ 'open', 'high', 'low', 'close', 'spread', 'tick_volume', 'real_volume' ]
+	data_fields = [ 'open', 'high', 'low', 'close' ]
+	volume_fields = [ 'tick_volume', 'real_volume' ]
 
 	interval: Interval = None

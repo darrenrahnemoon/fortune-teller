@@ -15,4 +15,4 @@ def _():
 		).read(alphavantage)
 
 		assert len(chart) != 0
-		assert chart.data['2022-10-28'] == 4.15
+		assert chart.data['value']['2022-10-28'] == 4.15

@@ -1,31 +1,46 @@
+import typing
 import pandas
+from dataclasses import dataclass, field
 
+if typing.TYPE_CHECKING:
+	from core.broker.broker import Broker
 from core.chart.chart import Chart
 
+@dataclass
 class ChartGroup:
-	def __init__(
-		self,
-		charts: list[Chart] = None,
-		**common_chart_params
-	) -> None:
-		self.dataframe: pandas.DataFrame = None
-		self.charts: list[Chart] = []
-		self.common_chart_params = common_chart_params
+	charts: list[Chart] = field(default_factory=list)
+	dataframe: pandas.DataFrame = field(repr=False, init=False, default_factory=lambda: pandas.DataFrame(columns=pandas.MultiIndex(levels=[[], []], codes=[[], []])))
+	common_params: dict[str] = field(default_factory=dict)
 
-		for chart in charts:
-			self.add_chart(chart)
+	def __post_init__(self):
+		self.common_params['chart_group'] = self
+		# Update chart values from common_params after initialization
+		for key, value in self.common_params.items():
+			self.set_field(key, value)
 
 	def add_chart(self, chart: Chart):
-		for key, value in self.common_chart_params.items():
+		for key, value in self.common_params.items():
 			setattr(chart, key, value)
-
-		if type(self.dataframe) != pandas.DataFrame:
-			self.dataframe = chart.dataframe
-		else:
-			self.dataframe = pandas.concat([ self.dataframe, chart.dataframe ], axis=1, copy=False)
-
 		self.charts.append(chart)
 
-	def read(self):
+	def set_field(self, key: str, value):
 		for chart in self.charts:
-			chart.read()
+			setattr(chart, key, value)
+		self.common_params[key] = value
+
+	def read(
+		self,
+		broker: 'Broker' = None,
+		select: list[str] = None,
+		refresh_indicators = True,
+	):
+		for chart in self.charts:
+			chart.read(broker, select = select, refresh_indicators = refresh_indicators)
+
+		dataframes = []
+		for chart in self.charts:
+			dataframes.append(chart.dataframe)
+			chart.dataframe = None
+		dataframe = pandas.concat(dataframes, axis=1)
+		dataframe = dataframe.reindex(dataframe.columns.sort_values(), axis=1)
+		self.dataframe = dataframe

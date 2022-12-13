@@ -1,4 +1,5 @@
 from core.chart.chart import Chart
 
 class TickChart(Chart):
-	value_fields = Chart.value_fields + [ 'bid', 'ask', 'last', 'tick_volume', 'real_volume' ]
+	data_fields = [ 'bid', 'ask', 'last' ]
+	volume_fields = [ 'tick_volume', 'real_volume' ]

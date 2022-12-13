@@ -1,4 +1,4 @@
-import functools
+from numpy import char
 import pandas
 import inspect
 import typing
@@ -7,8 +7,10 @@ from dataclasses import dataclass, field
 
 if typing.TYPE_CHECKING:
 	from core.indicator import Indicator
+	from core.chart.group import ChartGroup
 	from core.broker import Broker
 
+from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.utils.time import TimeWindow
 
 logger = logging.getLogger(__name__)
@@ -16,39 +18,40 @@ logger = logging.getLogger(__name__)
 Symbol = str
 
 @dataclass
-class Chart(TimeWindow):
-	query_fields: typing.ClassVar[list[str]] = [ 'symbol' ]
-	value_fields: typing.ClassVar[list[str]] = []
+class Chart(TimeWindow, SharedDataFrameContainer):
+	query_fields = [ 'symbol' ]
+	data_fields: typing.ClassVar[list[str]] = []
+	volume_fields: typing.ClassVar[list[str]] = []
+
+	@classmethod
+	@property
+	def value_fields(cls):
+		return cls.data_fields + cls.volume_fields
 
 	symbol: Symbol = None
 	broker: 'Broker' = None
-	indicators: dict[str, 'Indicator' or type['Indicator']] = field(repr=False, default_factory=dict)
-	_dataframe: pandas.DataFrame = field(repr=False, init=False, default=None)
+	chart_group: 'ChartGroup' = None
+	indicators: dict[str, type['Indicator']] = field(repr=False, default_factory=dict)
+	select: list[str] = None
 
 	def __post_init__(self):
 		super().__post_init__()
-		if len(self.indicators):
-			indicators = self.indicators
-			self.indicators = dict()
-			for name, indicator in indicators.items():
-				self.add_indicator(indicator, name=name)
+		self.dataframe = None
 
-	def __len__(self) -> int:
-		return len(self.dataframe) if type(self.dataframe) == pandas.DataFrame else 0
+		for name, indicator in self.indicators.items():
+			self.attach_indicator(indicator, name=name)
 
-	@functools.cached_property
-	def name(self):
-		return f"{type(self).__name__}.{'.'.join([ str(getattr(self, key)) for key in self.query_fields ])}"
-
-	@property
-	def data(self):
-		if len(self.value_fields) == 1:
-			return self.dataframe[self.symbol, self.name, self.value_fields[-1]]
-		return self.dataframe[self.symbol, self.name]
-
-	def read(self, broker: 'Broker' = None):
-		self.broker = broker or self.broker
-		self.broker.read_chart(self)
+	def read(
+		self,
+		broker: 'Broker' = None,
+		select: list[str] = None,
+		refresh_indicators = True,
+	):
+		broker = broker or self.broker
+		select = select or self.select
+		broker.read_chart(self, select = select)
+		if refresh_indicators:
+			self.refresh_indicators()
 		return self
 
 	def write(self, broker: 'Broker'):
@@ -57,53 +60,45 @@ class Chart(TimeWindow):
 
 	@property
 	def dataframe(self):
-		return self._dataframe
+		dataframe = self._dataframe
+		if type(dataframe) != pandas.DataFrame and self.chart_group:
+			dataframe = self.chart_group.dataframe
+		return dataframe
 
 	@dataframe.setter
 	def dataframe(self, dataframe: pandas.DataFrame):
-		logger.debug(f'Setting dataframe for chart...\n{self}\n\n{dataframe}')
 		if type(dataframe) != pandas.DataFrame:
-			logger.error(f'Invalid dataframe was assigned to {self}: {dataframe}')
+			self._dataframe = dataframe
 			return
 
 		if len(dataframe) == 0:
-			dataframe = pandas.DataFrame(columns=self.value_fields + [ 'timestamp' ])
+			dataframe = pandas.DataFrame(columns = [ 'timestamp' ] + self.value_fields)
 
-		if dataframe.index.name != 'timestamp':
-			dataframe['timestamp'] = pandas.to_datetime(dataframe['timestamp'])
-			dataframe.set_index('timestamp', inplace=True, drop=True)
-			dataframe.index.name = 'timestamp' # probably unnecessary someone check
+		if type(dataframe.index) != pandas.DatetimeIndex:
+			dataframe.index = pandas.DatetimeIndex(dataframe['timestamp'], name='timestamp')
+			if not dataframe.index.tz:
+				dataframe.index = dataframe.index.tz_localize(tz='UTC')
+			dataframe = dataframe.drop([ 'timestamp' ], axis=1)
 
 		if type(dataframe.columns) != pandas.MultiIndex:
-			dataframe = dataframe[[ key for key in self.value_fields ]]
+			dataframe = dataframe[[ key for key in dataframe.columns if key in self.value_fields ]]
 			dataframe.columns = pandas.MultiIndex.from_tuples(
-				[ (self.symbol, self.name, column) for column in dataframe.columns ],
-				names=[ 'symbol', 'timeseries', 'feature' ]
+				[ (self.name, column) for column in dataframe.columns ],
+				names=[ 'timeseries', 'feature' ]
 			)
+		self._dataframe = dataframe
 
-		if type(self._dataframe) != pandas.DataFrame:
-			self._dataframe = dataframe
-		else:
-			self._dataframe = pandas.concat([ self._dataframe, dataframe ], axis=1, copy=False)
-
-		self.refresh_indicators()
-
-	def add_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):
+	def attach_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):
 		if inspect.isclass(indicator):
 			indicator = indicator()
-
-		indicator.name = name or repr(indicator)
 		self.indicators[name or type(indicator)] = indicator
-
-		indicator.apply(self)
+		indicator.attach(self)
 		return indicator
 
-	def remove_indicator(self, name: str):
-		indicator = self.indicators[name]
-		indicator.chart = None
-		self.dataframe.drop((self.symbol, indicator.name), axis=1, inplace=True)
+	def detach_indicator(self, name: str):
+		self.indicators[name].detach()
 		del self.indicators[name]
 
-	def refresh_indicators(self, force: bool = False):
+	def refresh_indicators(self):
 		for indicator in self.indicators.values():
-			indicator.apply(self, force=force)
+			indicator.refresh()

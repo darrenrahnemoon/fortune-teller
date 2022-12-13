@@ -2,8 +2,6 @@ import logging
 import functools
 from dataclasses import dataclass
 
-from pandas.core import api
-
 from core.broker.broker import Broker
 from core.broker.metatrader.serializers import MetaTraderCandleStickChartDataFrameSerializer, MetaTraderTickChartDataFrameSerializer
 from core.chart import CandleStickChart, TickChart, Chart
@@ -20,8 +18,8 @@ class MetaTraderBroker(Broker):
 	timezone = 'UTC'
 
 	serializers = {
-		CandleStickChart : MetaTraderCandleStickChartDataFrameSerializer(),
-		TickChart: MetaTraderTickChartDataFrameSerializer(),
+		'candlestick' : MetaTraderCandleStickChartDataFrameSerializer(),
+		'tick': MetaTraderTickChartDataFrameSerializer(),
 		'interval': MappingSerializer({
 			Interval.Minute(1) : 1,
 			Interval.Minute(2) : 2,
@@ -74,17 +72,17 @@ class MetaTraderBroker(Broker):
 			]
 		}
 
-	def read_chart(self, chart: Chart):
+	def read_chart(self, chart: Chart, select: list[str] = None):
 		self.ensure_timestamp(chart)
 
 		if isinstance(chart, CandleStickChart):
 			raw = self.api.copy_rates_range(
 				chart.symbol,
-				chart.interval.to_broker(self),
+				self.serializers['interval'].serialize(chart.interval),
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 			)
-			dataframe = self.serializers[CandleStickChart].deserialize(raw)
+			dataframe = self.serializers['candlestick'].deserialize(raw, select = select)
 		elif isinstance(chart, TickChart):
 			raw = self.api.copy_ticks_range(
 				chart.symbol,
@@ -92,7 +90,7 @@ class MetaTraderBroker(Broker):
 				chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = self.serializers[TickChart].deserialize(raw)
+			dataframe = self.serializers['tick'].deserialize(raw, select = select)
 		else:
 			raise Exception(f"Unsupported chart type '{chart}'.")
 

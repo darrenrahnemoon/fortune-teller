@@ -9,28 +9,13 @@ from core.chart.chart import Chart
 from core.utils.serializer import Serializer
 
 class ChartDataFrameSerializer(Serializer[pandas.DataFrame or pandas.Series, list[dict]]):
-	def serialize(self, dataframe):
-		if type(dataframe) == pandas.DataFrame:
-			rows = dataframe.reset_index().to_dict(orient='records')
-		elif type(dataframe) == pandas.Series:
-			rows = [
-				dict(timestamp=timestamp, value=value)
-				for timestamp, value in dataframe.to_dict().items() 
-			]
-		else:
-			raise Exception(f'Invalid data passed to `ChartDataFrameSerializer`: {dataframe}')
+	def serialize(self, dataframe: pandas.DataFrame):
+		rows = dataframe.reset_index().drop_duplicates('timestamp').to_dict(orient='records')
+		return rows
 
-		seen = set()
-		return [
-			row for row in rows 
-			if not (
-				row['timestamp'] in seen 
-				or seen.add(row['timestamp'])
-			)
-		]
-
-	def deserialize(self, records, chart: Chart):
-		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.value_fields)
+	def deserialize(self, records, chart: Chart, select: list[str] = None):
+		select = select or chart.value_fields
+		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + select)
 
 class ChartFilterSerializer(Serializer[Chart, dict]):
 	def serialize(self, chart: Chart):

@@ -1,3 +1,6 @@
 __pycache__
 .env
 .DS_Store
+
+models/**/*
+!models/.gitignore

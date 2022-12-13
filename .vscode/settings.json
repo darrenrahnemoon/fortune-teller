@@ -5,10 +5,13 @@
 		"cachedclassproperty",
 		"caseconverter",
 		"dataframe",
+		"dataframes",
 		"ensureattr",
 		"hybridmethod",
 		"kebabcase",
+		"metatrader",
 		"pymongo",
+		"seasonalities",
 		"termcolor",
 		"timesteps"
 	],

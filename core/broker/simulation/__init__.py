@@ -1,3 +1,4 @@
+from core.chart.group import ChartGroup
 import logging
 import typing
 import pandas
@@ -16,7 +17,7 @@ from core.position import Position, PositionStatus, PositionType
 from core.chart import Chart, CandleStickChart, Symbol
 
 from core.interval import Interval
-from core.utils.time import normalize_timestamp, now, TimestampLike
+from core.utils.time import TimeWindow, normalize_timestamp, TimestampLike
 from core.utils.collection import ensure_list
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ class SimulationBroker(Broker):
 	positions: list[Position] = field(default_factory=list, init=False, repr=False)
 	orders: list[Order] = field(default_factory=list, init=False, repr=False)
 
+	def __post_init__(self):
+		self._now = None
+
 	@property
 	def timesteps(self):
 		return self._timesteps
@@ -43,11 +47,12 @@ class SimulationBroker(Broker):
 	@timesteps.setter
 	def timesteps(self, value: Chart or pandas.DatetimeIndex):
 		if isinstance(value, Chart):
-			records = self.repository.read_chart(value)
+			records = self.repository.read_chart_raw(value)
 			self._timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
 		else:
 			self._timesteps = value
-		self.equity_curve = pandas.Series(index=self._timesteps, dtype='float', name='equity')
+		if type(self._timesteps) == pandas.DatetimeIndex:
+			self.equity_curve = pandas.Series(index=self._timesteps, dtype='float', name='equity')
 
 	@property
 	def now(self) -> pandas.Timestamp:
@@ -57,15 +62,23 @@ class SimulationBroker(Broker):
 	def now(self, value: TimestampLike):
 		self._now = normalize_timestamp(value)
 
-	def read_chart(self, chart: Chart):
+	def read_chart(self, chart: Chart, select: list = None):
 		self.ensure_timestamp(chart)
-		self.repository.read_chart(chart, inplace=True)
+		self.repository.read_chart(chart, select = select)
 
 	def write_chart(self, chart: Chart):
 		self.repository.write_chart(chart)
 
 	def remove_historical_data(self, chart: Chart):
 		self.repository.drop_collection_for_chart(chart)
+
+	def get_common_period(self, chart_group: ChartGroup) -> TimeWindow:
+		from_timestamp = []
+		to_timestamp = []
+		for chart in chart_group.charts:
+			from_timestamp.append(self.get_min_available_timestamp_for_chart(chart))
+			to_timestamp.append(self.get_max_available_timestamp_for_chart(chart))
+		return TimeWindow(max(from_timestamp), min(to_timestamp))
 
 	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:
 		return self.repository.get_available_charts(filter=filter, include_timestamps=include_timestamps)
@@ -113,9 +126,9 @@ class SimulationBroker(Broker):
 		self.repository.write_backtest_report(report)
 
 	def get_last_price(self, symbol: Symbol) -> float:
-		data = self.repository.read_chart(
+		data = self.repository.read_chart_raw(
 			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), to_timestamp=self.now),
-			limit=1,
+			limit = 1,
 		)[0]
 		return data['close']
 

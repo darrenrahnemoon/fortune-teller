@@ -26,7 +26,7 @@ def _():
 		assert type(indicator) == MACDIndicator
 		assert len(indicator) != 0
 
-		chart.remove_indicator('macd')
+		chart.detach_indicator('macd')
 		assert len(indicator) == 0
 
 	@it("should be able to attach to a chart after a it's loaded")
@@ -38,10 +38,10 @@ def _():
 			to_timestamp='2021-12',
 		).read(broker)
 
-		indicator = chart.add_indicator(MACDIndicator(window_slow=10, window_fast=5))
+		indicator = chart.attach_indicator(MACDIndicator(window_slow=10, window_fast=5))
 		assert chart.indicators[MACDIndicator] != None
 		assert chart.indicators[MACDIndicator] == indicator
 		assert len(indicator) != 0
 
-		chart.remove_indicator(MACDIndicator)
+		chart.detach_indicator(MACDIndicator)
 		assert len(indicator) == 0

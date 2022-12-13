@@ -26,13 +26,13 @@ class Broker:
 	@classmethod
 	def get_available_charts(self, filter = {}):
 		charts = []
-		for chart, combinations in self.get_available_chart_combinations().items():
+		for chart, combination_groups in self.get_available_chart_combinations().items():
 			if 'chart' in filter and not issubclass(chart, filter['chart']):
 				continue
-
-			for combination in product_dict(combinations):
-				if filter.items() <= combination.items():
-					charts.append(chart(**combination))
+			for combination_group in combination_groups:
+				for combination in product_dict(combination_group):
+					if filter.items() <= combination.items():
+						charts.append(chart(**combination))
 		return charts
 
 	def ensure_timestamp(self, chart: Chart):
@@ -41,7 +41,7 @@ class Broker:
 		return chart
 
 	@abc.abstractmethod
-	def read_chart(self, chart: Chart) -> Chart:
+	def read_chart(self, chart: Chart, select: list[str] = None) -> Chart:
 		pass
 
 	@abc.abstractmethod

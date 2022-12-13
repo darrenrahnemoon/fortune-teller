@@ -1,6 +1,5 @@
 import os
 import sys
-import pandas
 import pymongo
 import logging
 from pymongo.collection import Collection
@@ -21,24 +20,34 @@ from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
 
-chart_dataframe_serializer = ChartDataFrameSerializer()
-chart_filter_serializer = ChartFilterSerializer()
-dataclass_mongo_serializer = DataClassMongoSerializer()
-
 @dataclass
 class Repository:
 	client: pymongo.MongoClient = field(default_factory=lambda: pymongo.MongoClient(os.getenv('DB_URI'), tz_aware=True))
 
+	serializers = {
+		'chart': ChartDataFrameSerializer(),
+		'filter': ChartFilterSerializer(),
+		'dataclass': DataClassMongoSerializer(),
+	}
+
 	def __post_init__(self):
 		self.chart_collection_serializer = ChartCollectionSerializer(self.client['trading'])
 
-	def read_chart(self, chart: Chart, limit = 0, inplace = False):
+	def read_chart_raw(
+		self,
+		chart: Chart,
+		limit = 0,
+		filter: dict[str] = {},
+		select: list[str] = None
+	) -> list:
+		select = select or chart.value_fields
 		collection = self.chart_collection_serializer.serialize(chart)
-		filter = chart_filter_serializer.serialize(chart)
-		records = list(collection.find(filter, limit=limit))
-		if inplace:
-			chart.dataframe = chart_dataframe_serializer.deserialize(records, chart)
-		return records
+		filter.update(self.serializers['filter'].serialize(chart))
+		return list(collection.find(filter, limit=limit, projection = [ 'timestamp' ] + select))
+
+	def read_chart(self, chart: Chart, limit = 0, select: list[str] = None):
+		records = self.read_chart_raw(chart, limit=limit, select = select)
+		chart.dataframe = self.serializers['chart'].deserialize(records, chart, select = select)
 
 	def write_chart(self, chart: Chart):
 		data = chart.data
@@ -47,7 +56,7 @@ class Repository:
 			return
 
 		collection = self.ensure_collection_for_chart(chart)
-		rows = chart_dataframe_serializer.serialize(data)
+		rows = self.serializers['chart'].serialize(data)
 		self.upsert(collection, rows)
 
 	def upsert(self, collection: Collection, rows: list):
@@ -121,5 +130,5 @@ class Repository:
 
 	def write_backtest_report(self, report: BacktestReport):
 		collection = self.client['trading_backtest_reports'][type(report.strategy).__name__]
-		serialized_report = dataclass_mongo_serializer.serialize(report)
+		serialized_report = self.serializers['dataclass'].serialize(report)
 		collection.insert_one(serialized_report)

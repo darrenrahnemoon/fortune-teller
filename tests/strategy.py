@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from core.order import Order
 from core.broker import SimulationBroker
 from core.strategy import Strategy
@@ -11,7 +12,10 @@ from core.utils.test import describe, it
 def _():
 	@it('should backtest based on chart data')
 	def _():
+		@dataclass
 		class TestStrategy(Strategy):
+			broker: SimulationBroker = None
+
 			def setup(self):
 				self.count = 0
 
@@ -55,11 +59,11 @@ def _():
 
 				self.count += 1
 		strategy = TestStrategy()
-		strategy.broker = SimulationBroker()
-		strategy.broker.timesteps = CandleStickChart(
+		broker = SimulationBroker()
+		broker.timesteps = CandleStickChart(
 			symbol='EURUSD',
 			interval=Interval.Minute(1),
 			from_timestamp='2021-05-13 12:00',
 			to_timestamp='2021-05-13 14:10'
 		)
-		strategy.run()
+		strategy.backtest(broker)
