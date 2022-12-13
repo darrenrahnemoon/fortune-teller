@@ -72,25 +72,25 @@ class MetaTraderBroker(Broker):
 			]
 		}
 
-	def read_chart(self, chart: Chart, select: list[str] = None):
+	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
 
 		if isinstance(chart, CandleStickChart):
-			raw = self.api.copy_rates_range(
+			records = self.api.copy_rates_range(
 				chart.symbol,
 				self.serializers['interval'].serialize(chart.interval),
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 			)
-			dataframe = self.serializers['candlestick'].deserialize(raw, select = select)
+			dataframe = self.serializers['candlestick'].deserialize(records, chart)
 		elif isinstance(chart, TickChart):
-			raw = self.api.copy_ticks_range(
+			records = self.api.copy_ticks_range(
 				chart.symbol,
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = self.serializers['tick'].deserialize(raw, select = select)
+			dataframe = self.serializers['tick'].deserialize(records, chart)
 		else:
 			raise Exception(f"Unsupported chart type '{chart}'.")
 

@@ -62,9 +62,9 @@ class SimulationBroker(Broker):
 	def now(self, value: TimestampLike):
 		self._now = normalize_timestamp(value)
 
-	def read_chart(self, chart: Chart, select: list = None):
+	def read_chart(self, chart: Chart):
 		self.ensure_timestamp(chart)
-		self.repository.read_chart(chart, select = select)
+		self.repository.read_chart(chart)
 
 	def write_chart(self, chart: Chart):
 		self.repository.write_chart(chart)
@@ -127,8 +127,7 @@ class SimulationBroker(Broker):
 
 	def get_last_price(self, symbol: Symbol) -> float:
 		data = self.repository.read_chart_raw(
-			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), to_timestamp=self.now),
-			limit = 1,
+			CandleStickChart(symbol=symbol, interval=Interval.Minute(1), count=1),
 		)[0]
 		return data['close']
 

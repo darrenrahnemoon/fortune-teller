@@ -13,18 +13,24 @@ class ChartDataFrameSerializer(Serializer[pandas.DataFrame or pandas.Series, lis
 		rows = dataframe.reset_index().drop_duplicates('timestamp').to_dict(orient='records')
 		return rows
 
-	def deserialize(self, records, chart: Chart, select: list[str] = None):
-		select = select or chart.value_fields
-		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + select)
+	def deserialize(self, records, chart: Chart):
+		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.select)
 
-class ChartFilterSerializer(Serializer[Chart, dict]):
+class ChartMongoFindOptionsSerializer(Serializer[Chart, dict]):
 	def serialize(self, chart: Chart):
-		filter = { 'timestamp' : {} }
+		find_options = {}
+		find_options['projection'] = [ 'timestamp' ] + chart.select
+		filter = find_options['filter'] = {}
+		if chart.count:
+			find_options['limit'] = chart.count
+
 		if chart.from_timestamp:
+			filter['timestamp'] = {}
 			filter['timestamp']['$gte'] = chart.from_timestamp
 		if chart.to_timestamp:
+			filter.setdefault('timestamp', {})
 			filter['timestamp']['$lte'] = chart.to_timestamp
-		return filter
+		return find_options
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=False, match_args=False, kw_only=False, slots=False)
 class ChartCollectionSerializer(Serializer[Chart, str or Collection]):

@@ -15,7 +15,7 @@ def _():
 
 	@describe('charts')
 	def _():
-		@it('should read chart data from the database')
+		@it('should read chart data within the date range provided from the database')
 		def _():
 			chart = CandleStickChart(
 				symbol='EURUSD',
@@ -26,8 +26,21 @@ def _():
 
 			assert len(chart) != 0
 			assert chart.data.index.name == 'timestamp'
+			assert chart.dataframe.index.min() >= chart.from_timestamp
+			assert chart.dataframe.index.max() <= chart.to_timestamp
 			for column in chart.value_fields:
 				assert column in chart.data.columns, column
+				assert chart.data[column].isna().all() == False
+
+		@it('should read a specific number of bars from the database')
+		def _():
+			chart = CandleStickChart(
+				symbol='EURUSD',
+				interval=Interval.Minute(1),
+				from_timestamp='2021-10',
+				count=100
+			).read(simulation_broker)
+			assert len(chart) == chart.count
 
 		@it("should upsert chart data to it's historical data")
 		def _():

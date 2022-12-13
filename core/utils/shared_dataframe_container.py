@@ -19,13 +19,13 @@ class SharedDataFrameContainer:
 		pass
 
 	@property
-	def data(self):
+	def data(self) -> pandas.DataFrame:
 		return self.dataframe[self.name]
 
 	@data.setter
 	def data(self, value: pandas.DataFrame or pandas.Series):
 		if type(value) == pandas.Series and len(self.value_fields) == 1:
-			self.dataframe[self.name, self.value_fields[1]] = value
+			self.dataframe[self.name, self.value_fields[0]] = value
 			return
 
 		if type(value) == pandas.DataFrame:

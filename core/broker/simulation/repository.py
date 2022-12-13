@@ -9,7 +9,7 @@ from core.broker.simulation.report import BacktestReport
 from core.broker.simulation.serializers import (
 	ChartCollectionSerializer,
 	ChartDataFrameSerializer,
-	ChartFilterSerializer,
+	ChartMongoFindOptionsSerializer,
 	DataClassMongoSerializer
 )
 from core.broker.broker import ChartCombinations
@@ -25,29 +25,21 @@ class Repository:
 	client: pymongo.MongoClient = field(default_factory=lambda: pymongo.MongoClient(os.getenv('DB_URI'), tz_aware=True))
 
 	serializers = {
-		'chart': ChartDataFrameSerializer(),
-		'filter': ChartFilterSerializer(),
+		'dataframe': ChartDataFrameSerializer(),
+		'find_options': ChartMongoFindOptionsSerializer(),
 		'dataclass': DataClassMongoSerializer(),
 	}
 
 	def __post_init__(self):
 		self.chart_collection_serializer = ChartCollectionSerializer(self.client['trading'])
 
-	def read_chart_raw(
-		self,
-		chart: Chart,
-		limit = 0,
-		filter: dict[str] = {},
-		select: list[str] = None
-	) -> list:
-		select = select or chart.value_fields
+	def read_chart_raw(self, chart: Chart) -> list:
 		collection = self.chart_collection_serializer.serialize(chart)
-		filter.update(self.serializers['filter'].serialize(chart))
-		return list(collection.find(filter, limit=limit, projection = [ 'timestamp' ] + select))
+		return list(collection.find(**self.serializers['find_options'].serialize(chart)))
 
-	def read_chart(self, chart: Chart, limit = 0, select: list[str] = None):
-		records = self.read_chart_raw(chart, limit=limit, select = select)
-		chart.dataframe = self.serializers['chart'].deserialize(records, chart, select = select)
+	def read_chart(self, chart: Chart):
+		records = self.read_chart_raw(chart)
+		chart.dataframe = self.serializers['dataframe'].deserialize(records, chart)
 
 	def write_chart(self, chart: Chart):
 		data = chart.data
@@ -56,7 +48,7 @@ class Repository:
 			return
 
 		collection = self.ensure_collection_for_chart(chart)
-		rows = self.serializers['chart'].serialize(data)
+		rows = self.serializers['dataframe'].serialize(data)
 		self.upsert(collection, rows)
 
 	def upsert(self, collection: Collection, rows: list):

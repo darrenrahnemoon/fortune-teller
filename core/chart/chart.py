@@ -1,4 +1,3 @@
-from numpy import char
 import pandas
 import inspect
 import typing
@@ -32,24 +31,23 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	broker: 'Broker' = None
 	chart_group: 'ChartGroup' = None
 	indicators: dict[str, type['Indicator']] = field(repr=False, default_factory=dict)
+	count: int = None
 	select: list[str] = None
 
 	def __post_init__(self):
 		super().__post_init__()
 		self.dataframe = None
-
+		self.select = self.select or self.value_fields
 		for name, indicator in self.indicators.items():
 			self.attach_indicator(indicator, name=name)
 
 	def read(
 		self,
 		broker: 'Broker' = None,
-		select: list[str] = None,
 		refresh_indicators = True,
 	):
 		broker = broker or self.broker
-		select = select or self.select
-		broker.read_chart(self, select = select)
+		broker.read_chart(self)
 		if refresh_indicators:
 			self.refresh_indicators()
 		return self

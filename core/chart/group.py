@@ -31,11 +31,10 @@ class ChartGroup:
 	def read(
 		self,
 		broker: 'Broker' = None,
-		select: list[str] = None,
 		refresh_indicators = True,
 	):
 		for chart in self.charts:
-			chart.read(broker, select = select, refresh_indicators = refresh_indicators)
+			chart.read(broker, refresh_indicators = refresh_indicators)
 
 		dataframes = []
 		for chart in self.charts:

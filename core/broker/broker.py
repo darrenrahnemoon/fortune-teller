@@ -1,6 +1,9 @@
 import abc
 from dataclasses import dataclass
 
+from keras.backend import to_dense
+from keras.utils.generic_utils import to_snake_case
+
 from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
 from core.chart import Chart, Symbol
@@ -36,12 +39,16 @@ class Broker:
 		return charts
 
 	def ensure_timestamp(self, chart: Chart):
+		if chart.count:
+			if chart.to_timestamp:
+				raise Exception('Cannot read x number of datapoints before a timestamp.')
+			if chart.from_timestamp:
+				return
 		if not chart.to_timestamp:
 			chart.to_timestamp = self.now
-		return chart
 
 	@abc.abstractmethod
-	def read_chart(self, chart: Chart, select: list[str] = None) -> Chart:
+	def read_chart(self, chart: Chart) -> Chart:
 		pass
 
 	@abc.abstractmethod
