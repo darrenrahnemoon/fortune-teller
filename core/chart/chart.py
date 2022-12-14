@@ -26,7 +26,7 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	select: list[str] = None
 
 	query_fields: ClassVar[list[str]] = [ 'symbol' ]
-	timestamp_field: ClassVar[str] = Chart.timestamp_field
+	timestamp_field: ClassVar[str] = 'timestamp'
 	data_fields: ClassVar[list[str]] = []
 	volume_fields: ClassVar[list[str]] = []
 

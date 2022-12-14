@@ -19,10 +19,11 @@ def _():
 		def _():
 			chart = CandleStickChart(
 				symbol='EURUSD',
+				broker=simulation_broker,
 				interval=Interval.Minute(1),
 				from_timestamp='2021-10',
 				to_timestamp='2021-11',
-			).read(simulation_broker)
+			).read()
 
 			assert len(chart) != 0
 			assert chart.data.index.name == Chart.timestamp_field
@@ -36,10 +37,11 @@ def _():
 		def _():
 			chart = CandleStickChart(
 				symbol='EURUSD',
+				broker=simulation_broker,
 				interval=Interval.Minute(1),
 				from_timestamp='2021-10',
 				count=100
-			).read(simulation_broker)
+			).read()
 			assert len(chart) == chart.count
 
 		@it("should upsert chart data to it's historical data")
@@ -49,8 +51,8 @@ def _():
 			simulation_broker.remove_historical_data(chart)
 			assert simulation_broker.get_min_available_timestamp_for_chart(chart) == None
 			assert simulation_broker.get_max_available_timestamp_for_chart(chart) == None
-
-			chart.read(alphavantage).write(simulation_broker)
+			alphavantage.read_chart(chart)
+			simulation_broker.write_chart(chart)
 
 			assert simulation_broker.get_min_available_timestamp_for_chart(chart).date() == chart.data.index[0].date()
 			assert simulation_broker.get_max_available_timestamp_for_chart(chart).date() == chart.data.index[-1].date()

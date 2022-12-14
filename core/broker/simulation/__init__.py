@@ -78,7 +78,7 @@ class SimulationBroker(Broker):
 		self.repository.drop_collection_for_chart(chart)
 
 	@classmethod
-	def get_common_period(self, chart_group: ChartGroup) -> TimeWindow:
+	def get_common_time_window(self, chart_group: ChartGroup) -> TimeWindow:
 		from_timestamp = []
 		to_timestamp = []
 		for chart in chart_group.charts:

@@ -22,15 +22,17 @@ def _():
 			def handler(self):
 				hour_chart = CandleStickChart(
 					symbol='EURUSD',
+					broker=self.broker,
 					interval=Interval.Hour(1),
 					from_timestamp=self.broker.now - Interval.Hour(1).to_pandas_timedelta()
-				).read(self.broker)
+				).read()
 
 				minute_chart = CandleStickChart(
 					symbol='EURUSD',
+					broker=self.broker,
 					interval=Interval.Minute(1),
 					from_timestamp=self.broker.now - Interval.Hour(1).to_pandas_timedelta()
-				).read(self.broker)
+				).read()
 
 				assert hour_chart.data.iloc[-1]['high'] >= minute_chart.data.iloc[-1]['high']
 				assert hour_chart.data.iloc[-1]['low'] <= minute_chart.data.iloc[-1]['low']

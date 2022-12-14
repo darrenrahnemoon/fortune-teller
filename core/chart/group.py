@@ -14,14 +14,17 @@ class ChartGroup:
 
 	def __post_init__(self):
 		self.common_params['chart_group'] = self
-		# Update chart values from common_params after initialization
-		for key, value in self.common_params.items():
-			self.set_field(key, value)
+		self.set_fields(self.common_params)
 
 	def add_chart(self, chart: Chart):
 		for key, value in self.common_params.items():
 			setattr(chart, key, value)
 		self.charts.append(chart)
+
+	def set_fields(self, values: dict[str]):
+		for chart in self.charts:
+			for key, value in values.items():
+				setattr(chart, key, value)
 
 	def set_field(self, key: str, value):
 		for chart in self.charts:

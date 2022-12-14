@@ -10,9 +10,10 @@ def _():
 	def _():
 		chart = LineChart(
 			symbol='TREASURY_YIELD',
+			broker=alphavantage,
 			interval=Interval.Day(1),
 			maturity=Interval.Year(30)
-		).read(alphavantage)
+		).read()
 
 		assert len(chart) != 0
 		assert chart.data['value']['2022-10-28'] == 4.15

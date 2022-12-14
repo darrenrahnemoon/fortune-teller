@@ -1,5 +1,4 @@
 from itertools import product
-from typing import Generator
 
 def ensureattr(__obj, __name, __default):
 	"""Check if an attribute exists on object and if not set it to default
@@ -18,7 +17,7 @@ def ensureattr(__obj, __name, __default):
 		setattr(__obj, __name, __default)
 		return __default
 
-def product_dict(combinations: dict[list]) -> Generator[dict]:
+def product_dict(combinations: dict[list]):
 	return (
 		dict(
 			zip(combinations.keys(), combination)
