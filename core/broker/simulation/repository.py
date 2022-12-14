@@ -1,9 +1,8 @@
-import os
 import sys
 import pymongo
 import logging
 from pymongo.collection import Collection
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from core.broker.simulation.report import BacktestReport
 from core.broker.simulation.serializers import (
@@ -16,14 +15,13 @@ from core.broker.broker import ChartCombinations
 from core.chart import Chart
 from core.interval import * # HACK: used for eval to reverse __repr__
 
+from core.utils.mongo import MongoRepository
 from core.utils.time import normalize_timestamp
 
 logger = logging.getLogger(__name__)
 
 @dataclass
-class Repository:
-	client: pymongo.MongoClient = field(default_factory=lambda: pymongo.MongoClient(os.getenv('DB_URI'), tz_aware=True))
-
+class SimulationRepository(MongoRepository):
 	serializers = {
 		'dataframe': ChartDataFrameSerializer(),
 		'find_options': ChartMongoFindOptionsSerializer(),
@@ -31,7 +29,7 @@ class Repository:
 	}
 
 	def __post_init__(self):
-		self.chart_collection_serializer = ChartCollectionSerializer(self.client['trading'])
+		self.chart_collection_serializer = ChartCollectionSerializer(self.historical_data)
 
 	def read_chart_raw(self, chart: Chart) -> list:
 		collection = self.chart_collection_serializer.serialize(chart)
@@ -78,7 +76,7 @@ class Repository:
 		self.chart_collection_serializer.serialize(chart).drop()
 
 	def get_available_chart_combinations(self) -> ChartCombinations: 
-		collection_names = self.client['trading'].list_collection_names()
+		collection_names = self.historical_data.list_collection_names()
 		collection_names.sort()
 		available_data = dict()
 		for name in collection_names:
@@ -97,7 +95,7 @@ class Repository:
 			return available_data
 
 	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:
-		collection_names = self.client['trading'].list_collection_names()
+		collection_names = self.historical_data.list_collection_names()
 		collection_names.sort()
 		charts = []
 		for name in collection_names:
@@ -121,6 +119,14 @@ class Repository:
 		return normalize_timestamp(record['timestamp']) if record else None
 
 	def write_backtest_report(self, report: BacktestReport):
-		collection = self.client['trading_backtest_reports'][type(report.strategy).__name__]
+		collection = self.backtest_reports.get_collection(type(report.strategy).__name__)
 		serialized_report = self.serializers['dataclass'].serialize(report)
 		collection.insert_one(serialized_report)
+
+	@property
+	def historical_data(self):
+		return self.client['trading']
+
+	@property
+	def backtest_reports(self):
+		return self.client['trading_backtest_reports']

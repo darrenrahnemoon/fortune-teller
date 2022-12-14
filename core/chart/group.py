@@ -41,5 +41,5 @@ class ChartGroup:
 			dataframes.append(chart.dataframe)
 			chart.dataframe = None
 		dataframe = pandas.concat(dataframes, axis=1)
-		dataframe = dataframe.reindex(dataframe.columns.sort_values(), axis=1)
+		# dataframe = dataframe.reindex(dataframe.columns.sort_values(), axis=1)
 		self.dataframe = dataframe

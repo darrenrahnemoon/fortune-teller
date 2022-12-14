@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from core.broker.broker import Broker
 from core.broker.simulation.report import BacktestReport
 from core.broker.simulation.scheduler import Scheduler
-from core.broker.simulation.repository import Repository
+from core.broker.simulation.repository import SimulationRepository
 
 if typing.TYPE_CHECKING:
 	from core.strategy import Strategy
@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SimulationBroker(Broker):
-	repository = Repository()
 	scheduler: Scheduler = field(default_factory=Scheduler, init=False, repr=False)
 
 	_timesteps: pandas.DatetimeIndex = field(init=False, repr=False)
@@ -36,6 +35,11 @@ class SimulationBroker(Broker):
 
 	positions: list[Position] = field(default_factory=list, init=False, repr=False)
 	orders: list[Order] = field(default_factory=list, init=False, repr=False)
+
+	@classmethod
+	@property
+	def repository(self):
+		return SimulationRepository()
 
 	def __post_init__(self):
 		self._now = None
@@ -69,9 +73,11 @@ class SimulationBroker(Broker):
 	def write_chart(self, chart: Chart):
 		self.repository.write_chart(chart)
 
+	@classmethod
 	def remove_historical_data(self, chart: Chart):
 		self.repository.drop_collection_for_chart(chart)
 
+	@classmethod
 	def get_common_period(self, chart_group: ChartGroup) -> TimeWindow:
 		from_timestamp = []
 		to_timestamp = []
@@ -80,12 +86,15 @@ class SimulationBroker(Broker):
 			to_timestamp.append(self.get_max_available_timestamp_for_chart(chart))
 		return TimeWindow(max(from_timestamp), min(to_timestamp))
 
+	@classmethod
 	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:
 		return self.repository.get_available_charts(filter=filter, include_timestamps=include_timestamps)
 
+	@classmethod
 	def get_max_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
 		return self.repository.get_max_available_timestamp_for_chart(chart)
 
+	@classmethod
 	def get_min_available_timestamp_for_chart(self, chart: Chart) -> pandas.Timestamp:
 		return self.repository.get_min_available_timestamp_for_chart(chart)
 

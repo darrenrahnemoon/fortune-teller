@@ -1,17 +1,17 @@
 import abc
+import typing
 from dataclasses import dataclass
-
-from keras.backend import to_dense
-from keras.utils.generic_utils import to_snake_case
 
 from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
-from core.chart import Chart, Symbol
+if typing.TYPE_CHECKING:
+	from core.chart import Chart, Symbol
+
 from core.utils.time import TimestampLike, now
 from core.utils.cls import product_dict
 
 ChartCombinations = dict[
-	type[Chart], dict[str, list]
+	type['Chart'], dict[str, list]
 ]
 
 @dataclass
@@ -38,7 +38,7 @@ class Broker:
 						charts.append(chart(**combination))
 		return charts
 
-	def ensure_timestamp(self, chart: Chart):
+	def ensure_timestamp(self, chart: 'Chart'):
 		if chart.count:
 			if chart.to_timestamp:
 				raise Exception('Cannot read x number of datapoints before a timestamp.')
@@ -48,11 +48,11 @@ class Broker:
 			chart.to_timestamp = self.now
 
 	@abc.abstractmethod
-	def read_chart(self, chart: Chart) -> Chart:
+	def read_chart(self, chart: 'Chart') -> 'Chart':
 		pass
 
 	@abc.abstractmethod
-	def write_chart(self, chart: Chart) -> Chart:
+	def write_chart(self, chart: 'Chart') -> 'Chart':
 		pass
 
 	@abc.abstractmethod
@@ -68,13 +68,13 @@ class Broker:
 		pass
 
 	@abc.abstractmethod
-	def get_last_price(self, symbol: Symbol) -> float:
+	def get_last_price(self, symbol: 'Symbol') -> float:
 		pass
 
 	@abc.abstractmethod
 	def get_orders(
 		self,
-		symbol: Symbol = None,
+		symbol: 'Symbol' = None,
 		type: OrderType = None,
 		from_timestamp: TimestampLike = None,
 		to_timestamp: TimestampLike = None,
@@ -85,7 +85,7 @@ class Broker:
 	@abc.abstractmethod
 	def get_positions(
 		self,
-		symbol: Symbol = None,
+		symbol: 'Symbol' = None,
 		type: PositionType = None,
 		from_timestamp: TimestampLike = None,
 		to_timestamp: TimestampLike = None,

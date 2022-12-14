@@ -18,6 +18,13 @@ Symbol = str
 
 @dataclass
 class Chart(TimeWindow, SharedDataFrameContainer):
+	symbol: Symbol = None
+	broker: 'Broker' = None
+	chart_group: 'ChartGroup' = None
+	indicators: dict[str, type['Indicator']] = field(repr=False, default_factory=dict)
+	count: int = None
+	select: list[str] = None
+
 	query_fields = [ 'symbol' ]
 	data_fields: typing.ClassVar[list[str]] = []
 	volume_fields: typing.ClassVar[list[str]] = []
@@ -26,13 +33,6 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	@property
 	def value_fields(cls):
 		return cls.data_fields + cls.volume_fields
-
-	symbol: Symbol = None
-	broker: 'Broker' = None
-	chart_group: 'ChartGroup' = None
-	indicators: dict[str, type['Indicator']] = field(repr=False, default_factory=dict)
-	count: int = None
-	select: list[str] = None
 
 	def __post_init__(self):
 		super().__post_init__()

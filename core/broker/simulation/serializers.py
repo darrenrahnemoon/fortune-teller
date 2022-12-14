@@ -13,7 +13,7 @@ class ChartDataFrameSerializer(Serializer[pandas.DataFrame or pandas.Series, lis
 		rows = dataframe.reset_index().drop_duplicates('timestamp').to_dict(orient='records')
 		return rows
 
-	def deserialize(self, records, chart: Chart):
+	def deserialize(self, records: list[dict], chart: Chart):
 		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.select)
 
 class ChartMongoFindOptionsSerializer(Serializer[Chart, dict]):
