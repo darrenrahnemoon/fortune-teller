@@ -58,7 +58,7 @@ class SimulationRepository(MongoRepository):
 			del failed_row['_id'] # Cannot upsert a new generated `_id` on existing document
 
 			logger.debug(f'Duplicated row found. Upserting...\n{failed_row}')
-			collection.update_one({ 'timestamp': failed_row['timestamp'] }, { '$set' : failed_row })
+			collection.update_one({ Chart.timestamp_field: failed_row[Chart.timestamp_field] }, { '$set' : failed_row })
 
 			start_from = index + 1
 			if start_from == len(rows):
@@ -68,8 +68,8 @@ class SimulationRepository(MongoRepository):
 	def ensure_collection_for_chart(self, chart: Chart):
 		collection = self.chart_collection_serializer.serialize(chart)
 		index_information = collection.index_information()
-		if 'timestamp' not in index_information:
-			collection.create_index([('timestamp', pymongo.ASCENDING)], name='timestamp', unique=True)
+		if Chart.timestamp_field not in index_information:
+			collection.create_index([(Chart.timestamp_field, pymongo.ASCENDING)], name=Chart.timestamp_field, unique=True)
 		return collection
 
 	def drop_collection_for_chart(self, chart: Chart):
@@ -110,13 +110,13 @@ class SimulationRepository(MongoRepository):
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart):
 		collection = self.chart_collection_serializer.serialize(chart)
-		record = collection.find_one(sort=[('timestamp', pymongo.DESCENDING)])
-		return normalize_timestamp(record['timestamp']) if record else None
+		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.DESCENDING)])
+		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def get_min_available_timestamp_for_chart(self, chart: Chart):
 		collection = self.chart_collection_serializer.serialize(chart)
-		record = collection.find_one(sort=[('timestamp', pymongo.ASCENDING)])
-		return normalize_timestamp(record['timestamp']) if record else None
+		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.ASCENDING)])
+		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def write_backtest_report(self, report: BacktestReport):
 		collection = self.backtest_reports.get_collection(type(report.strategy).__name__)

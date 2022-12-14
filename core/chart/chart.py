@@ -1,10 +1,10 @@
 import pandas
 import inspect
-import typing
 import logging
+from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass, field
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
 	from core.indicator import Indicator
 	from core.chart.group import ChartGroup
 	from core.broker import Broker
@@ -25,9 +25,10 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	count: int = None
 	select: list[str] = None
 
-	query_fields = [ 'symbol' ]
-	data_fields: typing.ClassVar[list[str]] = []
-	volume_fields: typing.ClassVar[list[str]] = []
+	query_fields: ClassVar[list[str]] = [ 'symbol' ]
+	timestamp_field: ClassVar[str] = Chart.timestamp_field
+	data_fields: ClassVar[list[str]] = []
+	volume_fields: ClassVar[list[str]] = []
 
 	@classmethod
 	@property
@@ -41,23 +42,20 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 		for name, indicator in self.indicators.items():
 			self.attach_indicator(indicator, name=name)
 
-	def read(
-		self,
-		broker: 'Broker' = None,
-		refresh_indicators = True,
-	):
-		broker = broker or self.broker
-		broker.read_chart(self)
+	def read(self, refresh_indicators = True):
+		self.broker.read_chart(self)
 		if refresh_indicators:
 			self.refresh_indicators()
 		return self
 
-	def write(self, broker: 'Broker'):
-		broker.write_chart(self)
-		return self
-
 	@property
 	def dataframe(self):
+		"""
+		Returns:
+			pandas.DataFrame:
+				The dataframe of the chart itself if it's been populated
+				Otherwise, the dataframe of the chart group it belongs too
+		"""
 		dataframe = self._dataframe
 		if type(dataframe) != pandas.DataFrame and self.chart_group:
 			dataframe = self.chart_group.dataframe
@@ -70,19 +68,19 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 			return
 
 		if len(dataframe) == 0:
-			dataframe = pandas.DataFrame(columns = [ 'timestamp' ] + self.value_fields)
+			dataframe = pandas.DataFrame(columns = [ Chart.timestamp_field ] + self.value_fields)
 
 		if type(dataframe.index) != pandas.DatetimeIndex:
-			dataframe.index = pandas.DatetimeIndex(dataframe['timestamp'], name='timestamp')
+			dataframe.index = pandas.DatetimeIndex(dataframe[Chart.timestamp_field], name=Chart.timestamp_field)
 			if not dataframe.index.tz:
 				dataframe.index = dataframe.index.tz_localize(tz='UTC')
-			dataframe = dataframe.drop([ 'timestamp' ], axis=1)
+			dataframe = dataframe.drop([ Chart.timestamp_field ], axis=1)
 
 		if type(dataframe.columns) != pandas.MultiIndex:
 			dataframe = dataframe[[ key for key in dataframe.columns if key in self.value_fields ]]
 			dataframe.columns = pandas.MultiIndex.from_tuples(
 				[ (self.name, column) for column in dataframe.columns ],
-				names=[ 'timeseries', 'feature' ]
+				names=[ 'timeseries', 'field' ]
 			)
 		self._dataframe = dataframe
 

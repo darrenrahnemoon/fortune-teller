@@ -10,29 +10,34 @@ from core.utils.serializer import Serializer
 
 class ChartDataFrameSerializer(Serializer[pandas.DataFrame or pandas.Series, list[dict]]):
 	def serialize(self, dataframe: pandas.DataFrame):
-		rows = dataframe.reset_index().drop_duplicates('timestamp').to_dict(orient='records')
+		rows = dataframe.reset_index()\
+			.drop_duplicates(Chart.timestamp_field)\
+			.to_dict(orient='records')
 		return rows
 
 	def deserialize(self, records: list[dict], chart: Chart):
-		return pandas.DataFrame.from_records(records, columns=[ 'timestamp' ] + chart.select)
+		return pandas.DataFrame.from_records(
+			records,
+			columns = [ Chart.timestamp_field ] + chart.select
+		)
 
 class ChartMongoFindOptionsSerializer(Serializer[Chart, dict]):
 	def serialize(self, chart: Chart):
 		find_options = {}
-		find_options['projection'] = [ 'timestamp' ] + chart.select
+		find_options['projection'] = [ Chart.timestamp_field ] + chart.select
 		filter = find_options['filter'] = {}
 		if chart.count:
 			find_options['limit'] = chart.count
 
 		if chart.from_timestamp:
-			filter['timestamp'] = {}
-			filter['timestamp']['$gte'] = chart.from_timestamp
+			filter[Chart.timestamp_field] = {}
+			filter[Chart.timestamp_field]['$gte'] = chart.from_timestamp
 		if chart.to_timestamp:
-			filter.setdefault('timestamp', {})
-			filter['timestamp']['$lte'] = chart.to_timestamp
+			filter.setdefault(Chart.timestamp_field, {})
+			filter[Chart.timestamp_field]['$lte'] = chart.to_timestamp
 		return find_options
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=False, match_args=False, kw_only=False, slots=False)
+@dataclass
 class ChartCollectionSerializer(Serializer[Chart, str or Collection]):
 	database: Database
 
@@ -80,7 +85,9 @@ class DataClassMongoSerializer(Serializer[typing.Any, dict]):
 			result: dict = dict()
 			for field_name, field_type in value.__annotations__.items():
 				field_value = getattr(value, field_name)
-				field_type_name = field_type if type(field_type) == str else field_type.__name__
+				field_type_name = field_type if type(field_type) == str else field_type.__name__ # For typing.TYPE_CHECKING
+
+				# HACK: for order and position only include their IDs if they're 
 				if field_type_name in [ 'Order', 'Position' ] and field_value != None:
 					result[field_name] = field_value.id
 					continue

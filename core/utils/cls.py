@@ -1,5 +1,5 @@
-import functools
-import itertools
+from itertools import product
+from typing import Generator
 
 def ensureattr(__obj, __name, __default):
 	"""Check if an attribute exists on object and if not set it to default
@@ -18,18 +18,10 @@ def ensureattr(__obj, __name, __default):
 		setattr(__obj, __name, __default)
 		return __default
 
-class cachedclassproperty(object):
-	"""Converts the method to a class getter that is cached after the first call"""
-	def __init__(self, func):
-		self.func = functools.cache(func)
-	def __get__(self, obj, owner):
-		return self.func(owner)
-
-class hybridmethod(classmethod):
-	"""Converts the method to a method who's first argument is the class or the instance depending on how it's been called"""
-	def __get__(self, instance, type_):
-		descriptor_get = super().__get__ if instance is None else self.__func__.__get__
-		return descriptor_get(instance, type_)
-
-def product_dict(combinations: dict[list]):
-	return (dict(zip(combinations.keys(), combination)) for combination in itertools.product(*combinations.values()))
+def product_dict(combinations: dict[list]) -> Generator[dict]:
+	return (
+		dict(
+			zip(combinations.keys(), combination)
+		)
+		for combination in product(*combinations.values())
+	)

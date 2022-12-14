@@ -52,7 +52,7 @@ class SimulationBroker(Broker):
 	def timesteps(self, value: Chart or pandas.DatetimeIndex):
 		if isinstance(value, Chart):
 			records = self.repository.read_chart_raw(value)
-			self._timesteps = pandas.DatetimeIndex([ record['timestamp'] for record in records ])
+			self._timesteps = pandas.DatetimeIndex([ record[Chart.timestamp_field] for record in records ])
 		else:
 			self._timesteps = value
 		if type(self._timesteps) == pandas.DatetimeIndex:

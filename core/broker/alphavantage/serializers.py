@@ -1,4 +1,5 @@
 import pandas
+from core.chart import Chart
 from core.utils.serializer import Serializer
 
 class AlphaVantageLineChartDataFrameSerializer(Serializer[pandas.DataFrame, list[dict[str]]]):
@@ -11,6 +12,6 @@ class AlphaVantageLineChartDataFrameSerializer(Serializer[pandas.DataFrame, list
 
 		# Timestamp-related transformations
 		dataframe.index = pandas.to_datetime(dataframe.index)
-		dataframe.index.name = 'timestamp'
+		dataframe.index.name = Chart.timestamp_field
 		dataframe = dataframe.reindex(index=dataframe.index[::-1])
 		return dataframe

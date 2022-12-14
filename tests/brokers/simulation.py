@@ -1,4 +1,4 @@
-from core.chart import CandleStickChart, LineChart
+from core.chart import CandleStickChart, LineChart, Chart
 from core.broker import SimulationBroker, AlphaVantageBroker
 from core.strategy import Strategy
 from core.order import Order
@@ -25,7 +25,7 @@ def _():
 			).read(simulation_broker)
 
 			assert len(chart) != 0
-			assert chart.data.index.name == 'timestamp'
+			assert chart.data.index.name == Chart.timestamp_field
 			assert chart.dataframe.index.min() >= chart.from_timestamp
 			assert chart.dataframe.index.max() <= chart.to_timestamp
 			for column in chart.value_fields:

@@ -7,7 +7,7 @@ class MetaTraderCandleStickChartDataFrameSerializer(Serializer[pandas.DataFrame,
 	def deserialize(self, records, chart: Chart):
 		dataframe = pandas.DataFrame(records)
 		if 'time' in dataframe.columns:
-			dataframe['timestamp'] = pandas.to_datetime(dataframe['time'], unit='s', utc=True)
+			dataframe[Chart.timestamp_field] = pandas.to_datetime(dataframe['time'], unit='s', utc=True)
 			dataframe = dataframe.drop(columns='time')
 
 		dataframe = dataframe.drop(
@@ -30,7 +30,7 @@ class MetaTraderTickChartDataFrameSerializer(Serializer[pandas.DataFrame, typing
 			})
 
 		if 'time_msc' in dataframe.columns and 'time' in dataframe.columns:
-			dataframe['timestamp'] = pandas.to_datetime(dataframe['time_msc'], unit='ms', utc=True)
+			dataframe[Chart.timestamp_field] = pandas.to_datetime(dataframe['time_msc'], unit='ms', utc=True)
 			dataframe = dataframe.drop(columns=[ 'time', 'time_msc' ])
 
 		dataframe = dataframe.drop(

@@ -48,11 +48,11 @@ class Broker:
 			chart.to_timestamp = self.now
 
 	@abc.abstractmethod
-	def read_chart(self, chart: 'Chart') -> 'Chart':
+	def read_chart(self, chart: 'Chart'):
 		pass
 
 	@abc.abstractmethod
-	def write_chart(self, chart: 'Chart') -> 'Chart':
+	def write_chart(self, chart: 'Chart'):
 		pass
 
 	@abc.abstractmethod
