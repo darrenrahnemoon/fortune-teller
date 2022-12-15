@@ -1,10 +1,9 @@
-import pandas
-from pymongo import common
-
-from core.utils.test import it, describe
 from core.interval import Interval
 from core.chart import ChartGroup, CandleStickChart, LineChart
 from core.broker import SimulationBroker
+
+from core.utils.test import it, describe
+from core.utils.time import normalize_timestamp
 
 @describe('ChartGroup')
 def _():
@@ -14,8 +13,8 @@ def _():
 		chart_group = ChartGroup(
 			common_params = {
 				'broker': broker,
-				'from_timestamp': '2017-01-04',
-				'to_timestamp': '2017-01-31',
+				'from_timestamp': normalize_timestamp('2017-01-04'), # SHOULD DO: make chart fields normalize upon update
+				'to_timestamp': normalize_timestamp('2017-01-31'),
 			}
 		)
 		chart_group.add_chart(CandleStickChart(symbol='USDCAD', interval=Interval.Minute(1)))
