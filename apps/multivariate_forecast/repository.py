@@ -7,9 +7,6 @@ from core.utils.mongo import MongoRepository
 
 @dataclass
 class NextPeriodHighLowRepository(MongoRepository):
-	def has_dataset(self, chart_group: ChartGroup) -> bool:
-		return self.get_collection_for_chart_group(chart_group).count_documents({}) > 0
-
 	def get_collection_for_chart_group(self, chart_group: ChartGroup) -> Collection:
 		# HACK: generate the unique identifier of chart group here. Ideally get the individual datastructures to implement __hash__
 		return self.training_datasets[

@@ -65,4 +65,4 @@ strategy = MultivariateForecastStrategy(
 	forward_window_length=Interval.Hour(1),
 	backward_window_length=Interval.Day(1)
 )
-strategy.model.prepare_dataset()
+strategy.model.cache_dataset()

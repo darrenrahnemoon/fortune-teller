@@ -1,19 +1,17 @@
-from core.chart.chart import Chart
-from typing import Callable
-from core.broker.simulation import SimulationBroker
 import functools
 import math
-from re import S
-import numpy
 import pandas
+from typing import Callable
 from dataclasses import dataclass
 
 from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
 from keras_tuner import HyperParameters
 
-from core.chart import ChartGroup, CandleStickChart
+from core.chart import ChartGroup, Chart
+from core.broker import SimulationBroker
 from .repository import NextPeriodHighLowRepository
+from core.utils.math import mean_normalize
 
 @dataclass
 class NextPeriodHighLow:
@@ -71,16 +69,22 @@ class NextPeriodHighLow:
 		)
 		return model
 
-	def prepare_dataset(self):
+	def cache_dataset(self, overwrite = False, batch_size = 1000):
 		chart_group, trading_focus = self.build_chart_group()
-		if self.repository.has_dataset(chart_group):
-			return
-		dataset_item_length = self.backward_window_length + self.forward_window_length
+
+		collection = self.repository.get_collection_for_chart_group(chart_group)
+		if collection.count_documents({}) > 0:
+			if overwrite:
+				collection.drop()
+			else:
+				return
+
+		total_window_length = self.backward_window_length + self.forward_window_length
 
 		chart_group.set_fields({
 			'from_timestamp': None,
 			'to_timestamp': None,
-			'count': dataset_item_length * 100,
+			'count': total_window_length * 2,
 		})
 
 		common_time_window = SimulationBroker.get_common_time_window(chart_group)
@@ -89,15 +93,17 @@ class NextPeriodHighLow:
 			chart_group.set_field('from_timestamp', timestamp)
 			chart_group.read()
 
-			print(chart_group.dataframe)
-			self.preprocess_input(chart_group, adjust_window_length=False)
-			print(chart_group.dataframe)
-
-			if len(chart_group.dataframe) < dataset_item_length:
+			self.preprocess_input(chart_group, is_production=False)
+			collection.insert_many(dataset_items.dataframe.)
+			if len(chart_group.dataframe) < total_window_length:
 				break
 			timestamp = chart_group.dataframe.index[1]
 
-	def preprocess_input(self, chart_group: ChartGroup = None, adjust_window_length = True) -> ChartGroup:
+	def preprocess_input(
+		self,
+		chart_group: ChartGroup = None,
+		is_production = True
+	):
 		for chart in chart_group.charts:
 			data: pandas.DataFrame = chart.data
 			data = data.interpolate(method='linear')
@@ -106,7 +112,8 @@ class NextPeriodHighLow:
 			chart.refresh_indicators()
 
 		dataframe = chart_group.dataframe
-		if adjust_window_length:
+		dataframe = mean_normalize(dataframe)
+		if is_production:
 			if len(dataframe) < self.backward_window_length:
 				# Pad dataframe
 				pass
@@ -114,6 +121,18 @@ class NextPeriodHighLow:
 				dataframe = dataframe.tail(self.backward_window_length)
 		dataframe = dataframe.fillna(0)
 		chart_group.dataframe = dataframe
+
+	def to_dataset_item(self, chart_group: ChartGroup, trading_focus: list[Chart]):
+		result = dict()
+		result['input'] = mean_normalize(chart_group.dataframe[:self.backward_window_length]).values.tolist()
+		result['output'] = []
+		for chart in trading_focus:
+			data = chart.data[-self.forward_window_length:]
+			result['output'].append([
+				data['high'].max(),
+				data['low'].min()
+			])
+		return result
 
 	@property
 	@functools.cache
