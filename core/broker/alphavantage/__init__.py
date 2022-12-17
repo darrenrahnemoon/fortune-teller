@@ -1,14 +1,15 @@
 import functools
 import time
 import os
+import pandas
 import requests
 import logging
 from dataclasses import dataclass, field
 
 from core.broker.broker import Broker, ChartCombinations
-from core.broker.alphavantage.serializers import AlphaVantageLineChartDataFrameSerializer
 from core.chart import LineChart
 from core.interval import Interval
+from .serializers import LineChartDataFrameRecordsSerializer
 
 from core.utils.serializer import MappingSerializer
 
@@ -17,25 +18,23 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AlphaVantageBroker(Broker):
 	api_key: str = field(default_factory=lambda: os.getenv('ALPHAVANTAGE_API_KEY'))
-	serializers = {
-		'chart': AlphaVantageLineChartDataFrameSerializer(),
-		'interval': MappingSerializer({
-			Interval.Day(1): 'daily',
-			Interval.Week(1): 'weekly',
-			Interval.Month(1): 'monthly',
-			Interval.Quarter(1): 'quarterly',
-			Interval.Month(6) : 'semiannual',
-			Interval.Year(1): 'annual',
-		}),
-		'maturity': MappingSerializer({
-			Interval.Month(3): '3month',
-			Interval.Year(2): '2year',
-			Interval.Year(5): '5year',
-			Interval.Year(7): '7year',
-			Interval.Year(10): '10year',
-			Interval.Year(30): '30year',
-		})
-	}
+	dataframe_records_serializer = LineChartDataFrameRecordsSerializer()
+	interval_serializer = MappingSerializer({
+		Interval.Day(1): 'daily',
+		Interval.Week(1): 'weekly',
+		Interval.Month(1): 'monthly',
+		Interval.Quarter(1): 'quarterly',
+		Interval.Month(6) : 'semiannual',
+		Interval.Year(1): 'annual',
+	})
+	treasury_yield_maturity_serializer = MappingSerializer({
+		Interval.Month(3): '3month',
+		Interval.Year(2): '2year',
+		Interval.Year(5): '5year',
+		Interval.Year(7): '7year',
+		Interval.Year(10): '10year',
+		Interval.Year(30): '30year',
+	})
 
 	@classmethod
 	@functools.cache
@@ -94,14 +93,14 @@ class AlphaVantageBroker(Broker):
 			]
 		}
 
-	def read_chart(self, chart: LineChart, **kwargs):
+	def read_chart(self, chart: LineChart, **kwargs) -> pandas.DataFrame:
 		params = dict(
 			apikey = self.api_key,
 			datatype = 'json',
 			outputsize = 'full',
 			function = chart.symbol,
-			interval = self.serializers['interval'].serialize(chart.interval),
-			maturity = self.serializers['maturity'].serialize(chart.maturity)
+			interval = self.interval_serializer.serialize(chart.interval),
+			maturity = self.treasury_yield_maturity_serializer.serialize(chart.maturity)
 		)
 
 		response = requests.get('https://www.alphavantage.co/query', params=params).json()
@@ -111,4 +110,4 @@ class AlphaVantageBroker(Broker):
 			time.sleep(60) # Alphavantage only allows 5 requests per minute
 			return self.read_chart(chart)
 
-		chart.dataframe = self.serializers['chart'].deserialize(response['data'])
+		return self.dataframe_records_serializer.to_dataframe(response['data'], chart)

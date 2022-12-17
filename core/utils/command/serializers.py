@@ -1,13 +1,11 @@
-import typing
 import logging
-from dataclasses import dataclass
 
 from core.utils.serializer import Serializer
 from core.utils.collection import is_any_of
 
 logger = logging.getLogger(__name__)
 
-class CommandArgumentSerializer(Serializer[typing.Any, str]):
+class CommandArgumentSerializer(Serializer):
 	def __init__(self, from_type: type[object], include_subclasses = True):
 		self.from_type = from_type
 

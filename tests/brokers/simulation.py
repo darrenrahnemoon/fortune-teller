@@ -46,12 +46,12 @@ def _():
 
 		@it("should upsert chart data to it's historical data")
 		def _():
-			chart = LineChart(symbol='INFLATION', interval=Interval.Year(1))
+			chart = LineChart(symbol='INFLATION', interval=Interval.Year(1), broker=alphavantage)
 
 			simulation_broker.remove_historical_data(chart)
 			assert simulation_broker.get_min_available_timestamp_for_chart(chart) == None
 			assert simulation_broker.get_max_available_timestamp_for_chart(chart) == None
-			alphavantage.read_chart(chart)
+			chart.read()
 			simulation_broker.write_chart(chart)
 
 			assert simulation_broker.get_min_available_timestamp_for_chart(chart).date() == chart.data.index[0].date()

@@ -1,5 +1,6 @@
 import abc
 import typing
+import pandas
 from dataclasses import dataclass
 
 from core.order import Order, OrderStatus, OrderType
@@ -48,7 +49,7 @@ class Broker:
 			chart.to_timestamp = self.now
 
 	@abc.abstractmethod
-	def read_chart(self, chart: 'Chart'):
+	def read_chart(self, chart: 'Chart') -> pandas.DataFrame:
 		pass
 
 	@abc.abstractmethod

@@ -69,8 +69,6 @@ class Interval:
 	def to_numpy_timedelta(self) -> str:
 		return numpy.timedelta64(self._real_amount, self.numpy_timedelta_unit)
 
-	def to_broker(self, broker: type['Broker'] or 'Broker' = None):
-		return broker.serializers['interval'].serialize(self)
 
 class Millisecond(Interval):
 	pandas_timedelta_unit='milliseconds'

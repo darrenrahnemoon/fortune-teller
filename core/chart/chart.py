@@ -43,7 +43,8 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 			self.attach_indicator(indicator, name=name)
 
 	def read(self, refresh_indicators = True):
-		self.broker.read_chart(self)
+		self.dataframe = self.broker.read_chart(self)
+
 		if refresh_indicators:
 			self.refresh_indicators()
 		return self
@@ -63,25 +64,6 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 
 	@dataframe.setter
 	def dataframe(self, dataframe: pandas.DataFrame):
-		if type(dataframe) != pandas.DataFrame:
-			self._dataframe = dataframe
-			return
-
-		if len(dataframe) == 0:
-			dataframe = pandas.DataFrame(columns = [ Chart.timestamp_field ] + self.value_fields)
-
-		if type(dataframe.index) != pandas.DatetimeIndex:
-			dataframe.index = pandas.DatetimeIndex(dataframe[Chart.timestamp_field], name=Chart.timestamp_field)
-			if not dataframe.index.tz:
-				dataframe.index = dataframe.index.tz_localize(tz='UTC')
-			dataframe = dataframe.drop([ Chart.timestamp_field ], axis=1)
-
-		if type(dataframe.columns) != pandas.MultiIndex:
-			dataframe = dataframe[[ key for key in dataframe.columns if key in self.value_fields ]]
-			dataframe.columns = pandas.MultiIndex.from_tuples(
-				[ (self.name, column) for column in dataframe.columns ],
-				names=[ 'timeseries', 'field' ]
-			)
 		self._dataframe = dataframe
 
 	def attach_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):

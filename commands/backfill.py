@@ -1,7 +1,4 @@
-from core.utils.cls import product_dict
-import itertools
 import logging
-from numpy import e
 import pandas
 
 from core.interval import * # Needed for `eval`
@@ -10,6 +7,7 @@ from core.broker import SimulationBroker
 from core.utils.command import Command, map_dict_to_argument
 from core.utils.module import import_module
 from core.utils.time import normalize_timestamp, now
+from core.utils.cls import product_dict
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +50,7 @@ class BackfillHistoricalDataCommand(Command):
 		for combination in product_dict(combinations):
 			increments = []
 			chart_class = combination.pop('chart')
-			chart = chart_class(**combination)
+			chart = chart_class(broker=from_broker, **combination)
 			if isinstance(chart, TickChart):
 				increments = pandas.date_range(
 					start=self.args.from_timestamp,
@@ -66,5 +64,5 @@ class BackfillHistoricalDataCommand(Command):
 				chart.from_timestamp = increments[index - 1]
 				chart.to_timestamp = increments[index]
 				logger.info(f'Backfilling {chart}...')
-				from_broker.read_chart(chart)
+				chart.read()
 				to_broker.write_chart(chart)

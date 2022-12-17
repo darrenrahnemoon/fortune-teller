@@ -6,9 +6,9 @@ import random
 from dataclasses import dataclass, field
 
 from core.broker.broker import Broker
-from core.broker.simulation.report import BacktestReport
-from core.broker.simulation.scheduler import Scheduler
-from core.broker.simulation.repository import SimulationRepository
+from .report import BacktestReport
+from .scheduler import Scheduler
+from .repository import SimulationRepository
 
 if typing.TYPE_CHECKING:
 	from core.strategy import Strategy
@@ -66,9 +66,9 @@ class SimulationBroker(Broker):
 	def now(self, value: TimestampLike):
 		self._now = normalize_timestamp(value)
 
-	def read_chart(self, chart: Chart):
+	def read_chart(self, chart: Chart) -> pandas.DataFrame:
 		self.ensure_timestamp(chart)
-		self.repository.read_chart(chart)
+		return self.repository.read_chart(chart)
 
 	def write_chart(self, chart: Chart):
 		self.repository.write_chart(chart)
@@ -84,7 +84,11 @@ class SimulationBroker(Broker):
 		for chart in chart_group.charts:
 			from_timestamp.append(self.get_min_available_timestamp_for_chart(chart))
 			to_timestamp.append(self.get_max_available_timestamp_for_chart(chart))
-		return TimeWindow(max(from_timestamp), min(to_timestamp))
+
+		return TimeWindow(
+			from_timestamp = max(from_timestamp),
+			to_timestamp = min(to_timestamp)
+		)
 
 	@classmethod
 	def get_available_charts(self, filter = {}, include_timestamps = False) -> list[Chart]:

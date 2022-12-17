@@ -1,17 +1,16 @@
 import pandas
 from core.chart import Chart
-from core.utils.serializer import Serializer
+from core.chart.serializers import ChartDataFrameRecordsSerializer
 
-class AlphaVantageLineChartDataFrameSerializer(Serializer[pandas.DataFrame, list[dict[str]]]):
-	def deserialize(self, records):
+class LineChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
+	def to_dataframe(self, records, chart):
 		dataframe = pandas.DataFrame.from_records(records, index='date')
 
-		# Value-related transformations
 		dataframe = dataframe[dataframe['value'] != '.']
 		dataframe['value'] = dataframe['value'].astype(float)
 
-		# Timestamp-related transformations
 		dataframe.index = pandas.to_datetime(dataframe.index)
 		dataframe.index.name = Chart.timestamp_field
-		dataframe = dataframe.reindex(index=dataframe.index[::-1])
-		return dataframe
+		dataframe = dataframe.reindex(index = dataframe.index[::-1])
+
+		return super().to_dataframe(dataframe, chart)

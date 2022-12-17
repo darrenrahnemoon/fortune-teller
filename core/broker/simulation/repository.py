@@ -5,11 +5,11 @@ from pymongo.collection import Collection
 from dataclasses import dataclass
 
 from core.broker.simulation.report import BacktestReport
+from core.chart.serializers import ChartDataFrameRecordsSerializer
 from core.broker.simulation.serializers import (
 	ChartCollectionSerializer,
-	ChartDataFrameSerializer,
 	ChartMongoFindOptionsSerializer,
-	DataClassMongoSerializer
+	DataClassMongoDocumentSerializer
 )
 from core.broker.broker import ChartCombinations
 from core.chart import Chart
@@ -22,22 +22,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SimulationRepository(MongoRepository):
-	serializers = {
-		'dataframe': ChartDataFrameSerializer(),
-		'find_options': ChartMongoFindOptionsSerializer(),
-		'dataclass': DataClassMongoSerializer(),
-	}
+	dataframe_records_serializer = ChartDataFrameRecordsSerializer()
+	mongo_find_options_serializer = ChartMongoFindOptionsSerializer()
+	dataclass_mongo_document_serializer = DataClassMongoDocumentSerializer()
 
 	def __post_init__(self):
 		self.chart_collection_serializer = ChartCollectionSerializer(self.historical_data)
 
 	def read_chart_raw(self, chart: Chart) -> list:
-		collection = self.chart_collection_serializer.serialize(chart)
-		return list(collection.find(**self.serializers['find_options'].serialize(chart)))
+		collection = self.chart_collection_serializer.to_collection(chart)
+		return list(collection.find(**self.mongo_find_options_serializer.to_find_options(chart)))
 
-	def read_chart(self, chart: Chart):
+	def read_chart(self, chart: Chart) -> pandas.DataFrame:
 		records = self.read_chart_raw(chart)
-		chart.dataframe = self.serializers['dataframe'].deserialize(records, chart)
+		return self.dataframe_records_serializer.to_dataframe(records, chart)
 
 	def write_chart(self, chart: Chart):
 		data = chart.data
@@ -46,7 +44,7 @@ class SimulationRepository(MongoRepository):
 			return
 
 		collection = self.ensure_collection_for_chart(chart)
-		rows = self.serializers['dataframe'].serialize(data)
+		rows = self.dataframe_records_serializer.to_records(data)
 		self.upsert(collection, rows)
 
 	def upsert(self, collection: Collection, rows: list):
@@ -66,21 +64,21 @@ class SimulationRepository(MongoRepository):
 			self.upsert(collection, rows[start_from:])
 
 	def ensure_collection_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.serialize(chart)
+		collection = self.chart_collection_serializer.to_collection(chart)
 		index_information = collection.index_information()
 		if Chart.timestamp_field not in index_information:
 			collection.create_index([(Chart.timestamp_field, pymongo.ASCENDING)], name=Chart.timestamp_field, unique=True)
 		return collection
 
 	def drop_collection_for_chart(self, chart: Chart):
-		self.chart_collection_serializer.serialize(chart).drop()
+		self.chart_collection_serializer.to_collection(chart).drop()
 
 	def get_available_chart_combinations(self) -> ChartCombinations: 
 		collection_names = self.historical_data.list_collection_names()
 		collection_names.sort()
 		available_data = dict()
 		for name in collection_names:
-			chart = self.chart_collection_serializer.deserialize(name)
+			chart = self.chart_collection_serializer.to_chart(name)
 			combinations = available_data.setdefault(type(chart), [])
 			symbol_combinations = next((combination for combination in combinations if chart.symbol in combination['symbol'] ), None)
 			if symbol_combinations == None:
@@ -99,7 +97,7 @@ class SimulationRepository(MongoRepository):
 		collection_names.sort()
 		charts = []
 		for name in collection_names:
-			chart = self.chart_collection_serializer.deserialize(name)
+			chart = self.chart_collection_serializer.to_chart(name)
 			if not filter.items() <= chart.__dict__.items():
 				continue
 			if include_timestamps:
@@ -109,18 +107,18 @@ class SimulationRepository(MongoRepository):
 		return charts
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.serialize(chart)
+		collection = self.chart_collection_serializer.to_collection(chart)
 		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.DESCENDING)])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def get_min_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.serialize(chart)
+		collection = self.chart_collection_serializer.to_collection(chart)
 		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.ASCENDING)])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def write_backtest_report(self, report: BacktestReport):
 		collection = self.backtest_reports.get_collection(type(report.strategy).__name__)
-		serialized_report = self.serializers['dataclass'].serialize(report)
+		serialized_report = self.dataclass_mongo_document_serializer.to_mongo_document(report)
 		collection.insert_one(serialized_report)
 
 	@property

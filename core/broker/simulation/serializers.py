@@ -4,25 +4,13 @@ from pymongo.database import Database
 from pymongo.collection import Collection
 from dataclasses import dataclass
 
-from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
 from core.chart.chart import Chart
+from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
 from core.utils.serializer import Serializer
 
-class ChartDataFrameSerializer(Serializer[pandas.DataFrame or pandas.Series, list[dict]]):
-	def serialize(self, dataframe: pandas.DataFrame):
-		rows = dataframe.reset_index()\
-			.drop_duplicates(Chart.timestamp_field)\
-			.to_dict(orient='records')
-		return rows
 
-	def deserialize(self, records: list[dict], chart: Chart):
-		return pandas.DataFrame.from_records(
-			records,
-			columns = [ Chart.timestamp_field ] + chart.select
-		)
-
-class ChartMongoFindOptionsSerializer(Serializer[Chart, dict]):
-	def serialize(self, chart: Chart):
+class ChartMongoFindOptionsSerializer(Serializer):
+	def to_find_options(self, chart: Chart):
 		find_options = {}
 		find_options['projection'] = [ Chart.timestamp_field ] + chart.select
 		filter = find_options['filter'] = {}
@@ -38,14 +26,14 @@ class ChartMongoFindOptionsSerializer(Serializer[Chart, dict]):
 		return find_options
 
 @dataclass
-class ChartCollectionSerializer(Serializer[Chart, str or Collection]):
+class ChartCollectionSerializer(Serializer):
 	database: Database
 
-	def serialize(self, chart: Chart):
+	def to_collection(self, chart: Chart):
 		collection = f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"
 		return self.database[collection]
 
-	def deserialize(self, collection: str or Collection):
+	def to_chart(self, collection: str or Collection):
 		if type(collection) == Collection:
 			collection = collection.name
 		chunks = collection.split('.')
@@ -54,8 +42,8 @@ class ChartCollectionSerializer(Serializer[Chart, str or Collection]):
 		query_fields = query_fields + [ eval(chunk) for chunk in chunks[2:] ]
 		return chart_class(**dict(zip(chart_class.query_fields, query_fields)))
 
-class DataClassMongoSerializer(Serializer[typing.Any, dict]):
-	def serialize(self, value):
+class DataClassMongoDocumentSerializer(Serializer):
+	def to_mongo_document(self, value):
 		_type = type(value)
 
 		# Exceptional non-primitive data types that pymongo can consume 
@@ -67,19 +55,19 @@ class DataClassMongoSerializer(Serializer[typing.Any, dict]):
 			return repr(value)
 
 		if _type == list:
-			return [ self.serialize(item) for item in value ]
+			return [ self.to_mongo_document(item) for item in value ]
 
 		if _type == dict:
-			return { key: self.serialize(value[key]) for key in value }
+			return { key: self.to_mongo_document(value[key]) for key in value }
 
 		if _type == pandas.Series:
-			return self.serialize([
+			return self.to_mongo_document([
 				dict(timestamp=timestamp, value=value)
 				for timestamp, value in value.to_dict().items() 
 			])
 
 		if _type == pandas.DataFrame:
-			return self.serialize(value.to_dict('records'))
+			return self.to_mongo_document(value.to_dict('records'))
 
 		if hasattr(value, '__annotations__'):
 			result: dict = dict()
@@ -91,6 +79,6 @@ class DataClassMongoSerializer(Serializer[typing.Any, dict]):
 				if field_type_name in [ 'Order', 'Position' ] and field_value != None:
 					result[field_name] = field_value.id
 					continue
-				result[field_name] = self.serialize(field_value)
-			return self.serialize(result)
+				result[field_name] = self.to_mongo_document(field_value)
+			return self.to_mongo_document(result)
 		return value
