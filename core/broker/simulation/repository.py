@@ -1,7 +1,5 @@
-import sys
 import pymongo
 import logging
-from pymongo.collection import Collection
 from dataclasses import dataclass
 
 from core.broker.simulation.report import BacktestReport
@@ -25,12 +23,10 @@ class SimulationRepository(MongoRepository):
 	dataframe_records_serializer = ChartDataFrameRecordsSerializer()
 	mongo_find_options_serializer = ChartMongoFindOptionsSerializer()
 	dataclass_mongo_document_serializer = DataClassMongoDocumentSerializer()
-
-	def __post_init__(self):
-		self.chart_collection_serializer = ChartCollectionSerializer(self.historical_data)
+	chart_collection_serializer = ChartCollectionSerializer()
 
 	def read_chart_raw(self, chart: Chart) -> list:
-		collection = self.chart_collection_serializer.to_collection(chart)
+		collection = self.historical_data[self.chart_collection_serializer.to_collection_name(chart)]
 		return list(collection.find(**self.mongo_find_options_serializer.to_find_options(chart)))
 
 	def read_chart(self, chart: Chart) -> pandas.DataFrame:
@@ -47,31 +43,16 @@ class SimulationRepository(MongoRepository):
 		rows = self.dataframe_records_serializer.to_records(data)
 		self.upsert(collection, rows)
 
-	def upsert(self, collection: Collection, rows: list):
-		try:
-			collection.insert_many(rows)
-		except:
-			index = sys.exc_info()[1].details['writeErrors'][0]['index']
-			failed_row = rows[index]
-			del failed_row['_id'] # Cannot upsert a new generated `_id` on existing document
-
-			logger.debug(f'Duplicated row found. Upserting...\n{failed_row}')
-			collection.update_one({ Chart.timestamp_field: failed_row[Chart.timestamp_field] }, { '$set' : failed_row })
-
-			start_from = index + 1
-			if start_from == len(rows):
-				return
-			self.upsert(collection, rows[start_from:])
-
 	def ensure_collection_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.to_collection(chart)
-		index_information = collection.index_information()
-		if Chart.timestamp_field not in index_information:
+		collection = self.historical_data[self.chart_collection_serializer.to_collection_name(chart)]
+
+		if Chart.timestamp_field not in collection.index_information():
 			collection.create_index([(Chart.timestamp_field, pymongo.ASCENDING)], name=Chart.timestamp_field, unique=True)
+
 		return collection
 
 	def drop_collection_for_chart(self, chart: Chart):
-		self.chart_collection_serializer.to_collection(chart).drop()
+		self.historical_data[self.chart_collection_serializer.to_collection_name(chart)].drop()
 
 	def get_available_chart_combinations(self) -> ChartCombinations: 
 		collection_names = self.historical_data.list_collection_names()
@@ -107,12 +88,12 @@ class SimulationRepository(MongoRepository):
 		return charts
 
 	def get_max_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.to_collection(chart)
+		collection = self.historical_data[self.chart_collection_serializer.to_collection_name(chart)]
 		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.DESCENDING)])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def get_min_available_timestamp_for_chart(self, chart: Chart):
-		collection = self.chart_collection_serializer.to_collection(chart)
+		collection = self.historical_data[self.chart_collection_serializer.to_collection_name(chart)]
 		record = collection.find_one(sort=[(Chart.timestamp_field, pymongo.ASCENDING)])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 

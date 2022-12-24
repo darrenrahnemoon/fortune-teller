@@ -1,52 +1,54 @@
 import pandas
-from collections import defaultdict
 
+from core.utils.collection import is_any_of
 from core.chart import Chart, ChartGroup
 from core.utils.serializer import Serializer
 
+MULTI_INDEX_COLUMN_SEPARATOR = ','
+
 class ChartDataFrameRecordsSerializer(Serializer):
-	# Note: this serializer is the only serializer that mutates mutates the dataframe
-	def to_dataframe(self, dataframe: pandas.DataFrame or list, chart: Chart) -> pandas.DataFrame:
-		if type(dataframe) == list:
-			dataframe = pandas.DataFrame.from_records(
-				dataframe,
-				columns = [ Chart.timestamp_field ] + chart.select
-			)
+	# Note: this serializer is the only serializer that will mutate the dataframe
+	def to_dataframe(self, value: pandas.DataFrame or list, chart: Chart = None) -> pandas.DataFrame:
+		# Convert records to dataframe
+		if type(value) == list:
+			value = pandas.DataFrame.from_records(value)
 
-		if type(dataframe) != pandas.DataFrame:
-			return dataframe
+		# Skip if not a dataframe
+		if type(value) != pandas.DataFrame:
+			return value
 
-		if len(dataframe) == 0:
-			dataframe = pandas.DataFrame(columns = [ Chart.timestamp_field ] + chart.select)
+		# Empty dataframes might not have the right columns
+		if len(value) == 0:
+			value = pandas.DataFrame(columns = [ Chart.timestamp_field ])
 
-		if type(dataframe.index) != pandas.DatetimeIndex:
-			dataframe.index = pandas.DatetimeIndex(dataframe[Chart.timestamp_field], name=Chart.timestamp_field)
-	
-		if not dataframe.index.tz:
-			dataframe.index = dataframe.index.tz_localize(tz='UTC')
+		# Clean up timestamp
+		if type(value.index) != pandas.DatetimeIndex:
+			value.index = pandas.DatetimeIndex(value[Chart.timestamp_field], name=Chart.timestamp_field)
+			value = value.drop(columns=[ Chart.timestamp_field ])
+		if not value.index.tz:
+			value.index = value.index.tz_localize(tz='UTC')
 
-		if type(dataframe.columns) != pandas.MultiIndex:
-			dataframe = dataframe[[ key for key in dataframe.columns if key in chart.select ]]
-			dataframe.columns = pandas.MultiIndex.from_tuples(
-				[ (chart.name, column) for column in dataframe.columns ],
+		# Unflatten columns if columns are flattened
+		if is_any_of(value.columns, lambda column: MULTI_INDEX_COLUMN_SEPARATOR in column and column != '_id'): # HACK: mongo id returns a false positive for this
+			value.columns = pandas.MultiIndex.from_tuples([ column.split(MULTI_INDEX_COLUMN_SEPARATOR) for column in value.columns ])
+
+		# Add the wrapping column based on the chart specified
+		if type(value.columns) != pandas.MultiIndex:
+			value = value[[ key for key in value.columns if key in chart.select ]]
+			value.columns = pandas.MultiIndex.from_tuples(
+				[ (chart.name, column) for column in value.columns ],
 				names=[ 'timeseries', 'field' ]
 			)
-		return dataframe
+		return value
 
 	def to_records(self, dataframe: pandas.DataFrame or Chart or ChartGroup):
 		if isinstance(dataframe, Chart) or isinstance(dataframe, ChartGroup):
 			dataframe = dataframe.dataframe
 
-		rows = dataframe.reset_index()\
-			.drop_duplicates(Chart.timestamp_field)\
+		if type(dataframe.columns) == pandas.MultiIndex:
+			dataframe.columns = [ MULTI_INDEX_COLUMN_SEPARATOR.join(filter(None, column)) for column in dataframe.columns ]
+
+		return dataframe \
+			.reset_index() \
+			.drop_duplicates(Chart.timestamp_field) \
 			.to_dict(orient='records')
-
-		if type(next(iter(rows[0]))) == tuple:
-			result = []
-			for row in rows:
-				item = defaultdict(dict)
-				for key, value in row.items():
-					item[key[0]][key[1]] = value
-			return result
-
-		return rows

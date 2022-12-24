@@ -21,7 +21,7 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	symbol: Symbol = None
 	broker: 'Broker' = None
 	chart_group: 'ChartGroup' = None
-	indicators: dict[str, type['Indicator']] = field(repr=False, default_factory=dict)
+	indicators: dict[str, 'Indicator'] = field(repr=False, default_factory=dict)
 	count: int = None
 	select: list[str] = None
 

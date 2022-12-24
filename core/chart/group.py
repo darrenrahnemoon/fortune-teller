@@ -11,6 +11,7 @@ class ChartGroup:
 	charts: list[Chart] = field(default_factory=list)
 	dataframe: pandas.DataFrame = field(repr=False, init=False, default_factory=lambda: pandas.DataFrame(columns=pandas.MultiIndex(levels=[[], []], codes=[[], []])))
 	common_params: dict[str] = field(default_factory=dict)
+	name: str = None
 
 	def __post_init__(self):
 		self.common_params['chart_group'] = self
@@ -32,6 +33,7 @@ class ChartGroup:
 		self.common_params[key] = value
 
 	def read(self, refresh_indicators = True):
+		self.dataframe = None
 		for chart in self.charts:
 			chart.read(refresh_indicators = refresh_indicators)
 
@@ -40,5 +42,5 @@ class ChartGroup:
 			dataframes.append(chart.dataframe)
 			chart.dataframe = None
 		dataframe = pandas.concat(dataframes, axis=1)
-		# dataframe = dataframe.reindex(dataframe.columns.sort_values(), axis=1)
+		dataframe = dataframe.reindex(dataframe.columns.sort_values(), axis=1)
 		self.dataframe = dataframe

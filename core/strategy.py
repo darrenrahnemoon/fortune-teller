@@ -7,10 +7,6 @@ from core.broker import Broker, SimulationBroker
 class Strategy:
 	def __post_init__(self):
 		self.is_aborted = False
-		self.setup()
-
-	def setup(self):
-		pass
 
 	def cleanup(self):
 		pass

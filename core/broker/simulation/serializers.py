@@ -1,16 +1,27 @@
 
 import pandas
-from pymongo.database import Database
 from pymongo.collection import Collection
 from dataclasses import dataclass
 
-from core.chart.chart import Chart
+from core.chart import ChartGroup, Chart
 from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
 from core.utils.serializer import Serializer
 
-
 class ChartMongoFindOptionsSerializer(Serializer):
-	def to_find_options(self, chart: Chart):
+	def to_find_options(self, chart: Chart or ChartGroup):
+		if isinstance(chart, Chart):
+			return self.from_chart_to_find_options(chart)
+		elif isinstance(chart, ChartGroup):
+			return self.from_chart_group_to_find_options(chart)
+
+	def from_chart_group_to_find_options(self, chart_group: ChartGroup):
+		find_options = self.from_chart_to_find_options(chart_group.charts[0])
+		find_options['projection'] = { # HACK: currently `select` is not supported for chart_groups
+			'_id' : False,
+		}
+		return find_options
+
+	def from_chart_to_find_options(self, chart: Chart):
 		find_options = {}
 		find_options['projection'] = [ Chart.timestamp_field ] + chart.select
 		filter = find_options['filter'] = {}
@@ -25,13 +36,12 @@ class ChartMongoFindOptionsSerializer(Serializer):
 			filter[Chart.timestamp_field]['$lte'] = chart.to_timestamp
 		return find_options
 
-@dataclass
 class ChartCollectionSerializer(Serializer):
-	database: Database
-
-	def to_collection(self, chart: Chart):
-		collection = f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"
-		return self.database[collection]
+	def to_collection_name(self, chart: Chart or ChartGroup):
+		if isinstance(chart, Chart):
+			return self.from_chart_to_collection_name(chart)
+		elif isinstance(chart, ChartGroup):
+			return self.from_chart_group_to_collection_name(chart)
 
 	def to_chart(self, collection: str or Collection):
 		if type(collection) == Collection:
@@ -41,6 +51,12 @@ class ChartCollectionSerializer(Serializer):
 		query_fields = [ chunks[1] ] # HACK: symbol wasn't converted to a repr instead it was converted to string so it cannot be evaluated
 		query_fields = query_fields + [ eval(chunk) for chunk in chunks[2:] ]
 		return chart_class(**dict(zip(chart_class.query_fields, query_fields)))
+
+	def from_chart_to_collection_name(self, chart: Chart):
+		return f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"
+
+	def from_chart_group_to_collection_name(self, chart_group: ChartGroup):
+		return chart_group.name
 
 class DataClassMongoDocumentSerializer(Serializer):
 	def to_mongo_document(self, value):

@@ -16,7 +16,8 @@ def _():
 		class TestStrategy(Strategy):
 			broker: SimulationBroker = None
 
-			def setup(self):
+			def __post_init__(self):
+				super().__post_init__()
 				self.count = 0
 
 			def handler(self):

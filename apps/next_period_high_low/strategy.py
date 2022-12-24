@@ -1,17 +1,15 @@
-import functools
 from dataclasses import dataclass
-from keras_tuner import HyperParameters
 
-from core.broker import Broker, MetaTraderBroker, SimulationBroker
+from core.broker import Broker
 from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
 from core.strategy import Strategy
 from core.interval import Interval
 
-from .model import NextPeriodHighLow
+from .model.service import NextPeriodHighLowModelService
 
 @dataclass
-class MultivariateForecastStrategy(Strategy):
+class NextPeriodHighLowStrategy(Strategy):
 	# brokers used in the strategy
 	alphavantage_broker: Broker = None
 	metatrader_broker: Broker = None
@@ -21,25 +19,39 @@ class MultivariateForecastStrategy(Strategy):
 	forward_window_length: Interval or int = None
 	backward_window_length: Interval or int = None
 
-	def setup(self):
+	def __post_init__(self):
+		super().__post_init__()
 		if isinstance(self.forward_window_length, Interval):
-			self.forward_window_length = self.forward_window_length.to_pandas_timedelta() // self.interval.to_pandas_timedelta()
+			self.forward_window_length = int(
+				self.forward_window_length.to_pandas_timedelta() // self.interval.to_pandas_timedelta()
+			)
+
 		if isinstance(self.backward_window_length, Interval):
-			self.backward_window_length = self.backward_window_length.to_pandas_timedelta() // self.interval.to_pandas_timedelta()
-		self.model = NextPeriodHighLow(
-			build_chart_group = self.build_chart_group,
+			self.backward_window_length = int(
+				self.backward_window_length.to_pandas_timedelta() // self.interval.to_pandas_timedelta()
+			)
+
+		self.model_service = NextPeriodHighLowModelService(
+			build_input_chart_group = self.build_input_chart_group,
+			build_output_chart_group = self.build_output_chart_group,
 			forward_window_length = self.forward_window_length,
 			backward_window_length = self.backward_window_length,
 		)
 
-	def build_chart_group(self):
+	def build_input_chart_group(self):
+		chart_group = self.build_output_chart_group()
+		chart_group.charts[0].attach_indicator(SeasonalityIndicator)
+		return chart_group
+
+	def build_output_chart_group(self):
 		chart_group = ChartGroup(
+			name='NextPeriodHighLow',
 			charts = [
 				CandleStickChart(
 					symbol = symbol,
 					interval = self.interval,
 					broker = self.metatrader_broker,
-					select = CandleStickChart.data_fields, # Only data fields for now
+					select = CandleStickChart.data_fields,
 					count = self.backward_window_length
 				)
 				for symbol in [
@@ -49,20 +61,4 @@ class MultivariateForecastStrategy(Strategy):
 				]
 			]
 		)
-		chart_group.charts[0].attach_indicator(SeasonalityIndicator)
-		trading_focus = [ chart
-			for chart in chart_group.charts
-			if type(chart) == CandleStickChart
-		]
-		return chart_group, trading_focus
-
-broker = SimulationBroker()
-broker.now = '2020-05-01'
-strategy = MultivariateForecastStrategy(
-	alphavantage_broker=broker,
-	metatrader_broker=broker,
-	interval=Interval.Minute(1),
-	forward_window_length=Interval.Hour(1),
-	backward_window_length=Interval.Day(1)
-)
-strategy.model.cache_dataset()
+		return chart_group
