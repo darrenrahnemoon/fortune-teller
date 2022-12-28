@@ -19,4 +19,6 @@ class BatchedSequence(Sequence):
 			x, y = self.sequence[batch_item_index]
 			inputs.append(x)
 			outputs.append(y)
+		inputs = numpy.array(inputs)
+		outputs = numpy.array(outputs)
 		return inputs, outputs

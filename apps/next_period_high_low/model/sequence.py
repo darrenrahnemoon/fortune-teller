@@ -29,10 +29,15 @@ class NextPeriodHighLowSequence(Sequence):
 			'from_timestamp': self.timestamps[index],
 			'count': self.backward_window_length + self.forward_window_length
 		})
+
 		dataframe = self.repository.read_chart_group(input_chart_group)
 		input_chart_group.dataframe = dataframe[:self.backward_window_length].copy()
 		output_chart_group.dataframe = dataframe[self.backward_window_length:].copy()
-		return self.preprocessor.to_model_input(input_chart_group), self.preprocessor.to_model_output(output_chart_group)
+
+		return (
+			self.preprocessor.to_model_input(input_chart_group),
+			self.preprocessor.to_model_output(output_chart_group)
+		)
 
 	@property
 	@functools.cache
@@ -48,14 +53,15 @@ class NextPeriodHighLowSequence(Sequence):
 	def common_time_window(self):
 		return SimulationBroker.get_common_time_window(self.build_input_chart_group())
 
-	def cache(self):
+	def cache(self, from_timestamp = None, to_timestamp = None):
 		chart_group = self.build_input_chart_group()
 
-		increments = pandas.date_range(
-			start = self.common_time_window.from_timestamp,
-			end = self.common_time_window.to_timestamp,
+		increments = list(pandas.date_range(
+			start = from_timestamp or self.common_time_window.from_timestamp,
+			end = to_timestamp or self.common_time_window.to_timestamp,
 			freq = 'MS' # "Month Start"
-		)
+		))
+		increments.append(self.common_time_window.to_timestamp)
 
 		chart_group.set_field('count', None)
 		for index in range(1, len(increments)):

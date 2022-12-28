@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from core.broker import Broker
 from core.chart import ChartGroup, CandleStickChart
@@ -6,7 +6,7 @@ from core.indicator import SeasonalityIndicator
 from core.strategy import Strategy
 from core.interval import Interval
 
-from .model.service import NextPeriodHighLowModelService
+from .model.service import NextPeriodHighLowService
 
 @dataclass
 class NextPeriodHighLowStrategy(Strategy):
@@ -18,6 +18,8 @@ class NextPeriodHighLowStrategy(Strategy):
 	interval: Interval = None
 	forward_window_length: Interval or int = None
 	backward_window_length: Interval or int = None
+
+	service: NextPeriodHighLowService = field(init = False)
 
 	def __post_init__(self):
 		super().__post_init__()
@@ -31,7 +33,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				self.backward_window_length.to_pandas_timedelta() // self.interval.to_pandas_timedelta()
 			)
 
-		self.model_service = NextPeriodHighLowModelService(
+		self.service = NextPeriodHighLowService(
 			build_input_chart_group = self.build_input_chart_group,
 			build_output_chart_group = self.build_output_chart_group,
 			forward_window_length = self.forward_window_length,
