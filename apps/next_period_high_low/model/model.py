@@ -2,7 +2,6 @@
 import math
 from typing import Callable
 from dataclasses import dataclass
-from dataclasses import dataclass
 
 from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
@@ -24,7 +23,7 @@ class NextPeriodHighLowModel:
 		inputs = self.build_inputs()
 
 		dropout_rate = parameters.Float('dropout_rate', min_value = 0.2, max_value = 0.9, step = 0.05)
-		parallel_flows_count = parameters.Int('parallel_flows_count', min_value = 2, max_value = 15)
+		parallel_flows_count = parameters.Int('parallel_flows_count', min_value = 2, max_value = 4)
 		filters_count = parameters.Int('filters_count', min_value = 8, max_value = 1024)
 		lstm_units = parameters.Int('lstm_units', min_value = 16, max_value = 1024)
 
@@ -58,6 +57,7 @@ class NextPeriodHighLowModel:
 			loss = 'mse',
 			metrics = [ 'accuracy' ]
 		)
+		model.summary()
 		return model
 
 	def build_inputs(self):

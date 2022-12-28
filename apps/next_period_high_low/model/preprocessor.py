@@ -1,3 +1,4 @@
+import numpy
 import pandas
 from dataclasses import dataclass
 
@@ -32,11 +33,11 @@ class NextPeriodHighLowPreprocessor:
 	def to_model_input(self, input_chart_group: ChartGroup):
 		return input_chart_group.dataframe.to_numpy()
 
-	def to_model_output(self, output_chart_group: ChartGroup) -> dict:
+	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
 		for chart in output_chart_group.charts:
 			outputs.append([
 				chart.data['high'].max(),
 				chart.data['low'].min()
 			])
-		return outputs
+		return numpy.array(outputs)

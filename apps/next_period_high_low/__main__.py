@@ -8,7 +8,7 @@ def tune_model():
 		alphavantage_broker=broker,
 		metatrader_broker=broker,
 		interval=Interval.Minute(1),
-		backward_window_length=Interval.Minute(5),
-		forward_window_length=Interval.Minute(2),
+		backward_window_length=Interval.Day(1),
+		forward_window_length=Interval.Minute(10),
 	)
 	strategy.service.tune_model()

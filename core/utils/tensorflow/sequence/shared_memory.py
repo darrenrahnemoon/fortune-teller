@@ -1,17 +1,19 @@
 import numpy
-import atexit
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
 from keras.utils.data_utils import Sequence
 from multiprocess import Process, Queue, shared_memory, managers
+
+from .kwargs import sequence_dataclass_kwargs
 
 class ErasingSharedMemory(shared_memory.SharedMemory):
 	def __del__(self):
 		super(ErasingSharedMemory, self).__del__()
 		self.unlink()
 
-class SharedMemoryArray(numpy.ndarray):
+class ShareableNumpyArray(numpy.ndarray):
 	def __new__(cls, *args, shm = None, **kwargs):
-		obj = super(SharedMemoryArray, cls).__new__(cls, *args, **kwargs)
+		obj = super(ShareableNumpyArray, cls).__new__(cls, *args, **kwargs)
 		obj.shm = shm
 		return obj
 
@@ -19,69 +21,106 @@ class SharedMemoryArray(numpy.ndarray):
 		if obj is None: return
 		self.shm = getattr(obj, 'shm', None)
 
-@dataclass
-class SharedMemoryGenerator:
-	manager = None
+@dataclass(**sequence_dataclass_kwargs)
+class SharedMemorySequence(Sequence):
+	sequence: Sequence = None
+	workers: int = 3
+	max_queue_size: int = 8
 
-	@classmethod
-	def worker(self, sequence: Sequence, indices, queue):
+	manager: managers.SharedMemoryManager = field(init = False, default = None)
+	processes: list[Process] = field(init = False, default = None)
+	queue: Queue = field(init = False, default = None)
+
+	def __len__(self):
+		return len(self.sequence)
+
+	def __getitem__(self, index):
+		self.ensure_workers_initialized()
+		queue_item = self.queue.get(block = True)
+		existing_shm = ErasingSharedMemory(name = queue_item['name'])
+
+		x = ShareableNumpyArray(
+			shape = queue_item['x']['shape'],
+			dtype = queue_item['x']['dtype'],
+			buffer = existing_shm.buf,
+			offset = 0,
+			shm = existing_shm
+		)
+		y = ShareableNumpyArray(
+			shape = queue_item['y']['shape'],
+			dtype = queue_item['y']['dtype'],
+			buffer = existing_shm.buf,
+			offset = x.nbytes,
+			shm = existing_shm
+		)
+		return x, y
+
+	def __del__(self):
+		self.ensure_workers_destroyed()
+
+	@staticmethod
+	def worker(
+		manager: managers.SharedMemoryManager = None,
+		sequence: Sequence = None,
+		queue: Queue = None,
+		indices: list[int] = None,
+	):
 		for index in indices:
 			x, y = sequence[index]
-
-			shm = self.manager.SharedMemory(size = x.nbytes + y.nbytes)
+			shm = manager.SharedMemory(size = x.nbytes + y.nbytes)
 			shared_x = numpy.ndarray(x.shape, dtype = x.dtype, buffer = shm.buf, offset = 0)
 			shared_y = numpy.ndarray(y.shape, dtype = y.dtype, buffer = shm.buf, offset = x.nbytes)
-
 			shared_x[:] = x[:]
 			shared_y[:] = y[:]
 
-			queue.put((shared_x.shape, shared_x.dtype, shared_y.shape, shared_y.dtype, shm.name))
+			queue.put({
+				'name': shm.name,
+				'x': {
+					'shape': shared_x.shape,
+					'dtype': shared_x.dtype,
+				},
+				'y': {
+					'shape': shared_y.shape,
+					'dtype': shared_y.dtype
+				}
+			})
 			shm.close()
 			del shm
 
-	@classmethod
-	def to_generator(
-		self,
-		sequence: Sequence,
-		workers = 2,
-		max_queue_size = 2
-	):
-		queue = Queue(maxsize = max_queue_size)
+	def ensure_workers_initialized(self):
+		if self.manager != None:
+			return
 
-		if self.manager == None:
-			self.manager = managers.SharedMemoryManager()
-			self.manager.start()
+		self.manager = managers.SharedMemoryManager()
+		self.manager.start()
+		self.queue = Queue(maxsize = self.max_queue_size)
 
-		indices = numpy.array_split(numpy.arange(len(sequence)), workers)
-		processes = [
+		indices_batches = numpy.array_split(numpy.arange(len(self)), self.workers)
+		self.processes = [
 			Process(
 				target = self.worker,
-				args = (sequence, indices, queue)
+				kwargs = {
+					'sequence': self.sequence,
+					'manager': self.manager,
+					'queue': self.queue,
+					'indices': indices_batch
+				},
 			)
-			for indices in indices
+			for indices_batch in indices_batches
 		]
-		for process in processes:
+		for process in self.processes:
 			process.start()
 
-		try:
-			for _ in range(len(sequence)):
-				x_shape, x_dtype, y_shape, y_dtype, shm_name = queue.get(block = True)
-				existing_shm = ErasingSharedMemory(name = shm_name)
-				x = SharedMemoryArray(x_shape, dtype = x_dtype, buffer = existing_shm.buf, offset = 0, shm = existing_shm)
-				y = SharedMemoryArray(y_shape, dtype = y_dtype, buffer = existing_shm.buf, offset = x.nbytes, shm = existing_shm)
-				yield x, y
-		except KeyboardInterrupt:
-			self.close()
-		finally:
-			for process in processes:
+	def ensure_workers_destroyed(self):
+		if self.processes:
+			for process in self.processes:
 				process.terminate()
-			for process in processes:
 				process.join()
-			queue.close()
-
-	@staticmethod
-	@atexit.register
-	def close():
-		if SharedMemoryGenerator.manager:
-			SharedMemoryGenerator.manager.shutdown()
-			SharedMemoryGenerator.manager.join()
+			self.processes = None
+		if self.manager:
+			self.manager.shutdown()
+			self.manager.join()
+			self.manager = None
+		if self.queue:
+			self.queue.close()
+			self.queue = None

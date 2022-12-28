@@ -25,26 +25,27 @@ class NextPeriodHighLowSequence(Sequence):
 	def __getitem__(self, index):
 		input_chart_group = self.build_input_chart_group()
 		output_chart_group = self.build_output_chart_group()
+		timestamp = self.timestamps[index]
+
 		input_chart_group.set_fields({
-			'from_timestamp': self.timestamps[index],
+			'from_timestamp': timestamp,
 			'count': self.backward_window_length + self.forward_window_length
 		})
 
 		dataframe = self.repository.read_chart_group(input_chart_group)
-		input_chart_group.dataframe = dataframe[:self.backward_window_length].copy()
-		output_chart_group.dataframe = dataframe[self.backward_window_length:].copy()
+		input_chart_group.dataframe = dataframe[:self.backward_window_length]
+		output_chart_group.dataframe = dataframe[self.backward_window_length:]
 
-		return (
-			self.preprocessor.to_model_input(input_chart_group),
-			self.preprocessor.to_model_output(output_chart_group)
-		)
+		x = self.preprocessor.to_model_input(input_chart_group)
+		y = self.preprocessor.to_model_output(output_chart_group)
+		return x, y
 
 	@property
 	@functools.cache
 	def timestamps(self):
 		return pandas.date_range(
 			self.common_time_window.from_timestamp,
-			self.common_time_window.to_timestamp - pandas.Timedelta(self.backward_window_length + 1, 'minute'),
+			self.common_time_window.to_timestamp - pandas.Timedelta(self.backward_window_length + self.forward_window_length, 'minute'),
 			freq='min'
 		)
 
