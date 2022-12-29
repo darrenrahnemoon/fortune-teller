@@ -1,5 +1,6 @@
 import functools
 import pandas
+# import os
 from typing import Callable
 from dataclasses import dataclass
 from keras.utils.data_utils import Sequence
@@ -38,6 +39,8 @@ class NextPeriodHighLowSequence(Sequence):
 
 		x = self.preprocessor.to_model_input(input_chart_group)
 		y = self.preprocessor.to_model_output(output_chart_group)
+
+		# print(f'{os.getpid()}: NextPeriodHighLowSequence {index} | {timestamp} -> x:{x.shape}, y:{y.shape}')
 		return x, y
 
 	@property

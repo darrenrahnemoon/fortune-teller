@@ -27,6 +27,7 @@ class NextPeriodHighLowService:
 	steps_per_epoch: int = 20
 	hyperband_max_epochs: int = 10
 	hyperband_reduction_factor: int = 3
+	hyperband_iterations: int = 100
 	use_multiprocessing: bool = True
 	max_queue_size: int = 10
 	workers: int = 5
@@ -36,6 +37,14 @@ class NextPeriodHighLowService:
 	preprocessor: NextPeriodHighLowPreprocessor = field(init = False)
 	model: NextPeriodHighLowModel = field(init = False)
 
+	@property
+	def tensorboard_directory(self):
+		return Path(__file__).parent.joinpath('artifacts/tensorboard')
+
+	@property
+	def keras_tuner_directory(self):
+		return Path(__file__).parent.joinpath('artifacts/tuner')
+
 	def tune_model(self):
 		training_dataset, validation_dataset = self.get_datasets()
 		device = self.get_device()
@@ -44,8 +53,9 @@ class NextPeriodHighLowService:
 			hypermodel = self.model.build,
 			objective = 'val_loss',
 			max_epochs = self.hyperband_max_epochs,
+			hyperband_iterations = self.hyperband_iterations,
 			factor = self.hyperband_reduction_factor,
-			directory = Path(__file__).parent.joinpath('artifacts/tuner'),
+			directory = self.keras_tuner_directory,
 			project_name = 'trials'
 		)
 
@@ -61,7 +71,7 @@ class NextPeriodHighLowService:
 				verbose = True,
 				callbacks = [
 					EarlyStopping(monitor = 'val_loss', patience = 5),
-					TensorBoard(log_dir = Path(__file__).parent.joinpath('artifacts/tensorboard'))
+					TensorBoard(log_dir = self.tensorboard_directory)
 				]
 			)
 

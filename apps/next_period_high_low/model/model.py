@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
+from keras.optimizers import Adam
 from keras_tuner import HyperParameters
 
 from core.chart import ChartGroup
@@ -21,30 +22,106 @@ class NextPeriodHighLowModel:
 
 	def build(self, parameters: HyperParameters):
 		inputs = self.build_inputs()
+		features_length = inputs.shape[-1]
 
-		dropout_rate = parameters.Float('dropout_rate', min_value = 0.2, max_value = 0.9, step = 0.05)
-		parallel_flows_count = parameters.Int('parallel_flows_count', min_value = 2, max_value = 4)
-		filters_count = parameters.Int('filters_count', min_value = 8, max_value = 1024)
-		lstm_units = parameters.Int('lstm_units', min_value = 16, max_value = 1024)
+		prefix = []
+		def name(*args: tuple[str]):
+			return '/'.join(prefix + list(args))
 
-		y = []
-		for index in range(parallel_flows_count):
-			_y = Conv1D(filters = filters_count, kernel_size = 2 ** (index + 4), padding = 'same')(inputs)
-			_y = Dropout(dropout_rate)(_y)
+		def dropout_parameter(name: str):
+			return parameters.Float(
+				name = name,
+				min_value = 0.01,
+				max_value = 0.99,
+				step = 0.01
+			)
 
-			_y = Conv1D(filters = filters_count, kernel_size = 2 ** (index + 2), padding = 'same')(_y)
-			_y = Dropout(dropout_rate)(_y)
+		flows = []
+		for parallel_flow_index in range(
+			parameters.Int(
+				name = 'parallel_flows_count',
+				min_value = 1,
+				max_value = 5
+			)
+		):
+			flow = inputs
+			prefix.append(f'flow_{parallel_flow_index}')
 
-			_y = LSTM(lstm_units)(_y)
-			_y = Dropout(dropout_rate)(_y)
+			for cnn_index in range(
+				parameters.Int(
+					name = 'cnn_layers_count',
+					min_value = 1,
+					max_value = 4
+				)
+			):
+				prefix.append(f'cnn_{cnn_index}')
+				flow = Conv1D(
+					name = name('conv1d'),
+					filters = parameters.Int(
+						name = name('filters_count'),
+						min_value = 1,
+						max_value = features_length
+					),
+					kernel_size = parameters.Int(
+						name = name('kernel_size'),
+						min_value = 2,
+						max_value = self.backward_window_length
+					),
+					padding = 'same',
+					activation = 'relu'
+				)(flow)
+				flow = Dropout(
+					name = name('dropout'),
+					rate = dropout_parameter(name('dropout'))
+				)(flow)
+				prefix.pop()
 
-			y.append(_y)
-		y = Add()(y)
+			lstm_layers_count = parameters.Int(
+				name = 'lstm_layers_count',
+				min_value = 0,
+				max_value = 4
+			)
+			for lstm_index in range(lstm_layers_count):
+				prefix.append(f'lstm_{lstm_index}')
+				flow = LSTM(
+					name = name('lstm'),
+					units = parameters.Int(
+						name = name('units'),
+						min_value = 1,
+						max_value = features_length,
+					),
+					return_sequences = lstm_index != lstm_layers_count - 1
+				)(flow)
+				flow = Dropout(
+					name = name('dropout'),
+					rate = dropout_parameter(name('dropout'))
+				)(flow)
+				prefix.pop()
+
+			flows.append(flow)
+			prefix.pop()
+		y = Add()(flows)
 		y = Flatten()(y)
 
-		for index in range(parameters.Int('fully_connected_layer_count', min_value = 2, max_value = 5)):
-			y = Dense(parameters.Int(f'fully_connected_layer_{index}_nodes', min_value = 2 ** 6, max_value = 2 ** 14))(y)
-			y = Dropout(dropout_rate)(y)
+		for index in range(
+			parameters.Int(
+				name = 'dense_layers_count',
+				min_value = 1,
+				max_value = 4,
+			)
+		):
+			prefix.append(f'dense_{index}')
+			y = Dense(
+				units = parameters.Int(
+					name = name('units'),
+					min_value = 64,
+					max_value = 4096
+				),
+				activation = 'relu',
+			)(y)
+			y = Dropout(
+				rate = dropout_parameter(name('dropout'))
+			)(y)
 
 		outputs = self.build_outputs(y)
 
@@ -53,7 +130,14 @@ class NextPeriodHighLowModel:
 			outputs = outputs
 		)
 		model.compile(
-			optimizer = parameters.Choice('optimizer', [ 'adam', 'sgd' ]),
+			optimizer = Adam(
+				learning_rate = parameters.Float(
+					name = 'adam_optimizer_learning_rate',
+					min_value = 10 ** -4,
+					max_value = 10 ** -3,
+					step = 10 ** -4
+				)
+			),
 			loss = 'mse',
 			metrics = [ 'accuracy' ]
 		)
