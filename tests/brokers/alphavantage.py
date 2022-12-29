@@ -1,3 +1,4 @@
+from pandas.core.frame import DataFrame
 from core.interval import Interval
 from core.broker import AlphaVantageBroker
 from core.chart import LineChart
@@ -9,11 +10,18 @@ def _():
 	@it('should read economical data from AlphaVantageBroker')
 	def _():
 		chart = LineChart(
-			symbol='TREASURY_YIELD',
-			broker=alphavantage,
-			interval=Interval.Day(1),
-			maturity=Interval.Year(30)
+			symbol = 'TREASURY_YIELD',
+			broker = alphavantage,
+			interval = Interval.Day(1),
+			maturity = Interval.Year(30)
 		).read()
 
 		assert len(chart) != 0
 		assert chart.data['value']['2022-10-28'] == 4.15
+
+		dataframe = alphavantage.read_chart(
+			symbol = 'TREASURY_YIELD',
+			interval = Interval.Day(1),
+			maturity = Interval.Year(30)
+		)
+		assert dataframe.equals(chart.data)

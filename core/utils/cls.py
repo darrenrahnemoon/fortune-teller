@@ -1,21 +1,28 @@
 from itertools import product
+from typing import Any, Iterable
 
-def ensureattr(__obj, __name, __default):
+def ensureattr(obj: Any, name: str, default: Any):
 	"""Check if an attribute exists on object and if not set it to default
 
 	Args:
-		__obj (Any): object
-		__name (str): field name
-		__default (Any): default value in case the field doesn't exist
+		obj (Any): object
+		name (str): field name
+		default (Any): default value in case the field doesn't exist
 
 	Returns:
 		Any: the value that is finally stored in the field of the object
 	"""
 	try:
-		return getattr(__obj, __name)
+		return getattr(obj, name)
 	except:
-		setattr(__obj, __name, __default)
-		return __default
+		setattr(obj, name, default)
+		return default
+
+def pickattrs(obj, names: Iterable[str]) -> dict:
+	return {
+		attr: getattr(obj, attr)
+		for attr in names
+	}
 
 def product_dict(combinations: dict[list]):
 	return (

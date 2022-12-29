@@ -7,34 +7,16 @@ import logging
 from dataclasses import dataclass, field
 
 from core.broker.broker import Broker, ChartCombinations
-from core.chart import LineChart
+from core.chart import LineChart, OverriddenChartParams
 from core.interval import Interval
-from .serializers import LineChartDataFrameRecordsSerializer
-
-from core.utils.serializer import MappingSerializer
+from .serializers import AlphaVantageSerializers
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class AlphaVantageBroker(Broker):
-	api_key: str = field(default_factory=lambda: os.getenv('ALPHAVANTAGE_API_KEY'))
-	dataframe_records_serializer = LineChartDataFrameRecordsSerializer()
-	interval_serializer = MappingSerializer({
-		Interval.Day(1): 'daily',
-		Interval.Week(1): 'weekly',
-		Interval.Month(1): 'monthly',
-		Interval.Quarter(1): 'quarterly',
-		Interval.Month(6) : 'semiannual',
-		Interval.Year(1): 'annual',
-	})
-	treasury_yield_maturity_serializer = MappingSerializer({
-		Interval.Month(3): '3month',
-		Interval.Year(2): '2year',
-		Interval.Year(5): '5year',
-		Interval.Year(7): '7year',
-		Interval.Year(10): '10year',
-		Interval.Year(30): '30year',
-	})
+	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
+	serializers = AlphaVantageSerializers()
 
 	@classmethod
 	@functools.cache
@@ -93,21 +75,32 @@ class AlphaVantageBroker(Broker):
 			]
 		}
 
-	def read_chart(self, chart: LineChart, **kwargs) -> pandas.DataFrame:
-		params = dict(
+	def read_chart(
+		self,
+		chart: LineChart = None,
+		**overrides
+	) -> pandas.DataFrame:
+		chart_params = OverriddenChartParams(chart, overrides)
+
+		api_params = dict(
 			apikey = self.api_key,
 			datatype = 'json',
 			outputsize = 'full',
-			function = chart.symbol,
-			interval = self.interval_serializer.serialize(chart.interval),
-			maturity = self.treasury_yield_maturity_serializer.serialize(chart.maturity)
+			function = chart_params['symbol'],
+			interval = self.serializers.interval.serialize(chart_params['interval']),
+			maturity = self.serializers.treasury_yield_maturity.serialize(chart_params['maturity'])
 		)
 
-		response = requests.get('https://www.alphavantage.co/query', params=params).json()
-		# SHOULD DO: find a less naive way to know if rate limit is reached
+		response = requests.get('https://www.alphavantage.co/query', params = api_params).json()
+		# HACK/SHOULD DO: find a less naive way to know if rate limit is reached (probably from status code)
 		if 'Note' in response and response['Note'].startswith('Thank you'):
 			logger.warn('Rate limit reached. Waiting for 1 minute...')
 			time.sleep(60) # Alphavantage only allows 5 requests per minute
-			return self.read_chart(chart)
+			return self.read_chart(chart, **overrides)
 
-		return self.dataframe_records_serializer.to_dataframe(response['data'], chart)
+		return self.serializers.records.to_dataframe(
+			response['data'],
+			name = chart_params['name'],
+			select = chart_params['select'],
+			tz = self.timezone,
+		)

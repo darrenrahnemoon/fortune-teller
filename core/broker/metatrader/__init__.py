@@ -3,17 +3,10 @@ import functools
 import pandas
 from dataclasses import dataclass
 
-
-from core.broker.broker import Broker
+from .serializers import MetaTraderSerializers
 from core.chart import CandleStickChart, TickChart, Chart
-from core.interval import Interval
-from .serializers import (
-	CandleStickChartDataFrameRecordsSerializer,
-	TickChartDataFrameRecordsSerializer
-)
-
+from core.broker.broker import Broker
 from core.utils.module import import_module
-from core.utils.serializer import MappingSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -21,32 +14,7 @@ logger = logging.getLogger(__name__)
 class MetaTraderBroker(Broker):
 	api = None
 	timezone = 'UTC'
-
-	candlestick_chart_dataframe_records_serializer = CandleStickChartDataFrameRecordsSerializer()
-	tick_chart_dataframe_records_serializer = TickChartDataFrameRecordsSerializer()
-	interval_serializer = MappingSerializer({
-		Interval.Minute(1) : 1,
-		Interval.Minute(2) : 2,
-		Interval.Minute(3) : 3,
-		Interval.Minute(4) : 4,
-		Interval.Minute(5) : 5,
-		Interval.Minute(6) : 6,
-		Interval.Minute(10) : 10,
-		Interval.Minute(12) : 12,
-		Interval.Minute(15) : 15,
-		Interval.Minute(20) : 20,
-		Interval.Minute(30) : 30,
-		Interval.Hour(1) : 1 | 0x4000,
-		Interval.Hour(2) : 2 | 0x4000,
-		Interval.Hour(4) : 4 | 0x4000,
-		Interval.Hour(3) : 3 | 0x4000,
-		Interval.Hour(6) : 6 | 0x4000,
-		Interval.Hour(8) : 8 | 0x4000,
-		Interval.Hour(12) : 12 | 0x4000,
-		Interval.Day(1) : 24| 0x4000,
-		Interval.Week(1) : 1 | 0x8000,
-		Interval.Month(1) : 1 | 0xC000,
-	})
+	serializers = MetaTraderSerializers()
 
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
@@ -65,7 +33,7 @@ class MetaTraderBroker(Broker):
 			CandleStickChart : [
 				{
 					'symbol': [ symbol.name ],
-					'interval' : list(self.serializers['interval'].mapping.keys())
+					'interval' : list(self.serializers.interval.mapping.keys())
 				}
 				for symbol in symbols
 			],
@@ -81,11 +49,11 @@ class MetaTraderBroker(Broker):
 		if isinstance(chart, CandleStickChart):
 			records = self.api.copy_rates_range(
 				chart.symbol,
-				self.interval_serializer.serialize(chart.interval),
+				self.serializers.interval.serialize(chart.interval),
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 			)
-			dataframe = self.candlestick_chart_dataframe_records_serializer.to_dataframe(records, chart)
+			dataframe = self.serializers.records.candlestick.to_dataframe(records, chart)
 		elif isinstance(chart, TickChart):
 			records = self.api.copy_ticks_range(
 				chart.symbol,
@@ -93,7 +61,7 @@ class MetaTraderBroker(Broker):
 				chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = self.tick_chart_dataframe_records_serializer.to_dataframe(records, chart)
+			dataframe = self.serializers.records.tick.to_dataframe(records, chart)
 		else:
 			raise Exception(f"Unsupported chart type '{chart}'.")
 

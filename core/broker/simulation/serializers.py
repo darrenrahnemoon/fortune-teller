@@ -1,7 +1,6 @@
 
 import pandas
 from pymongo.collection import Collection
-from dataclasses import dataclass
 
 from core.chart import ChartGroup, Chart
 from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
@@ -48,12 +47,11 @@ class ChartCollectionSerializer(Serializer):
 			collection = collection.name
 		chunks = collection.split('.')
 		chart_class = next(cls for cls in Chart.__subclasses__() if cls.__name__ == chunks[0])
-		query_fields = [ chunks[1] ] # HACK: symbol wasn't converted to a repr instead it was converted to string so it cannot be evaluated
-		query_fields = query_fields + [ eval(chunk) for chunk in chunks[2:] ]
+		query_fields = [ eval(chunk) for chunk in chunks[2:] ]
 		return chart_class(**dict(zip(chart_class.query_fields, query_fields)))
 
 	def from_chart_to_collection_name(self, chart: Chart):
-		return f"{type(chart).__name__}.{'.'.join([ str(getattr(chart, key)) for key in chart.query_fields ])}"
+		return chart.name
 
 	def from_chart_group_to_collection_name(self, chart_group: ChartGroup):
 		return chart_group.name

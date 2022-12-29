@@ -31,14 +31,16 @@ class SimulationRepository(MongoRepository):
 
 	def read_chart(self, chart: Chart) -> pandas.DataFrame:
 		records = self.read_chart_raw(chart)
-		return self.dataframe_records_serializer.to_dataframe(records, chart)
+		dataframe = self.dataframe_records_serializer.to_dataframe(records, chart)
+		logger.debug(f'Read chart:\n{dataframe}')
+		return dataframe
 
 	def write_chart(self, chart: Chart):
 		data = chart.data
 		if len(data) == 0:
 			logger.warn(f'Attempted to write an empty {chart} into database. Skipping...')
 			return
-
+		logger.debug(f'Writing chart:\n{data}')
 		collection = self.ensure_collection_for_chart(chart)
 		rows = self.dataframe_records_serializer.to_records(data)
 		self.upsert(collection, rows)
@@ -104,8 +106,8 @@ class SimulationRepository(MongoRepository):
 
 	@property
 	def historical_data(self):
-		return self.client['trading']
+		return self.client['historical_data']
 
 	@property
 	def backtest_reports(self):
-		return self.client['trading_backtest_reports']
+		return self.client['backtest_reports']

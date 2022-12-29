@@ -18,7 +18,7 @@ class MongoRepository:
 	@property
 	@functools.cache
 	def client(self):
-		return pymongo.MongoClient(self.uri, tz_aware=True)
+		return pymongo.MongoClient(self.uri, tz_aware = True, connect = True)
 
 	def upsert(self, collection: Collection, rows: list):
 		try:

@@ -80,3 +80,16 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 	def refresh_indicators(self):
 		for indicator in self.indicators.values():
 			indicator.refresh()
+
+
+class OverriddenChartParams(dict):
+	def __init__(self, chart: Chart, overrides: dict):
+		self.chart = chart
+		self.overrides = overrides
+
+	def __getitem__(self, name: str):
+		if name in self.overrides:
+			return self.overrides[name]
+		if hasattr(self.chart, name):
+			return getattr(self.chart, name)
+		return None

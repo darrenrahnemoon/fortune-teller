@@ -1,5 +1,3 @@
-import typing
-
 class Serializer:
 	pass
 

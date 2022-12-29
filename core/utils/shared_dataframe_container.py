@@ -9,7 +9,7 @@ class SharedDataFrameContainer:
 
 	@functools.cached_property
 	def name(self):
-		return '.'.join([ type(self).__name__ ] + [ str(getattr(self, key)) for key in self.query_fields ])
+		return '.'.join([ type(self).__name__ ] + [ repr(getattr(self, key)) for key in self.query_fields ])
 
 	def __len__(self) -> int:
 		return 0 if type(self.dataframe) == type(None) else len(self.dataframe)

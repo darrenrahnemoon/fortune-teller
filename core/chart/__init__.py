@@ -1,5 +1,5 @@
 from core.chart.group import ChartGroup
-from core.chart.chart import Chart, Symbol
+from core.chart.chart import Chart, Symbol, OverriddenChartParams
 from core.chart.tick import TickChart
 from core.chart.candlestick import CandleStickChart
 from core.chart.renko import RenkoChart
