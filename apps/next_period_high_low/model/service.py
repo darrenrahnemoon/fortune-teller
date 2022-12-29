@@ -36,6 +36,7 @@ class NextPeriodHighLowService:
 	repository: NextPeriodHighLowRepository = field(init = False)
 	preprocessor: NextPeriodHighLowPreprocessor = field(init = False)
 	model: NextPeriodHighLowModel = field(init = False)
+	dataset: NextPeriodHighLowSequence = field(init = False)
 
 	@property
 	def tensorboard_directory(self):
@@ -84,15 +85,7 @@ class NextPeriodHighLowService:
 
 	def get_datasets(self):
 		# Dataset
-		dataset = NextPeriodHighLowSequence(
-			build_input_chart_group = self.build_input_chart_group,
-			build_output_chart_group = self.build_output_chart_group,
-			forward_window_length = self.forward_window_length,
-			backward_window_length = self.backward_window_length,
-			repository = self.repository,
-			preprocessor = self.preprocessor
-		)
-		dataset = ShuffledSequence(dataset)
+		dataset = ShuffledSequence(self.dataset)
 
 		# Training Dataset
 		training_dataset = PartialSequence(
@@ -144,3 +137,11 @@ class NextPeriodHighLowService:
 			batch_size = self.batch_size
 		)
 
+		self.dataset = NextPeriodHighLowSequence(
+			build_input_chart_group = self.build_input_chart_group,
+			build_output_chart_group = self.build_output_chart_group,
+			forward_window_length = self.forward_window_length,
+			backward_window_length = self.backward_window_length,
+			repository = self.repository,
+			preprocessor = self.preprocessor
+		)

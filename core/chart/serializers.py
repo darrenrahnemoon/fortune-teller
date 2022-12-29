@@ -42,7 +42,7 @@ class ChartDataFrameRecordsSerializer(Serializer):
 		return value
 
 	def to_records(self, dataframe: pandas.DataFrame or Chart or ChartGroup):
-		if isinstance(dataframe, Chart) or isinstance(dataframe, ChartGroup):
+		if hasattr(dataframe, 'dataframe'):
 			dataframe = dataframe.dataframe
 
 		if type(dataframe.columns) == pandas.MultiIndex:

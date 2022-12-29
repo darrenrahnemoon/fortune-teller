@@ -40,8 +40,8 @@ class NextPeriodHighLowRepository(MongoRepository):
 			return
 
 		collection = self.ensure_collection_for_chart_group(chart_group)
-		rows = self.dataframe_records_serializer.to_records(chart_group.dataframe)
-		self.upsert(collection, rows)
+		records = self.dataframe_records_serializer.to_records(chart_group.dataframe)
+		self.upsert(collection, records)
 
 	@property
 	def training_datasets(self):

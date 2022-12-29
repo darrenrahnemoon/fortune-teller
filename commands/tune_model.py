@@ -21,24 +21,24 @@ class TuneModelCommand(Command):
 			backward_window_length = Interval.Day(1),
 			forward_window_length = Interval.Minute(10),
 		)
+		strategy.service.dataset.cache()
+		# if self.args.clean:
+		# 	rmtree(strategy.service.keras_tuner_directory, ignore_errors = True)
+		# 	rmtree(strategy.service.tensorboard_directory, ignore_errors = True)
 
-		if self.args.clean:
-			rmtree(strategy.service.keras_tuner_directory, ignore_errors = True)
-			rmtree(strategy.service.tensorboard_directory, ignore_errors = True)
+		# tensorboard_process = None
+		# if self.args.tensorboard:
+		# 	tensorboard_process = subprocess.Popen([
+		# 		'tensorboard',
+		# 		'--logdir',
+		# 		strategy.service.tensorboard_directory
+		# 	],
+		# 	stdout = subprocess.PIPE,
+		# 	stderr = subprocess.PIPE
+		# )
 
-		tensorboard_process = None
-		if self.args.tensorboard:
-			tensorboard_process = subprocess.Popen([
-				'tensorboard',
-				'--logdir',
-				strategy.service.tensorboard_directory
-			],
-			stdout = subprocess.PIPE,
-			stderr = subprocess.PIPE
-		)
-
-		try:
-			strategy.service.tune_model()
-		finally:
-			if tensorboard_process:
-				tensorboard_process.terminate()
+		# try:
+		# 	strategy.service.tune_model()
+		# finally:
+		# 	if tensorboard_process:
+		# 		tensorboard_process.terminate()
