@@ -14,7 +14,7 @@ ChartCombinations = dict[
 
 @dataclass
 class Repository:
-	timezone: ClassVar[str]
+	timezone: ClassVar[str] = 'UTC'
 
 	@abstractmethod
 	def get_available_chart_combinations(self) -> ChartCombinations:

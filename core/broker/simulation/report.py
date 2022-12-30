@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 if typing.TYPE_CHECKING:
 	from core.strategy import Strategy
+	from core.broker import Broker
 from core.order import Order
 from core.position import Position
 
@@ -100,12 +101,16 @@ class BacktestReport:
 	positions: PositionsReport = None
 
 	@classmethod
-	def from_strategy(cls, strategy: 'Strategy'):
+	def from_strategy(
+		cls,
+		strategy: 'Strategy' = None,
+		broker: 'Broker' = None
+	):
 		report = cls()
 		report.created_at = now()
 		report.strategy = strategy
-		report.timesteps = TimestepsReport.from_timesteps(strategy.broker.timesteps)
-		report.equity = EquityReport.from_curve(strategy.broker.equity_curve)
-		report.orders = OrdersReport.from_orders(strategy.broker.orders)
-		report.positions = PositionsReport.from_positions(strategy.broker.positions)
+		report.timesteps = TimestepsReport.from_timesteps(broker.timesteps)
+		report.equity = EquityReport.from_curve(broker.equity_curve)
+		report.orders = OrdersReport.from_orders(broker.orders)
+		report.positions = PositionsReport.from_positions(broker.positions)
 		return report

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 	from core.repository import Repository
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
-from core.utils.time import TimeWindow
+from core.utils.time import TimeWindow, now
 
 logger = logging.getLogger(__name__)
 
@@ -86,19 +86,6 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 class ChartParams:
 	chart: Chart = None
 	overrides: dict = field(default_factory = dict)
-
-	# def ensure_timestamps(self):
-	# 	if self['count']:
-	# 		if self['from_timestamp'] and self['to_timestamp']:
-	# 			raise Exception('Cannot have both from/to timestamp and `count` populated')
-	# 		return
-
-	# 	if not self['to_timestamp']:
-	# 		repository = self['repository']
-	# 		if repository:
-	# 			self['to_timestamp'] = repository.now
-	# 		else:
-	# 			self['to_timestamp'] = now()
 
 	def __getitem__(self, name: str):
 		# HACK: `type` is a special case as the class type is used during querying as well

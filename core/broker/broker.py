@@ -12,7 +12,7 @@ from core.utils.time import TimestampLike, now
 
 @dataclass
 class Broker:
-	timezone: ClassVar[str]
+	timezone: ClassVar[str] = 'UTC'
 	repository: 'Repository' = None
 
 	@property

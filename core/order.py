@@ -36,7 +36,7 @@ class Order:
 		if isinstance(self.size, Size):
 			self.size = self.size.to_units(self)
 
-		broker.place_order(self)
+		self.broker.place_order(self)
 		return self
 
 	def cancel(self):

@@ -43,6 +43,10 @@ class ChartDataFrameRecordsSerializer(Serializer):
 			value.index = pandas.DatetimeIndex(value[Chart.timestamp_field], name = Chart.timestamp_field)
 			value = value.drop(columns = [ Chart.timestamp_field ])
 
+		# Make sure the dataframe is ascending
+		if value.index[0] > value.index[-1]:
+			value = value.sort_index(ascending = True)
+
 		# Ensure timestamp is timezone aware since different brokers have different time zones
 		if not value.index.tz:
 			value.index = value.index.tz_localize(tz = tz)

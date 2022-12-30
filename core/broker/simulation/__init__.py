@@ -19,11 +19,12 @@ from .serializers import DataClassMongoDocumentSerializer
 from core.interval import Interval
 from core.utils.time import normalize_timestamp, TimestampLike
 from core.utils.collection import ensure_list
+from core.utils.mongo import MongoRepository
 
 logger = logging.getLogger(__name__)
 
 @dataclass
-class SimulationBroker(Broker):
+class SimulationBroker(Broker, MongoRepository):
 	dataclass_serializer = DataClassMongoDocumentSerializer()
 
 	initial_cash: float = 1000.
@@ -75,7 +76,7 @@ class SimulationBroker(Broker):
 		for self.now in self.timesteps:
 			self.scheduler.run_as_of(self.now)
 
-			for order in self.get_orders(status='open'):
+			for order in self.get_orders(status ='open'):
 				price = self.get_last_price(order.symbol)
 				if (order.type == 'long' and order.stop and price >= order.stop) \
 					or (order.type == 'short' and order.stop and price <= order.stop):
@@ -104,12 +105,15 @@ class SimulationBroker(Broker):
 			strategy.handler()
 			self.equity_curve[self.now] = self.equity
 
-		report = BacktestReport.from_strategy(strategy)
+		report = BacktestReport.from_strategy(
+			strategy = strategy,
+			broker = self
+		)
 		self.write_backtest_report(report)
 
 	def write_backtest_report(self, report: BacktestReport):
 		collection = self.backtest_reports.get_collection(type(report.strategy).__name__)
-		serialized_report = self.serializers.dataclass.to_mongo_document(report)
+		serialized_report = self.dataclass_serializer.to_mongo_document(report)
 		collection.insert_one(serialized_report)
 
 	def get_orders(

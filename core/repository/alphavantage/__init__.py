@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AlphaVantageRepository(Repository):
-	timezone = 'UTC'
 	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
 	serializers = AlphaVantageSerializers()
 

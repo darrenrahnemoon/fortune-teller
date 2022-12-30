@@ -7,8 +7,8 @@ def ensure_list(potential_list: Iterable[V] or V) -> list[V]:
 		return potential_list
 	if type(potential_list) == list:
 		return potential_list
-	if hasattr(potential_list, '__iter__'):
-		return list(potential_list)
+	# if hasattr(potential_list, '__iter__'):
+	# 	return list(potential_list)
 	return [ potential_list ]
 
 def is_any_of(iterable: Iterable, check: Callable) -> bool:

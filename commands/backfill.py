@@ -19,7 +19,7 @@ class BackfillHistoricalDataCommand(Command):
 			default = []
 		)
 		self.parser.add_argument(
-			'--data-provider',
+			'--repository',
 			type = CommandArgumentSerializer(Repository).deserialize
 		)
 		self.parser.add_argument(
@@ -54,7 +54,7 @@ class BackfillHistoricalDataCommand(Command):
 
 	def handler(self):
 		if not self.args.repository:
-			logger.error('You need to specify a data provider to backfill from.')
+			logger.error('You need to specify a repository to backfill from.')
 			return
 
 		source_repository: Repository = self.args.repository()
