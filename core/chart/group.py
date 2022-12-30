@@ -17,6 +17,10 @@ class ChartGroup:
 		self.common_params['chart_group'] = self
 		self.set_fields(self.common_params)
 
+	@property
+	def data(self):
+		return self.dataframe
+
 	def add_chart(self, chart: Chart):
 		for key, value in self.common_params.items():
 			setattr(chart, key, value)

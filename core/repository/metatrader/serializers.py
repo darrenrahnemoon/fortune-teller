@@ -6,12 +6,15 @@ from core.chart.serializers import ChartDataFrameRecordsSerializer
 from core.interval import Interval
 
 class CandleStickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
-	def to_dataframe(
-		self,
-		records,
-		**kwargs,
-	):
+	def to_dataframe(self, records, **kwargs):
 		dataframe = pandas.DataFrame(records)
+
+		dataframe = dataframe.rename(
+			columns = {
+				'tick_volume': 'volume_tick',
+				'real_volume': 'volume_real',
+			}
+		)
 
 		# make sure a `timestamp` field is present so it becomes an index later
 		if 'time' in dataframe.columns:
@@ -20,18 +23,14 @@ class CandleStickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer
 		return super().to_dataframe(dataframe, **kwargs)
 
 class TickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
-	def to_dataframe(
-		self,
-		records,
-		**kwargs,
-	):
+	def to_dataframe(self, records, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
 		# standardize the columns
 		dataframe = dataframe.rename(
 			columns = {
 				'volume': 'volume_tick',
-				# 'volume_real': 'volume_real',
+				'volume_real': 'volume_real',
 			}
 		)
 

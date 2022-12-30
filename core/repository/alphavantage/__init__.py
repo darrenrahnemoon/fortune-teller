@@ -6,15 +6,16 @@ import requests
 import logging
 from dataclasses import dataclass, field
 
-from core.broker.broker import Broker, ChartCombinations
-from core.chart import LineChart, OverriddenChartParams
+from core.repository.repository import Repository, ChartCombinations
+from core.chart import LineChart, ChartParams
 from core.interval import Interval
 from .serializers import AlphaVantageSerializers
 
 logger = logging.getLogger(__name__)
 
 @dataclass
-class AlphaVantageBroker(Broker):
+class AlphaVantageRepository(Repository):
+	timezone = 'UTC'
 	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
 	serializers = AlphaVantageSerializers()
 
@@ -80,7 +81,7 @@ class AlphaVantageBroker(Broker):
 		chart: LineChart = None,
 		**overrides
 	) -> pandas.DataFrame:
-		chart_params = OverriddenChartParams(chart, overrides)
+		chart_params = ChartParams(chart, overrides)
 
 		api_params = dict(
 			apikey = self.api_key,

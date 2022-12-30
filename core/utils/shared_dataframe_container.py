@@ -1,20 +1,20 @@
-import abc
-import functools
-import typing
 import pandas
+from abc import abstractproperty
+from functools import cached_property
+from typing import ClassVar
 
 class SharedDataFrameContainer:
-	query_fields: typing.ClassVar[list[str]] = []
-	value_fields: typing.ClassVar[list[str]] = []
+	query_fields: ClassVar[list[str]] = []
+	value_fields: ClassVar[list[str]] = []
 
-	@functools.cached_property
+	@cached_property
 	def name(self):
 		return '.'.join([ type(self).__name__ ] + [ repr(getattr(self, key)) for key in self.query_fields ])
 
 	def __len__(self) -> int:
 		return 0 if type(self.dataframe) == type(None) else len(self.dataframe)
 
-	@abc.abstractproperty
+	@abstractproperty
 	def dataframe(self):
 		pass
 

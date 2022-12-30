@@ -1,8 +1,8 @@
 import abc
-from dataclasses import dataclass
-import typing
 import pandas
 import logging
+from typing import ClassVar
+from dataclasses import dataclass
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.chart import Chart
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Indicator(SharedDataFrameContainer):
-	value_fields: typing.ClassVar[list[str]] = []
+	value_fields: ClassVar[list[str]] = []
 
 	def __post_init__(self) -> None:
 		self.chart: Chart = None

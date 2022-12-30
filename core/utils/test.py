@@ -2,6 +2,7 @@ import os
 import time
 import traceback
 import termcolor
+import humanize
 
 from core.utils.module import import_modules
 
@@ -59,7 +60,7 @@ class TestManager:
 						self.stats['success'] += 1
 						print(
 							termcolor.colored(formatted_message, self.settings['case_color']),
-							termcolor.colored(f" Took {round((time.time() - start_time) * 1000, 3)}ms", self.settings['info_color'])
+							termcolor.colored(f" Took {humanize.precisedelta(time.time() - start_time, minimum_unit = 'microseconds')}", self.settings['info_color'])
 						)
 					except Exception:
 						self.stats['error'] += 1

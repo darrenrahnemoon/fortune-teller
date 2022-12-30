@@ -1,17 +1,16 @@
-from pandas.core.frame import DataFrame
+from core.repository import AlphaVantageRepository
 from core.interval import Interval
-from core.broker import AlphaVantageBroker
 from core.chart import LineChart
 from core.utils.test import it, describe
 
-@describe('AlphaVantageBroker')
+@describe('AlphaVantageRepository')
 def _():
-	alphavantage = AlphaVantageBroker()
-	@it('should read economical data from AlphaVantageBroker')
+	alphavantage_repository = AlphaVantageRepository()
+	@it('should read economical data from AlphaVantageRepository')
 	def _():
 		chart = LineChart(
 			symbol = 'TREASURY_YIELD',
-			broker = alphavantage,
+			repository = alphavantage_repository,
 			interval = Interval.Day(1),
 			maturity = Interval.Year(30)
 		).read()
@@ -19,7 +18,7 @@ def _():
 		assert len(chart) != 0
 		assert chart.data['value']['2022-10-28'] == 4.15
 
-		dataframe = alphavantage.read_chart(
+		dataframe = alphavantage_repository.read_chart(
 			symbol = 'TREASURY_YIELD',
 			interval = Interval.Day(1),
 			maturity = Interval.Year(30)

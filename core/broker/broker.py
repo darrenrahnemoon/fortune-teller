@@ -1,78 +1,41 @@
-import abc
-import typing
-import pandas
+from abc import abstractmethod, abstractproperty
+from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass
 
 from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
-if typing.TYPE_CHECKING:
-	from core.chart import Chart, Symbol
+if TYPE_CHECKING:
+	from core.chart import Symbol
+	from core.repository import Repository
 
 from core.utils.time import TimestampLike, now
-from core.utils.cls import product_dict
-
-ChartCombinations = dict[
-	type['Chart'], dict[str, list]
-]
 
 @dataclass
 class Broker:
-	timezone = 'UTC'
+	timezone: ClassVar[str]
+	repository: 'Repository' = None
 
 	@property
 	def now(self):
 		return now(self.timezone)
 
-	@abc.abstractmethod
-	def get_available_chart_combinations(self) -> ChartCombinations:
-		pass
-
-	@classmethod
-	def get_available_charts(self, filter = {}):
-		charts = []
-		for chart, combination_groups in self.get_available_chart_combinations().items():
-			if 'chart' in filter and not issubclass(chart, filter['chart']):
-				continue
-			for combination_group in combination_groups:
-				for combination in product_dict(combination_group):
-					if filter.items() <= combination.items():
-						charts.append(chart(**combination))
-		return charts
-
-	def ensure_timestamp(self, chart: 'Chart'):
-		if chart.count:
-			if chart.to_timestamp:
-				raise Exception('Cannot read x number of datapoints before a timestamp.')
-			if chart.from_timestamp:
-				return
-		if not chart.to_timestamp:
-			chart.to_timestamp = self.now
-
-	@abc.abstractmethod
-	def read_chart(self, chart: 'Chart') -> pandas.DataFrame:
-		pass
-
-	@abc.abstractmethod
-	def write_chart(self, chart: 'Chart'):
-		pass
-
-	@abc.abstractmethod
+	@abstractmethod
 	def place_order(self, order: Order) -> Order:
 		pass
 
-	@abc.abstractmethod
+	@abstractmethod
 	def cancel_order(self, order: Order) -> Order:
 		pass
 
-	@abc.abstractmethod
+	@abstractmethod
 	def close_position(self, position: Position):
 		pass
 
-	@abc.abstractmethod
+	@abstractmethod
 	def get_last_price(self, symbol: 'Symbol') -> float:
 		pass
 
-	@abc.abstractmethod
+	@abstractmethod
 	def get_orders(
 		self,
 		symbol: 'Symbol' = None,
@@ -83,7 +46,7 @@ class Broker:
 	) -> list[Order]:
 		pass
 
-	@abc.abstractmethod
+	@abstractmethod
 	def get_positions(
 		self,
 		symbol: 'Symbol' = None,
@@ -94,18 +57,10 @@ class Broker:
 	) -> list[Position]:
 		pass
 
-	@abc.abstractproperty
+	@abstractproperty
 	def balance(self) -> float:
 		pass
 
-	@abc.abstractproperty
+	@abstractproperty
 	def equity(self) -> float:
 		pass
-
-	@abc.abstractproperty
-	def leverage(self) -> float:
-		pass
-
-	@property
-	def margin(self) -> float:
-		return 1 / self.leverage

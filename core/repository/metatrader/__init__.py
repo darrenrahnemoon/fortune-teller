@@ -1,17 +1,18 @@
 import logging
-import functools
+
 import pandas
+from functools import cache
 from dataclasses import dataclass
 
 from .serializers import MetaTraderSerializers
-from core.chart import CandleStickChart, TickChart, Chart
-from core.broker.broker import Broker
+from core.repository.repository import Repository
+from core.chart import CandleStickChart, TickChart, Chart, ChartParams
 from core.utils.module import import_module
 
 logger = logging.getLogger(__name__)
 
 @dataclass
-class MetaTraderBroker(Broker):
+class MetaTraderRepository(Repository):
 	api = None
 	timezone = 'UTC'
 	serializers = MetaTraderSerializers()
@@ -22,11 +23,11 @@ class MetaTraderBroker(Broker):
 			return
 
 		# Intentionally imported this way so that importing this package on MacOS and Linux doesn't bork about MetaTrader5 which is only available on Windows
-		self.api = MetaTraderBroker.api = import_module('MetaTrader5')
+		self.api = import_module('MetaTrader5')
 		if not self.api.initialize():
 			raise self.api.last_error()
 
-	@functools.cache
+	@cache
 	def get_available_chart_combinations(self):
 		symbols = self.api.symbols_get()
 		return {
@@ -43,28 +44,39 @@ class MetaTraderBroker(Broker):
 			]
 		}
 
-	def read_chart(self, chart: Chart) -> pandas.DataFrame:
-		self.ensure_timestamp(chart)
-
-		if isinstance(chart, CandleStickChart):
+	def read_chart(
+		self,
+		chart: Chart = None,
+		**overrides
+	) -> pandas.DataFrame:
+		chart_params = ChartParams(chart, overrides)
+		dataframe = None
+		if chart_params['type'] == CandleStickChart:
 			records = self.api.copy_rates_range(
-				chart.symbol,
-				self.serializers.interval.serialize(chart.interval),
-				chart.from_timestamp.to_pydatetime(),
-				chart.to_timestamp.to_pydatetime(),
+				chart_params['symbol'],
+				self.serializers.interval.serialize(chart_params['interval']),
+				chart_params['from_timestamp'].to_pydatetime(),
+				chart_params['to_timestamp'].to_pydatetime(),
 			)
-			dataframe = self.serializers.records.candlestick.to_dataframe(records, chart)
-		elif isinstance(chart, TickChart):
+			dataframe = self.serializers.records.candlestick.to_dataframe(
+				records,
+				name = chart_params['name'],
+				select = chart_params['select'],
+				tz = self.timezone,
+			)
+		elif chart_params['type'] == TickChart:
 			records = self.api.copy_ticks_range(
-				chart.symbol,
-				chart.from_timestamp.to_pydatetime(),
-				chart.to_timestamp.to_pydatetime(),
+				chart_params['symbol'],
+				chart_params['from_timestamp'].to_pydatetime(),
+				chart_params['to_timestamp'].to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = self.serializers.records.tick.to_dataframe(records, chart)
-		else:
-			raise Exception(f"Unsupported chart type '{chart}'.")
-
+			dataframe = self.serializers.records.tick.to_dataframe(
+				records,
+				name = chart_params['name'],
+				select = chart_params['select'],
+				tz = self.timezone,
+			)
 		return dataframe
 
 

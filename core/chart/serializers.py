@@ -59,7 +59,7 @@ class ChartDataFrameRecordsSerializer(Serializer):
 			if name:
 				value.columns = pandas.MultiIndex.from_tuples(
 					[ (name, column) for column in value.columns ],
-					names=[ 'timeseries', 'field' ]
+					names=[ 'time_series', 'field' ]
 				)
 		return value
 

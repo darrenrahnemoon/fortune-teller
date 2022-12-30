@@ -2,7 +2,6 @@ import numpy
 import pandas
 from core.interval import Interval
 from core.utils.test import it, describe
-from core.broker import MetaTraderBroker
 
 @describe('Interval')
 def _():

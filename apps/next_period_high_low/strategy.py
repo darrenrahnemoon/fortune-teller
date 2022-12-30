@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from core.broker import Broker
+from core.repository import Repository
 from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
 from core.strategy import Strategy
@@ -11,8 +12,9 @@ from .model.service import NextPeriodHighLowService
 @dataclass
 class NextPeriodHighLowStrategy(Strategy):
 	# brokers used in the strategy
-	alphavantage_broker: Broker = None
-	metatrader_broker: Broker = None
+	metatrader_repository: Repository = None 
+	alphavantage_repository: Repository = None 
+	broker: Broker = None
 
 	# Params
 	interval: Interval = None
@@ -52,9 +54,9 @@ class NextPeriodHighLowStrategy(Strategy):
 				CandleStickChart(
 					symbol = symbol,
 					interval = self.interval,
-					broker = self.metatrader_broker,
 					select = CandleStickChart.data_fields,
-					count = self.backward_window_length
+					count = self.backward_window_length,
+					repository = self.metatrader_repository,
 				)
 				for symbol in [
 					'EURCAD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURNZD', 'EURUSD', 'EURAUD', 'EURTRY', 'EURNOK', 'EURSEK', 'EURCZK', 'EURDKK', 'EURHUF', 'EURPLN',

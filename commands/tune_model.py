@@ -3,7 +3,8 @@ import subprocess
 from shutil import rmtree
 
 from apps.next_period_high_low.strategy import NextPeriodHighLowStrategy
-from core.broker.simulation import SimulationBroker
+from core.repository import SimulationRepository
+from core.broker import SimulationBroker
 from core.interval import Interval
 from core.utils.command import Command
 
@@ -13,10 +14,14 @@ class TuneModelCommand(Command):
 		self.parser.add_argument('--clean', action = argparse.BooleanOptionalAction)
 
 	def handler(self):
-		broker = SimulationBroker()
+		simulation_repository = SimulationRepository()
+		simulation_broker = SimulationBroker(
+			repository = simulation_repository
+		)
 		strategy = NextPeriodHighLowStrategy(
-			alphavantage_broker = broker,
-			metatrader_broker = broker,
+			broker = simulation_broker,
+			metatrader_repository = simulation_repository,
+			alphavantage_repository = simulation_repository,
 			interval = Interval.Minute(1),
 			backward_window_length = Interval.Day(1),
 			forward_window_length = Interval.Minute(10),

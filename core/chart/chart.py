@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 if TYPE_CHECKING:
 	from core.indicator import Indicator
 	from core.chart.group import ChartGroup
-	from core.broker import Broker
+	from core.repository import Repository
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.utils.time import TimeWindow
@@ -19,14 +19,14 @@ Symbol = str
 @dataclass
 class Chart(TimeWindow, SharedDataFrameContainer):
 	symbol: Symbol = None
-	broker: 'Broker' = None
+	repository: 'Repository' = None
 	chart_group: 'ChartGroup' = None
 	indicators: dict[str, 'Indicator'] = field(repr=False, default_factory=dict)
 	count: int = None
 	select: list[str] = None
 
-	query_fields: ClassVar[list[str]] = [ 'symbol' ]
 	timestamp_field: ClassVar[str] = 'timestamp'
+	query_fields: ClassVar[list[str]] = [ 'symbol' ]
 	data_fields: ClassVar[list[str]] = []
 	volume_fields: ClassVar[list[str]] = []
 
@@ -43,7 +43,7 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 			self.attach_indicator(indicator, name=name)
 
 	def read(self, refresh_indicators = True):
-		self.dataframe = self.broker.read_chart(self)
+		self.dataframe = self.repository.read_chart(self)
 
 		if refresh_indicators:
 			self.refresh_indicators()
@@ -82,14 +82,43 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 			indicator.refresh()
 
 
-class OverriddenChartParams(dict):
-	def __init__(self, chart: Chart, overrides: dict):
-		self.chart = chart
-		self.overrides = overrides
+@dataclass
+class ChartParams:
+	chart: Chart = None
+	overrides: dict = field(default_factory = dict)
+
+	# def ensure_timestamps(self):
+	# 	if self['count']:
+	# 		if self['from_timestamp'] and self['to_timestamp']:
+	# 			raise Exception('Cannot have both from/to timestamp and `count` populated')
+	# 		return
+
+	# 	if not self['to_timestamp']:
+	# 		repository = self['repository']
+	# 		if repository:
+	# 			self['to_timestamp'] = repository.now
+	# 		else:
+	# 			self['to_timestamp'] = now()
 
 	def __getitem__(self, name: str):
+		# HACK: `type` is a special case as the class type is used during querying as well
+		if name == 'type':
+			if self.chart != None:
+				return type(self.chart)
+			else:
+				return self.overrides.get('type', None)
+
 		if name in self.overrides:
 			return self.overrides[name]
 		if hasattr(self.chart, name):
 			return getattr(self.chart, name)
 		return None
+
+	def __setitem__(self, key, value):
+		self.overrides[key] = value
+
+	@classmethod
+	def ensure(cls, potential_instance):
+		if type(cls) != cls:
+			return cls(potential_instance)
+		return potential_instance

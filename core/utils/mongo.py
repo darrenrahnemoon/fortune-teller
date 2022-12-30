@@ -3,6 +3,10 @@ import pymongo
 import os
 import logging
 import functools
+from typing import Iterable
+
+from pymongo.database import Database
+from pymongo.errors import BulkWriteError
 from pymongo.collection import Collection
 from dataclasses import dataclass
 
@@ -18,20 +22,33 @@ class MongoRepository:
 	@property
 	@functools.cache
 	def client(self):
-		return pymongo.MongoClient(self.uri, tz_aware = True, connect = True)
+		return pymongo.MongoClient(self.uri, tz_aware = True)
 
-	def upsert(self, collection: Collection, rows: list):
+	def upsert(
+		self,
+		collection: Collection,
+		records: Iterable,
+	):
 		try:
-			collection.insert_many(rows)
-		except:
-			index = sys.exc_info()[1].details['writeErrors'][0]['index']
-			failed_row = rows[index]
-			del failed_row['_id'] # Cannot upsert a new generated `_id` on existing document
+			collection.insert_many(records, ordered = False)
+		except BulkWriteError:
+			pass # SHOULD DO: upsert: https://stackoverflow.com/questions/44838280/how-to-ignore-duplicate-key-errors-safely-using-insert-many
 
-			logger.debug(f"Duplicated row found. Upserting...\n{failed_row[Chart.timestamp_field]}")
-			collection.update_one({ Chart.timestamp_field: failed_row[Chart.timestamp_field] }, { '$set' : failed_row })
+	def ensure_time_series_collection(
+		self,
+		database: Database,
+		name: str
+	):
+		collection = database.get_collection(name)
+		indexes = collection.index_information()
 
-			start_from = index + 1
-			if start_from == len(rows):
-				return
-			self.upsert(collection, rows[start_from:])
+		if Chart.timestamp_field not in indexes:
+			collection.create_index(
+				keys = [
+					(Chart.timestamp_field, pymongo.ASCENDING)
+				],
+				name = Chart.timestamp_field,
+				unique = True
+			)
+
+		return collection

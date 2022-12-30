@@ -19,13 +19,6 @@ class Strategy:
 		self.is_aborted = True
 		self.cleanup()
 
-	def backtest(self, broker: SimulationBroker = None, **kwargs):
-		broker = broker or SimulationBroker(**kwargs)
-		for field_name, field_type in type(self).__annotations__.items():
-			if issubclass(field_type, Broker) or 'Broker' in str(field_type):
-				setattr(self, field_name, broker)
-		broker.backtest(self)
-
 	def run(self):
 		while not self.is_aborted:
 			self.handler()
