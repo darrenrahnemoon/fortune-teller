@@ -3,13 +3,13 @@ import time
 import os
 import pandas
 import requests
-import logging
 from dataclasses import dataclass, field
 
 from core.repository.repository import Repository, ChartCombinations
 from core.chart import LineChart, ChartParams
 from core.interval import Interval
 from .serializers import AlphaVantageSerializers
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class AlphaVantageRepository(Repository):
 
 	def read_chart(
 		self,
-		chart: LineChart = None,
+		chart: LineChart or ChartParams = None,
 		**overrides
 	) -> pandas.DataFrame:
 		chart_params = ChartParams(chart, overrides)

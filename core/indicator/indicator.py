@@ -1,11 +1,12 @@
 import abc
 import pandas
-import logging
+
 from typing import ClassVar
 from dataclasses import dataclass
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.chart import Chart
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 

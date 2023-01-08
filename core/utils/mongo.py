@@ -1,7 +1,6 @@
 import sys
 import pymongo
 import os
-import logging
 import functools
 from typing import Iterable
 
@@ -11,6 +10,7 @@ from pymongo.collection import Collection
 from dataclasses import dataclass
 
 from core.chart import Chart
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 

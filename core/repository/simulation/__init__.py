@@ -1,16 +1,16 @@
-import logging
-from typing import Iterable
 import pandas
-from dataclasses import dataclass
 import pymongo
-
-from pymongo.database import Database
+from multiprocess import Pool
+from typing import Iterable
+from dataclasses import dataclass
 
 from .serializers import SimulationSerializers
 from core.chart import Chart, ChartGroup, ChartParams
 from core.repository.repository import ChartCombinations, Repository
-from core.utils.time import TimeWindow, normalize_timestamp
+from core.utils.time import TimeWindow, normalize_timestamp, now
 from core.utils.mongo import MongoRepository
+from core.utils.logging import logging
+from core.utils.cls import pretty_repr
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +20,16 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def read_chart(
 		self,
-		chart: Chart = None,
-		database: Database = None,
+		chart: Chart or ChartParams = None,
+		collection: str = None,
+		database: str = None,
 		**overrides
 	) -> pandas.DataFrame:
-		database = database or self.historical_data
+		database = self.client[database] if database else self.historical_data
 		chart_params = ChartParams(chart, overrides)
 		find_options = self.serializers.find_options.to_find_options(chart_params)
 
-		collection = self.serializers.collection.to_collection_name(chart_params)
+		collection = collection or self.serializers.collection.to_collection_name(chart_params)
 		collection = database.get_collection(collection)
 		records = collection.find(**find_options)
 
@@ -43,19 +44,20 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def write_chart(
 		self,
-		chart: Chart or ChartGroup = None,
-		database: Database = None,
+		chart: Chart or ChartGroup or ChartParams = None,
+		collection: str = None,
+		database: str = None,
 		**overrides
 	):
-		database = database or self.historical_data
 		chart_params = ChartParams(chart, overrides)
+		database = self.client[database] if database else self.historical_data
 		data = chart_params['data']
 		if len(data) == 0:
 			logger.warn(f"Attempted to write an empty {chart_params['name']} into database. Skipping...")
 			return
 
 		logger.debug(f'Writing chart:\n{data}')
-		collection = self.serializers.collection.to_collection_name(chart_params)
+		collection = collection or self.serializers.collection.to_collection_name(chart_params)
 		collection = self.ensure_time_series_collection(
 			database = database,
 			name = collection
@@ -68,7 +70,7 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def remove_historical_data(
 		self,
-		chart: Chart = None,
+		chart: Chart or ChartParams = None,
 		**overrides
 	):
 		chart_params = ChartParams(chart, overrides)
@@ -78,7 +80,7 @@ class SimulationRepository(Repository, MongoRepository):
 	@classmethod
 	def get_common_time_window(
 		self,
-		chart_group: ChartGroup = None,
+		chart_group: ChartGroup or ChartParams = None,
 		**overrides
 	) -> TimeWindow:
 		chart_params = ChartParams(chart_group, overrides)
@@ -131,7 +133,7 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def get_max_available_timestamp_for_chart(
 		self,
-		chart: Chart = None,
+		chart: Chart or ChartParams = None,
 		**overrides
 	) -> pandas.Timestamp:
 		chart_params = ChartParams(chart, overrides)
@@ -141,7 +143,7 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def get_min_available_timestamp_for_chart(
 		self,
-		chart: Chart = None,
+		chart: Chart or ChartParams = None,
 		**overrides
 	) -> pandas.Timestamp:
 		chart_params = ChartParams(chart, overrides)
@@ -149,6 +151,82 @@ class SimulationRepository(Repository, MongoRepository):
 		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.ASCENDING) ])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
+	def backfill_worker(
+		self,
+		chart_params: ChartParams,
+		repository: type[Repository],
+	):
+		# logger = logging.getLogger(__name__)
+		logger.info(f'Backfilling chart:\n{pretty_repr(chart_params)}\n')
+		repository = repository()
+		data = repository.read_chart(chart_params)
+
+		if chart_params['interval']:
+			pass
+
+		# existing_data = self.read_chart(chart, select = [], **overrides)
+
+		# # HACK: naive way of saving on duplicate inserting
+		# if len(existing_data) >= len(data):
+		# 	logger.debug('Chart already has been backfilled. Skipping...')
+		# 	return
+
+		# Columns get processed into a MultiIndex
+		data.columns = [ column[-1] for column in data.columns ]
+		self.write_chart(
+			chart_params,
+			data = data,
+		)
+
+	def backfill(
+		self,
+		chart: Chart = None,
+		repository: type[Repository] = None,
+		from_timestamp: pandas.Timestamp = None,
+		to_timestamp: pandas.Timestamp = now(),
+		clean: bool = False,
+		workers: int = 1,
+	):
+		if clean:
+			self.remove_historical_data(chart)
+
+		pool = Pool(workers)
+		try:
+			if from_timestamp and to_timestamp:
+				increments = list(pandas.date_range(
+					start = from_timestamp,
+					end = to_timestamp,
+					freq = 'MS' # "Month Start"
+				))
+				# date_range where start - end < freq returns empty
+				if len(increments) == 0:
+					increments = [ from_timestamp, to_timestamp ]
+				else:
+					increments.append(to_timestamp)
+
+					pool.starmap(
+						self.backfill_worker,
+						(
+							(
+								ChartParams(
+									chart,
+									{
+										'from_timestamp' : increments[index - 1],
+										'to_timestamp' : increments[index]
+									},
+								),
+								repository
+							)
+							for index in range(1, len(increments))
+						)
+					)
+
+			else:
+				chart.read()
+				self.write_chart(chart)
+		finally:
+			pool.close()
+			pool.join()
 	@property
 	def historical_data(self):
 		return self.client['historical_data']

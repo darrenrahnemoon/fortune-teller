@@ -1,7 +1,6 @@
-import logging
-
 from core.utils.serializer import Serializer
 from core.utils.collection import is_any_of
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 

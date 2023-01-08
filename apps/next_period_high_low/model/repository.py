@@ -1,6 +1,5 @@
 import pandas
 import pymongo
-import logging
 from dataclasses import dataclass
 
 from core.chart import ChartGroup, Chart
@@ -8,6 +7,7 @@ from core.chart.serializers import ChartDataFrameRecordsSerializer
 from core.broker.simulation.serializers import ChartCollectionSerializer, ChartMongoFindOptionsSerializer
 from core.utils.mongo import MongoRepository
 from .preprocessor import NextPeriodHighLowPreprocessor
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 

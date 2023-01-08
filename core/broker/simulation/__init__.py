@@ -1,4 +1,3 @@
-import logging
 import typing
 import pandas
 import random
@@ -20,6 +19,7 @@ from core.interval import Interval
 from core.utils.time import normalize_timestamp, TimestampLike
 from core.utils.collection import ensure_list
 from core.utils.mongo import MongoRepository
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 

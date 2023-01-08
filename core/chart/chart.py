@@ -1,6 +1,5 @@
 import pandas
 import inspect
-import logging
 from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass, field
 
@@ -11,6 +10,7 @@ if TYPE_CHECKING:
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.utils.time import TimeWindow, now
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +81,22 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 		for indicator in self.indicators.values():
 			indicator.refresh()
 
-
 @dataclass
 class ChartParams:
 	chart: Chart = None
 	overrides: dict = field(default_factory = dict)
+
+	def __init__(
+		self,
+		chart: Chart or 'ChartParams',
+		overrides: dict = {}
+	) -> None:
+		self.overrides = overrides
+		if type(chart) == ChartParams:
+			self.chart = chart.chart
+			self.overrides.update(chart.overrides)
+		else:
+			self.chart = chart
 
 	def __getitem__(self, name: str):
 		# HACK: `type` is a special case as the class type is used during querying as well
@@ -103,9 +114,3 @@ class ChartParams:
 
 	def __setitem__(self, key, value):
 		self.overrides[key] = value
-
-	@classmethod
-	def ensure(cls, potential_instance):
-		if type(cls) != cls:
-			return cls(potential_instance)
-		return potential_instance

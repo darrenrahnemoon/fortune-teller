@@ -12,11 +12,12 @@ class AvailableHistoricalDataCommand(Command):
 			self.add_arguments_from_class(chart_class, chart_class.query_fields)
 
 	def handler(self):
+		repository = self.args.repository()
 		where = {
 			key: value 
 			for key, value in self.args.__dict__.items() 
 			if key != 'repository' and value != None
 		}
-		charts = self.args.repository.get_available_charts(filter = where, include_timestamps=True)
+		charts = repository.get_available_charts(filter = where, include_timestamps = True)
 		for chart in charts:
 			print(type(chart).__name__, *[ getattr(chart, key) for key in chart.query_fields ], chart.from_timestamp, chart.to_timestamp, sep='\t')

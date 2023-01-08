@@ -1,10 +1,10 @@
-import logging
 import pandas
 from typing import Iterable
 
 from core.utils.collection import is_any_of
 from core.chart import Chart
 from core.utils.serializer import Serializer
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ class ChartDataFrameRecordsSerializer(Serializer):
 
 		# Empty dataframes might not have the right columns, so add them
 		if len(value) == 0 and type(value.columns) != pandas.MultiIndex: # NOTE: `select` not supported for MultiIndex columns
-			value[[ Chart.to_timestamp ] + (select or [])] = None # by setting to None the columns are "upserted"
+			value[Chart.timestamp_field] = None
+			if select and len(select):
+				value[select] = None
 
 		# Ensure timestamp is index
 		if type(value.index) != pandas.DatetimeIndex:
@@ -44,7 +46,7 @@ class ChartDataFrameRecordsSerializer(Serializer):
 			value = value.drop(columns = [ Chart.timestamp_field ])
 
 		# Make sure the dataframe is ascending
-		if value.index[0] > value.index[-1]:
+		if len(value.index) > 1 and value.index[0] > value.index[-1]:
 			value = value.sort_index(ascending = True)
 
 		# Ensure timestamp is timezone aware since different brokers have different time zones

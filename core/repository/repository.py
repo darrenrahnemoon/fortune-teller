@@ -20,8 +20,7 @@ class Repository:
 	def get_available_chart_combinations(self) -> ChartCombinations:
 		pass
 
-	@classmethod
-	def get_available_charts(self, filter = {}):
+	def get_available_charts(self, filter = {}, **kwargs):
 		charts = []
 		for chart, combination_groups in self.get_available_chart_combinations().items():
 			if 'chart' in filter and not issubclass(chart, filter['chart']):

@@ -1,33 +1,27 @@
-import logging
-
 import pandas
-from functools import cache
 from dataclasses import dataclass
 
 from .serializers import MetaTraderSerializers
 from core.repository.repository import Repository
 from core.chart import CandleStickChart, TickChart, Chart, ChartParams
 from core.utils.module import import_module
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class MetaTraderRepository(Repository):
-	api = None
 	timezone = 'UTC'
 	serializers = MetaTraderSerializers()
 
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
-		if self.api:
-			return
 
 		# Intentionally imported this way so that importing this package on MacOS and Linux doesn't bork about MetaTrader5 which is only available on Windows
 		self.api = import_module('MetaTrader5')
 		if not self.api.initialize():
 			raise self.api.last_error()
 
-	@cache
 	def get_available_chart_combinations(self):
 		symbols = self.api.symbols_get()
 		return {
@@ -39,14 +33,14 @@ class MetaTraderRepository(Repository):
 				for symbol in symbols
 			],
 			TickChart : [
-				{ 'symbol' : symbol.name }
+				{ 'symbol' : [ symbol.name ] }
 				for symbol in symbols
 			]
 		}
 
 	def read_chart(
 		self,
-		chart: Chart = None,
+		chart: Chart or ChartParams = None,
 		**overrides
 	) -> pandas.DataFrame:
 		chart_params = ChartParams(chart, overrides)

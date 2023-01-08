@@ -1,6 +1,4 @@
 import argparse
-import logging
-import pandas
 
 from core.repository import Repository, SimulationRepository
 from core.chart import Chart
@@ -8,13 +6,14 @@ from core.utils.time import normalize_timestamp, now
 from core.utils.cls import product_dict
 from core.utils.command import Command
 from core.utils.command.serializers import CommandArgumentSerializer
+from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
 
 class BackfillHistoricalDataCommand(Command):
 	def config(self):
 		self.parser.add_argument(
-			'symbol',
+			'--symbol',
 			nargs = '*',
 			default = []
 		)
@@ -57,7 +56,6 @@ class BackfillHistoricalDataCommand(Command):
 			logger.error('You need to specify a repository to backfill from.')
 			return
 
-		source_repository: Repository = self.args.repository()
 		simulation_repository = SimulationRepository()
 		combinations = {
 			key: value
@@ -66,22 +64,12 @@ class BackfillHistoricalDataCommand(Command):
 		}
 
 		for combination in product_dict(combinations):
-			increments = []
 			chart_class = combination.pop('chart')
-			chart = chart_class(repository = source_repository, **combination)
-			increments = list(pandas.date_range(
-				start = self.args.from_timestamp,
-				end = self.args.to_timestamp,
-				freq = 'MS' # "Month Start"
-			))
-			increments.append(self.args.to_timestamp)
-			if len(increments) == 1:
-				increments.insert(0, self.args.from_timestamp)
-			if self.args.clean:
-				simulation_repository.remove_historical_data(chart)
-			for index in range(1, len(increments)):
-				chart.from_timestamp = increments[index - 1]
-				chart.to_timestamp = increments[index]
-				logger.info(f'Backfilling chart:\n{chart}')
-				chart.read()
-				simulation_repository.write_chart(chart)
+			simulation_repository.backfill(
+				chart = chart_class(**combination),
+				repository = self.args.repository,
+				from_timestamp = self.args.from_timestamp,
+				to_timestamp = self.args.to_timestamp,
+				clean = self.args.clean,
+				workers = 5,
+			)
