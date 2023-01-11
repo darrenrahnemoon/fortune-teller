@@ -1,3 +1,4 @@
+import numpy
 import pandas
 from dataclasses import dataclass
 
@@ -58,6 +59,10 @@ class MetaTraderRepository(Repository):
 				select = chart_params['select'],
 				tz = self.timezone,
 			)
+			dataframe = self.ensure_interval_integrity(
+				dataframe = dataframe,
+				chart_params = chart_params
+			)
 		elif chart_params['type'] == TickChart:
 			records = self.api.copy_ticks_range(
 				chart_params['symbol'],
@@ -73,6 +78,32 @@ class MetaTraderRepository(Repository):
 			)
 		return dataframe
 
+	def ensure_interval_integrity(
+		self,
+		dataframe: pandas.DataFrame = None,
+		chart_params: ChartParams = None,
+		frequency_tolerance: int = 50,
+	):
+		if not (chart_params['from_timestamp'] and chart_params['to_timestamp'] and chart_params['interval']):
+			return dataframe # Not enough data to do an interval integrity 
+
+		if len(dataframe) == 0:
+			return dataframe
+
+		try:
+			average_frequency = numpy.diff(dataframe.index.to_numpy()).mean()
+			expected_frequency = chart_params['interval'].to_pandas_timedelta()
+			if average_frequency / expected_frequency > frequency_tolerance:
+				logger.warn(f"Missing too many data points. It's likely that MetaTrader attempted to compensate for less granularity by returning a higher granular data. Skipping results...\nAverage Frequency of Received Data: {average_frequency}\nExpected Frequency: {expected_frequency}")
+				return self.serializers.records.candlestick.to_dataframe(
+					[],
+					name = chart_params['name'],
+					select = chart_params['select'],
+					tz = self.timezone,
+				)
+		except:
+			pass
+		return dataframe
 
 # tick copy flags
 COPY_TICKS_ALL                      = -1

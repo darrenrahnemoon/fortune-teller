@@ -7,9 +7,15 @@ from core.utils.command import Command, CommandArgumentSerializer
 class AvailableHistoricalDataCommand(Command):
 	def config(self):
 		self.parser.add_argument('--repository', type = CommandArgumentSerializer(Repository).deserialize, default = SimulationRepository())
-		self.parser.add_argument('--chart', type = CommandArgumentSerializer(Chart).deserialize)
+		self.parser.add_argument('--chart', nargs = "*", type = CommandArgumentSerializer(Chart).deserialize)
 		for chart_class in [ Chart ] + Chart.__subclasses__():
-			self.add_arguments_from_class(chart_class, chart_class.query_fields)
+			self.add_arguments_from_class(
+				cls = chart_class,
+				select = chart_class.query_fields,
+				kwargs = {
+					'nargs' : '*'
+				}
+			)
 
 	def handler(self):
 		repository = self.args.repository()

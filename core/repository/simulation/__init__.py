@@ -124,8 +124,14 @@ class SimulationRepository(Repository, MongoRepository):
 		collection_names.sort()
 		for name in collection_names:
 			chart = self.serializers.collection.to_chart(name)
-			if not filter.items() <= chart.__dict__.items():
+
+			should_skip = False
+			for key, value in chart.__dict__.items():
+				if (key in filter) and (value not in filter[key]):
+					should_skip = True
+			if should_skip:
 				continue
+
 			if include_timestamps:
 				chart.from_timestamp = self.get_min_available_timestamp_for_chart(chart)
 				chart.to_timestamp = self.get_max_available_timestamp_for_chart(chart)
@@ -156,26 +162,15 @@ class SimulationRepository(Repository, MongoRepository):
 		chart_params: ChartParams,
 		repository: type[Repository],
 	):
-		# logger = logging.getLogger(__name__)
 		logger.info(f'Backfilling chart:\n{pretty_repr(chart_params)}\n')
 		repository = repository()
-		data = repository.read_chart(chart_params)
+		new_data = repository.read_chart(chart_params)
 
-		if chart_params['interval']:
-			pass
-
-		# existing_data = self.read_chart(chart, select = [], **overrides)
-
-		# # HACK: naive way of saving on duplicate inserting
-		# if len(existing_data) >= len(data):
-		# 	logger.debug('Chart already has been backfilled. Skipping...')
-		# 	return
-
-		# Columns get processed into a MultiIndex
-		data.columns = [ column[-1] for column in data.columns ]
+		# Columns get processed into a MultiIndex we only need the fields not the time series names
+		new_data.columns = [ column[-1] for column in new_data.columns ]
 		self.write_chart(
 			chart_params,
-			data = data,
+			data = new_data,
 		)
 
 	def backfill(

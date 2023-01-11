@@ -1,4 +1,3 @@
-import sys
 import pymongo
 import os
 import functools

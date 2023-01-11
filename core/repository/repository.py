@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 from core.utils.time import now
 from core.utils.cls import product_dict
+from core.utils.collection import is_any_of
 
 ChartCombinations = dict[
 	type['Chart'], dict[str, list]
@@ -21,15 +22,19 @@ class Repository:
 		pass
 
 	def get_available_charts(self, filter = {}, **kwargs):
-		charts = []
 		for chart, combination_groups in self.get_available_chart_combinations().items():
-			if 'chart' in filter and not issubclass(chart, filter['chart']):
+			if 'chart' in filter and not is_any_of(filter['chart'], lambda filter_chart: issubclass(chart, filter_chart)):
 				continue
 			for combination_group in combination_groups:
 				for combination in product_dict(combination_group):
-					if filter.items() <= combination.items():
-						charts.append(chart(**combination))
-		return charts
+					should_skip = False
+					for key, value in combination.items():
+						if key in filter and not value in filter[key]:
+							should_skip = True
+							break
+					if should_skip:
+						continue
+					yield chart(**combination)
 
 	@abstractmethod
 	def read_chart(

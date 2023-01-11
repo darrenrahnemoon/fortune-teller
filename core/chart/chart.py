@@ -100,7 +100,7 @@ class ChartParams:
 
 	def __getitem__(self, name: str):
 		# HACK: `type` is a special case as the class type is used during querying as well
-		if name == 'type':
+		if name == 'type' or name == 'chart':
 			if self.chart != None:
 				return type(self.chart)
 			else:
