@@ -49,7 +49,7 @@ class ChartCollectionSerializer(Serializer):
 			collection = collection.name
 		chunks = collection.split('.')
 		chart_class = next(cls for cls in Chart.__subclasses__() if cls.__name__ == chunks[0])
-		query_fields = [ eval(chunk) for chunk in chunks[2:] ]
+		query_fields = [ eval(chunk) for chunk in chunks[1:] ]
 		return chart_class(**dict(zip(chart_class.query_fields, query_fields)))
 
 class SimulationSerializers:

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
 	from core.chart import Chart
 
-from core.utils.time import now
 from core.utils.cls import product_dict
 from core.utils.collection import is_any_of
 
@@ -20,6 +19,14 @@ class Repository:
 	@abstractmethod
 	def get_available_chart_combinations(self) -> ChartCombinations:
 		pass
+
+	def get_available_symbols(self):
+		symbols = set()
+		for _, combinations in self.get_available_chart_combinations().items():
+			for combination in combinations:
+				for symbol in combination['symbol']:
+					symbols.add(symbol)
+		return list(symbol)
 
 	def get_available_charts(self, filter = {}, **kwargs):
 		for chart, combination_groups in self.get_available_chart_combinations().items():

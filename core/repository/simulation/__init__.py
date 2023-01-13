@@ -131,7 +131,6 @@ class SimulationRepository(Repository, MongoRepository):
 					should_skip = True
 			if should_skip:
 				continue
-
 			if include_timestamps:
 				chart.from_timestamp = self.get_min_available_timestamp_for_chart(chart)
 				chart.to_timestamp = self.get_max_available_timestamp_for_chart(chart)

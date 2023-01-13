@@ -1,31 +1,15 @@
 import argparse
 
-from core.repository import Repository, SimulationRepository
-from core.chart import Chart
+from core.repository import SimulationRepository
 from core.utils.time import normalize_timestamp, now
-from core.utils.cls import pretty_repr, product_dict
-from core.utils.command import Command
-from core.utils.command.serializers import CommandArgumentSerializer
 from core.utils.logging import logging
+from .chart_filter_command import ChartFilterCommand
 
 logger = logging.getLogger(__name__)
 
-class BackfillHistoricalDataCommand(Command):
+class BackfillHistoricalDataCommand(ChartFilterCommand):
 	def config(self):
-		self.parser.add_argument(
-			'--symbol',
-			nargs = '*',
-			default = []
-		)
-		self.parser.add_argument(
-			'--repository',
-			type = CommandArgumentSerializer(Repository).deserialize
-		)
-		self.parser.add_argument(
-			'--chart',
-			nargs = '*',
-			type = CommandArgumentSerializer(Chart).deserialize
-		)
+		self.add_chart_arguments(nargs = '*')
 		self.parser.add_argument(
 			'--from',
 			dest = 'from_timestamp',
@@ -47,15 +31,6 @@ class BackfillHistoricalDataCommand(Command):
 			type = int,
 		)
 
-		for chart_class in [ Chart ] + Chart.__subclasses__():
-			self.add_arguments_from_class(
-				cls = chart_class,
-				select = chart_class.query_fields,
-				kwargs = {
-					'nargs' : '*'
-				}
-			)
-
 	def handler(self):
 		if not self.args.repository:
 			logger.error('You need to specify a repository to backfill from.')
@@ -64,20 +39,9 @@ class BackfillHistoricalDataCommand(Command):
 		simulation_repository = SimulationRepository()
 
 		if self.args.symbol[0] == '*':
-			symbols = set()
-			for _, combinations in source_repository.get_available_chart_combinations().items():
-				for combination in combinations:
-					for symbol in combination['symbol']:
-						symbols.add(symbol)
-			self.args.symbol = list(symbols)
+			self.args.symbol = source_repository.get_available_symbols()
 
-		combinations = {
-			key: value
-			for key, value in self.args.__dict__.items() 
-			if key not in [ 'workers', 'repository', 'from_timestamp', 'to_timestamp', 'clean' ] and value != None
-		}
-
-		for chart in source_repository.get_available_charts(filter = combinations):
+		for chart in source_repository.get_available_charts(filter = self.get_chart_filter()):
 			simulation_repository.backfill(
 				chart = chart,
 				repository = self.args.repository,

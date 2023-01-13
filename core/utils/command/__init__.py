@@ -23,23 +23,6 @@ class Command:
 		"""Runs when the `Command` is being executed. Can access the arguments from `self.args`"""
 		pass
 
-	def add_arguments_from_class(
-		self,
-		cls: type,
-		select = [],
-		kwargs = {}
-	):
-		select = select if len(select) else cls.__annotations__.keys()
-		for field_name in select:
-			option_string = f'--{caseconverter.kebabcase(field_name)}'
-
-			# skip if option string has been previously defined
-			if is_any_of(self.parser._actions, lambda action: option_string in action.option_strings):
-				continue
-
-			field_type = cls.__annotations__[field_name]
-			self.parser.add_argument(option_string, type = CommandArgumentSerializer(field_type).deserialize, **kwargs)
-
 	@staticmethod
 	def run_from_path(path: str):
 		"""Run the first occurrence of a `Command` subclass specified in the passed path

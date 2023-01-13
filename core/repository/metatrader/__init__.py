@@ -23,18 +23,21 @@ class MetaTraderRepository(Repository):
 		if not self.api.initialize():
 			raise self.api.last_error()
 
+	def get_available_symbols(self):
+		return [ symbol.name for symbol in self.api.symbols_get() ]
+
 	def get_available_chart_combinations(self):
-		symbols = self.api.symbols_get()
+		symbols = self.get_available_symbols()
 		return {
 			CandleStickChart : [
 				{
-					'symbol': [ symbol.name ],
+					'symbol': [ symbol ],
 					'interval' : list(self.serializers.interval.mapping.keys())
 				}
 				for symbol in symbols
 			],
 			TickChart : [
-				{ 'symbol' : [ symbol.name ] }
+				{ 'symbol' : [ symbol ] }
 				for symbol in symbols
 			]
 		}
