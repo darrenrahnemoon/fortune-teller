@@ -1,6 +1,7 @@
 from core.utils.command import Command
 from core.utils.test import TestManager
 
+@Command.register
 class TestsCommand(Command):
 	def config(self):
 		self.parser.add_argument('--patterns', nargs='+', default=[ 'tests/**/*.py' ])

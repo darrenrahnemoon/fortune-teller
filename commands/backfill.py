@@ -3,10 +3,12 @@ import argparse
 from core.repository import SimulationRepository
 from core.utils.time import normalize_timestamp, now
 from core.utils.logging import logging
-from .chart_filter_command import ChartFilterCommand
+from core.utils.command import Command
+from .chart_filter import ChartFilterCommand
 
 logger = logging.getLogger(__name__)
 
+@Command.register
 class BackfillHistoricalDataCommand(ChartFilterCommand):
 	def config(self):
 		self.add_chart_arguments(nargs = '*')

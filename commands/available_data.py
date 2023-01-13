@@ -1,4 +1,7 @@
-from commands.chart_filter_command import ChartFilterCommand
+from .chart_filter import ChartFilterCommand
+from core.utils.command import Command
+
+@Command.register
 class AvailableHistoricalDataCommand(ChartFilterCommand):
 	def config(self):
 		self.add_chart_arguments(nargs = '*')

@@ -1,9 +1,9 @@
-from core.utils.collection import is_any_of
 import caseconverter
 from core.repository import Repository
 from core.chart import Chart
 from core.utils.command.serializers import CommandArgumentSerializer
 from core.utils.command import Command
+from core.utils.collection import is_any_of
 
 class ChartFilterCommand(Command):
 	def add_chart_arguments(self, nargs = None):
@@ -28,6 +28,9 @@ class ChartFilterCommand(Command):
 					'nargs' : nargs
 				}
 			)
+
+	def handler(self):
+		return super().handler()
 
 	def get_chart_filter(self):
 		return {

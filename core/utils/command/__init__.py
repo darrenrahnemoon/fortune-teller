@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import argparse
 import inspect
 import sys
@@ -11,6 +12,11 @@ class Command:
 		self.parser = argparse.ArgumentParser()
 		self.config()
 
+	@staticmethod
+	def register(command_class):
+		command_class.__maincommand__ = True
+		return command_class
+
 	def run(self):
 		self.args = self.parser.parse_args(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
 		self.handler()
@@ -19,6 +25,7 @@ class Command:
 		"""Configure the arguments and flags that this `Command` should handle using `self.parser`"""
 		pass
 
+	@abstractmethod
 	def handler(self):
 		"""Runs when the `Command` is being executed. Can access the arguments from `self.args`"""
 		pass
@@ -33,7 +40,7 @@ class Command:
 		for possible_command in import_module(path).__dict__.values():
 			if inspect.isclass(possible_command)\
 				and issubclass(possible_command, Command)\
-				and possible_command != Command:
+				and getattr(possible_command, '__maincommand__', False):
 				possible_command().run()
 
 class KeyValuePairsAction(argparse.Action):

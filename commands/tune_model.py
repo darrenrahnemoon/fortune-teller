@@ -1,6 +1,4 @@
 import argparse
-import subprocess
-from shutil import rmtree
 
 from apps.next_period_high_low.strategy import NextPeriodHighLowStrategy
 from core.repository import SimulationRepository
@@ -8,6 +6,7 @@ from core.broker import SimulationBroker
 from core.interval import Interval
 from core.utils.command import Command
 
+@Command.register
 class TuneModelCommand(Command):
 	def config(self):
 		self.parser.add_argument('--tensorboard', action = argparse.BooleanOptionalAction)
