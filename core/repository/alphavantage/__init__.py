@@ -6,7 +6,7 @@ import requests
 from dataclasses import dataclass, field
 
 from core.repository.repository import Repository, ChartCombinations
-from core.chart import LineChart, ChartParams
+from core.chart import LineChart, OverriddenChart
 from core.interval import Interval
 from .serializers import AlphaVantageSerializers
 from core.utils.logging import logging
@@ -77,18 +77,18 @@ class AlphaVantageRepository(Repository):
 
 	def read_chart(
 		self,
-		chart: LineChart or ChartParams = None,
+		chart: LineChart or OverriddenChart = None,
 		**overrides
 	) -> pandas.DataFrame:
-		chart_params = ChartParams(chart, overrides)
+		overridden_chart = OverriddenChart(chart, overrides)
 
 		api_params = dict(
 			apikey = self.api_key,
 			datatype = 'json',
 			outputsize = 'full',
-			function = chart_params['symbol'],
-			interval = self.serializers.interval.serialize(chart_params['interval']),
-			maturity = self.serializers.treasury_yield_maturity.serialize(chart_params['maturity'])
+			function = overridden_chart.symbol,
+			interval = self.serializers.interval.serialize(overridden_chart.interval),
+			maturity = self.serializers.treasury_yield_maturity.serialize(overridden_chart.maturity)
 		)
 
 		response = requests.get('https://www.alphavantage.co/query', params = api_params).json()
@@ -100,7 +100,7 @@ class AlphaVantageRepository(Repository):
 
 		return self.serializers.records.to_dataframe(
 			response['data'],
-			name = chart_params['name'],
-			select = chart_params['select'],
+			name = overridden_chart.name,
+			select = overridden_chart.select,
 			tz = self.timezone,
 		)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from .serializers import MetaTraderSerializers
 from core.repository.repository import Repository
-from core.chart import CandleStickChart, TickChart, Chart, ChartParams
+from core.chart import CandleStickChart, TickChart, Chart, OverriddenChart
 from core.utils.module import import_module
 from core.utils.logging import logging
 
@@ -44,39 +44,39 @@ class MetaTraderRepository(Repository):
 
 	def read_chart(
 		self,
-		chart: Chart or ChartParams = None,
+		chart: Chart or OverriddenChart = None,
 		**overrides
 	) -> pandas.DataFrame:
-		chart_params = ChartParams(chart, overrides)
+		overridden_chart = OverriddenChart(chart, overrides)
 		dataframe = None
-		if chart_params['type'] == CandleStickChart:
+		if overridden_chart.type == CandleStickChart:
 			records = self.api.copy_rates_range(
-				chart_params['symbol'],
-				self.serializers.interval.serialize(chart_params['interval']),
-				chart_params['from_timestamp'].to_pydatetime(),
-				chart_params['to_timestamp'].to_pydatetime(),
+				overridden_chart.symbol,
+				self.serializers.interval.serialize(overridden_chart.interval),
+				overridden_chart.from_timestamp.to_pydatetime(),
+				overridden_chart.to_timestamp.to_pydatetime(),
 			)
 			dataframe = self.serializers.records.candlestick.to_dataframe(
 				records,
-				name = chart_params['name'],
-				select = chart_params['select'],
+				name = overridden_chart.name,
+				select = overridden_chart.select,
 				tz = self.timezone,
 			)
 			dataframe = self.ensure_interval_integrity(
 				dataframe = dataframe,
-				chart_params = chart_params
+				overridden_chart = overridden_chart
 			)
-		elif chart_params['type'] == TickChart:
+		elif overridden_chart.type == TickChart:
 			records = self.api.copy_ticks_range(
-				chart_params['symbol'],
-				chart_params['from_timestamp'].to_pydatetime(),
-				chart_params['to_timestamp'].to_pydatetime(),
+				overridden_chart.symbol,
+				overridden_chart.from_timestamp.to_pydatetime(),
+				overridden_chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
 			dataframe = self.serializers.records.tick.to_dataframe(
 				records,
-				name = chart_params['name'],
-				select = chart_params['select'],
+				name = overridden_chart.name,
+				select = overridden_chart.select,
 				tz = self.timezone,
 			)
 		return dataframe
@@ -84,10 +84,10 @@ class MetaTraderRepository(Repository):
 	def ensure_interval_integrity(
 		self,
 		dataframe: pandas.DataFrame = None,
-		chart_params: ChartParams = None,
+		overridden_chart: OverriddenChart = None,
 		frequency_tolerance: int = 50,
 	):
-		if not (chart_params['from_timestamp'] and chart_params['to_timestamp'] and chart_params['interval']):
+		if not (overridden_chart.from_timestamp'] and overridden_chart['to_timestamp'] and overridden_chart['interval):
 			return dataframe # Not enough data to do an interval integrity 
 
 		if len(dataframe) == 0:
@@ -95,13 +95,13 @@ class MetaTraderRepository(Repository):
 
 		try:
 			average_frequency = numpy.diff(dataframe.index.to_numpy()).mean()
-			expected_frequency = chart_params['interval'].to_pandas_timedelta()
+			expected_frequency = overridden_chart.interval.to_pandas_timedelta()
 			if average_frequency / expected_frequency > frequency_tolerance:
 				logger.warn(f"Missing too many data points. It's likely that MetaTrader attempted to compensate for less granularity by returning a higher granular data. Skipping results...\nAverage Frequency of Received Data: {average_frequency}\nExpected Frequency: {expected_frequency}")
 				return self.serializers.records.candlestick.to_dataframe(
 					[],
-					name = chart_params['name'],
-					select = chart_params['select'],
+					name = overridden_chart.name,
+					select = overridden_chart.select,
 					tz = self.timezone,
 				)
 		except:

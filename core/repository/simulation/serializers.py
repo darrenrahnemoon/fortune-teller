@@ -1,48 +1,48 @@
 import pymongo
 from pymongo.collection import Collection
 
-from core.chart import Chart, ChartParams
+from core.chart import Chart, OverriddenChart
 from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
 from core.utils.serializer import Serializer
 from core.chart.serializers import ChartDataFrameRecordsSerializer
 
 class ChartMongoFindOptionsSerializer(Serializer):
-	def to_find_options(self, chart_params: ChartParams):
+	def to_find_options(self, overridden_chart: OverriddenChart):
 		find_options = {}
 
 		find_options['projection'] = {
 			'_id': False,
 			Chart.timestamp_field : True,
 		}
-		for field in chart_params['select'] or []:
+		for field in overridden_chart.select or []:
 			find_options['projection'][field] = True
 
-		find_options['limit'] = chart_params['count'] or 0
+		find_options['limit'] = overridden_chart.count or 0
 		filter = find_options['filter'] = {}
-		if chart_params['from_timestamp']:
+		if overridden_chart.from_timestamp:
 			filter.setdefault(Chart.timestamp_field, {})
-			filter[Chart.timestamp_field]['$gte'] = chart_params['from_timestamp']
+			filter[Chart.timestamp_field]['$gte'] = overridden_chart.from_timestamp
 			find_options['sort'] = [ (Chart.timestamp_field, pymongo.ASCENDING) ]
-		if chart_params['to_timestamp']:
+		if overridden_chart.to_timestamp:
 			filter.setdefault(Chart.timestamp_field, {})
-			filter[Chart.timestamp_field]['$lte'] = chart_params['to_timestamp']
+			filter[Chart.timestamp_field]['$lte'] = overridden_chart.to_timestamp
 			find_options['sort'] = [ (Chart.timestamp_field, pymongo.DESCENDING) ]
 
 		return find_options
 
 class ChartCollectionSerializer(Serializer):
-	def to_collection_name(self, chart_params: ChartParams):
-		# If chart_params already supplied the name use that
-		name = chart_params['name']
+	def to_collection_name(self, overridden_chart: OverriddenChart):
+		# If overridden_chart already supplied the name use that
+		name = overridden_chart.name
 		if name:
 			return name
 
 		# Otherwise regenerate the name the same way chart generates it SHOULD DO: DRY out with `chart.name`
-		chart_class = chart_params['type']
+		chart_class = overridden_chart.type
 		if chart_class:
-			return '.'.join([ chart_class.__name__ ] + [ repr(chart_params[key]) for key in chart_class.query_fields ])
+			return '.'.join([ chart_class.__name__ ] + [ repr(overridden_chart[key]) for key in chart_class.query_fields ])
 
-		raise Exception(f'Unable to deduce collection name from chart params:\n{chart_params}')
+		raise Exception(f'Unable to deduce collection name from chart params:\n{overridden_chart}')
 
 	def to_chart(self, collection: str or Collection):
 		if type(collection) == Collection:

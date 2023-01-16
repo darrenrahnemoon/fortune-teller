@@ -82,21 +82,24 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 			indicator.refresh()
 
 @dataclass
-class ChartParams:
+class OverriddenChart:
 	chart: Chart = None
 	overrides: dict = field(default_factory = dict)
 
 	def __init__(
 		self,
-		chart: Chart or 'ChartParams',
+		chart: Chart or 'OverriddenChart',
 		overrides: dict = {}
 	) -> None:
 		self.overrides = overrides
-		if type(chart) == ChartParams:
+		if type(chart) == OverriddenChart:
 			self.chart = chart.chart
 			self.overrides.update(chart.overrides)
 		else:
 			self.chart = chart
+
+	def __getattr__(self, name: str):
+		return self[name]
 
 	def __getitem__(self, name: str):
 		# HACK: `type` is a special case as the class type is used during querying as well
