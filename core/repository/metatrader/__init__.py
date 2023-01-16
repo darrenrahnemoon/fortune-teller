@@ -87,7 +87,7 @@ class MetaTraderRepository(Repository):
 		overridden_chart: OverriddenChart = None,
 		frequency_tolerance: int = 50,
 	):
-		if not (overridden_chart.from_timestamp'] and overridden_chart['to_timestamp'] and overridden_chart['interval):
+		if not (overridden_chart.from_timestamp and overridden_chart.to_timestamp and overridden_chart.interval):
 			return dataframe # Not enough data to do an interval integrity 
 
 		if len(dataframe) == 0:
