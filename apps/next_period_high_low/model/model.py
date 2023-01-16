@@ -7,7 +7,7 @@ from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
 from keras.optimizers import Adam
 from keras_tuner import HyperParameters
-
+from core.utils.tensorflow.keras_tuner.parameters import ParameterName
 from core.chart import ChartGroup
 
 @dataclass
@@ -23,11 +23,7 @@ class NextPeriodHighLowModel:
 	def build(self, parameters: HyperParameters):
 		inputs = self.build_inputs()
 		features_length = inputs.shape[-1]
-
-		prefix = []
-		def name(*args: tuple[str]):
-			return '/'.join(prefix + list(args))
-
+		parameter = ParameterName()
 		def dropout_parameter(name: str):
 			return parameters.Float(
 				name = name,
@@ -45,7 +41,7 @@ class NextPeriodHighLowModel:
 			)
 		):
 			flow = inputs
-			prefix.append(f'flow_{parallel_flow_index}')
+			parameter.add_prefix('flow', parallel_flow_index)
 
 			for cnn_index in range(
 				parameters.Int(
@@ -54,16 +50,16 @@ class NextPeriodHighLowModel:
 					max_value = 4
 				)
 			):
-				prefix.append(f'cnn_{cnn_index}')
+				parameter.add_prefix(f'cnn_{cnn_index}')
 				flow = Conv1D(
-					name = name('conv1d'),
+					name = parameter.name('conv1d'),
 					filters = parameters.Int(
-						name = name('filters_count'),
+						name = parameter.name('filters_count'),
 						min_value = 1,
 						max_value = features_length
 					),
 					kernel_size = parameters.Int(
-						name = name('kernel_size'),
+						name = parameter.name('kernel_size'),
 						min_value = 2,
 						max_value = self.backward_window_length
 					),
@@ -71,10 +67,10 @@ class NextPeriodHighLowModel:
 					activation = 'relu'
 				)(flow)
 				flow = Dropout(
-					name = name('dropout'),
-					rate = dropout_parameter(name('dropout'))
+					name = parameter.name('dropout'),
+					rate = dropout_parameter(parameter.name('dropout'))
 				)(flow)
-				prefix.pop()
+				parameter.remove_prefix()
 
 			lstm_layers_count = parameters.Int(
 				name = 'lstm_layers_count',
@@ -82,24 +78,24 @@ class NextPeriodHighLowModel:
 				max_value = 4
 			)
 			for lstm_index in range(lstm_layers_count):
-				prefix.append(f'lstm_{lstm_index}')
+				parameter.add_prefix(f'lstm_{lstm_index}')
 				flow = LSTM(
-					name = name('lstm'),
+					name = parameter.name('lstm'),
 					units = parameters.Int(
-						name = name('units'),
+						name = parameter.name('units'),
 						min_value = 1,
 						max_value = features_length,
 					),
 					return_sequences = lstm_index != lstm_layers_count - 1
 				)(flow)
 				flow = Dropout(
-					name = name('dropout'),
-					rate = dropout_parameter(name('dropout'))
+					name = parameter.name('dropout'),
+					rate = dropout_parameter(parameter.name('dropout'))
 				)(flow)
-				prefix.pop()
+				parameter.remove_prefix()
 
 			flows.append(flow)
-			prefix.pop()
+			parameter.remove_prefix()
 		y = Add()(flows)
 		y = Flatten()(y)
 
@@ -110,17 +106,17 @@ class NextPeriodHighLowModel:
 				max_value = 4,
 			)
 		):
-			prefix.append(f'dense_{index}')
+			parameter.add_prefix(f'dense_{index}')
 			y = Dense(
 				units = parameters.Int(
-					name = name('units'),
+					name = parameter.name('units'),
 					min_value = 64,
 					max_value = 4096
 				),
 				activation = 'relu',
 			)(y)
 			y = Dropout(
-				rate = dropout_parameter(name('dropout'))
+				rate = dropout_parameter(parameter.name('dropout'))
 			)(y)
 
 		outputs = self.build_outputs(y)

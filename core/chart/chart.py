@@ -42,8 +42,8 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 		for name, indicator in self.indicators.items():
 			self.attach_indicator(indicator, name=name)
 
-	def read(self, refresh_indicators = True):
-		self.dataframe = self.repository.read_chart(self)
+	def read(self, refresh_indicators = True, repository = None, **overrides):
+		self.dataframe = (repository or self.repository).read_chart(self, **overrides)
 
 		if refresh_indicators:
 			self.refresh_indicators()

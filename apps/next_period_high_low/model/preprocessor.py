@@ -12,7 +12,6 @@ class NextPeriodHighLowPreprocessor:
 	def process_input(
 		self,
 		input_chart_group: ChartGroup,
-		is_training = False
 	):
 		for chart in input_chart_group.charts:
 			data: pandas.DataFrame = chart.data
@@ -23,10 +22,9 @@ class NextPeriodHighLowPreprocessor:
 		dataframe = input_chart_group.dataframe
 		dataframe = dataframe.fillna(0)
 
-		if not is_training:
-			dataframe = dataframe.tail(self.backward_window_length)
-			if len(dataframe) < self.backward_window_length:
-				pass # SHOULD DO: pad beginning of dataframe with zeros
+		dataframe = dataframe.tail(self.backward_window_length + self.forward_window_length)
+		if len(dataframe) < self.backward_window_length:
+			pass # SHOULD DO: pad beginning of dataframe with zeros
 
 		input_chart_group.dataframe = dataframe
 

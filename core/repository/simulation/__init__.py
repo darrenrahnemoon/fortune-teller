@@ -77,7 +77,6 @@ class SimulationRepository(Repository, MongoRepository):
 		collection = self.serializers.collection.to_collection_name(chart_params)
 		self.historical_data.drop_collection(collection)
 
-	@classmethod
 	def get_common_time_window(
 		self,
 		chart_group: ChartGroup or ChartParams = None,
@@ -221,6 +220,7 @@ class SimulationRepository(Repository, MongoRepository):
 		finally:
 			pool.close()
 			pool.join()
+
 	@property
 	def historical_data(self):
 		return self.client['historical_data']

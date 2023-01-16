@@ -36,10 +36,10 @@ class ChartGroup:
 			setattr(chart, key, value)
 		self.common_params[key] = value
 
-	def read(self, refresh_indicators = True):
+	def read(self, refresh_indicators = True, **overrides):
 		self.dataframe = None
 		for chart in self.charts:
-			chart.read(refresh_indicators = refresh_indicators)
+			chart.read(refresh_indicators = refresh_indicators, **overrides)
 
 		dataframes = []
 		for chart in self.charts:
