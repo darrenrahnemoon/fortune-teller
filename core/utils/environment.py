@@ -13,3 +13,5 @@ sys.pycache_prefix = tempfile.gettempdir()
 
 dotenv.load_dotenv('.env')
 
+def set_env(key: str, value):
+	dotenv.set_key('.env', key, value)

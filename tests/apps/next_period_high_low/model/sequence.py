@@ -1,3 +1,4 @@
+import numpy
 from core.indicator import SeasonalityIndicator
 from core.chart import ChartGroup, CandleStickChart
 from core.repository import SimulationRepository
@@ -60,4 +61,6 @@ def _():
 		for i in range(5):
 			x, y = sequence[i]
 			assert x.shape == (100, expected_columns_count)
+			assert not numpy.any(numpy.isnan(x))
 			assert y.shape == (2, 2)
+			assert not numpy.any(numpy.isnan(y))

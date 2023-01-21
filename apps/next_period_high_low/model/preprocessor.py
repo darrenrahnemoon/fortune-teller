@@ -3,6 +3,10 @@ import pandas
 from dataclasses import dataclass
 
 from core.chart.group import ChartGroup
+from core.utils.logging import logging
+from core.utils.math import mean_normalize
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class NextPeriodHighLowPreprocessor:
@@ -21,15 +25,16 @@ class NextPeriodHighLowPreprocessor:
 
 		dataframe = input_chart_group.dataframe
 		dataframe = dataframe.fillna(0)
-
-		dataframe = dataframe.tail(self.backward_window_length + self.forward_window_length)
+		dataframe = dataframe.head(self.backward_window_length + self.forward_window_length)
 		if len(dataframe) < self.backward_window_length:
 			pass # SHOULD DO: pad beginning of dataframe with zeros
 
 		input_chart_group.dataframe = dataframe
 
 	def to_model_input(self, input_chart_group: ChartGroup):
-		return input_chart_group.dataframe.to_numpy()
+		dataframe = input_chart_group.dataframe
+		# dataframe = mean_normalize(dataframe)
+		return dataframe.to_numpy()
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []

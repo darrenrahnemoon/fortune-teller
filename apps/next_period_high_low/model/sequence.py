@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from keras.utils.data_utils import Sequence
 
 from core.chart import ChartGroup
-from core.broker.simulation import SimulationBroker
 from core.repository.simulation import SimulationRepository
 from core.utils.logging import logging
 from .preprocessor import NextPeriodHighLowPreprocessor

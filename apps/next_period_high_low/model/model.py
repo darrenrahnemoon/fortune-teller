@@ -14,7 +14,6 @@ from core.chart import ChartGroup
 class NextPeriodHighLowModel:
 	build_input_chart_group: Callable[..., ChartGroup] = None
 	build_output_chart_group: Callable[..., ChartGroup] = None
-
 	forward_window_length: int = None
 	backward_window_length: int = None
 
@@ -118,6 +117,7 @@ class NextPeriodHighLowModel:
 			y = Dropout(
 				rate = dropout_parameter(parameter.name('dropout'))
 			)(y)
+			parameter.remove_prefix()
 
 		outputs = self.build_outputs(y)
 

@@ -1,8 +1,15 @@
 if __name__ == '__main__':
 	import sys
+	from argparse import ArgumentParser
+
 	import core.utils.environment
 	import core.utils.logging
+	from core.utils.module import import_module
 
-	from core.utils.command import Command
+	command = import_module(sys.argv[1])
+	parser = ArgumentParser()
+	if hasattr(command, 'config'):
+		command.config(parser)
 
-	Command.run_from_path(sys.argv[1])
+	args = parser.parse_args(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
+	command.handler(args)

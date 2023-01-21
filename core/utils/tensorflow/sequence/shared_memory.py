@@ -114,7 +114,7 @@ class SharedMemorySequence(Sequence):
 	def ensure_workers_destroyed(self):
 		if self.processes:
 			for process in self.processes:
-				process.terminate()
+				process.close()
 				process.join()
 			self.processes = None
 		if self.manager:

@@ -1,54 +1,37 @@
-import argparse
+from argparse import ArgumentParser, Namespace, BooleanOptionalAction
 
-from core.repository import SimulationRepository
+from core.repository import SimulationRepository, Repository
 from core.utils.time import normalize_timestamp, now
 from core.utils.logging import logging
-from core.utils.command import Command
-from .chart_filter import ChartFilterCommand
+from core.utils.serializer import RepresentationSerializer
+from .utils.chart import add_chart_arguments, get_chart_filter
 
 logger = logging.getLogger(__name__)
 
-@Command.register
-class BackfillHistoricalDataCommand(ChartFilterCommand):
-	def config(self):
-		self.add_chart_arguments(nargs = '*')
-		self.parser.add_argument(
-			'--from',
-			dest = 'from_timestamp',
-			type = normalize_timestamp
-		)
-		self.parser.add_argument(
-			'--to',
-			dest = 'to_timestamp',
-			default = now(),
-			type = normalize_timestamp
-		)
-		self.parser.add_argument(
-			'--clean',
-			action = argparse.BooleanOptionalAction
-		)
-		self.parser.add_argument(
-			'--workers',
-			default = 5,
-			type = int,
-		)
+def config(parser: ArgumentParser):
+	add_chart_arguments(parser, nargs = '*')
+	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
+	parser.add_argument('--from', dest = 'from_timestamp', type = normalize_timestamp)
+	parser.add_argument('--to', dest = 'to_timestamp', type = normalize_timestamp, default = now())
+	parser.add_argument('--clean', action = BooleanOptionalAction)
+	parser.add_argument('--workers', type = int, default = 5)
 
-	def handler(self):
-		if not self.args.repository:
-			logger.error('You need to specify a repository to backfill from.')
-			return
-		source_repository = self.args.repository()
-		simulation_repository = SimulationRepository()
+def handler(args: Namespace):
+	if not args.repository:
+		logger.error('You need to specify a repository to backfill from.')
+		return
+	source_repository = args.repository()
+	simulation_repository = SimulationRepository()
 
-		if self.args.symbol[0] == '*':
-			self.args.symbol = source_repository.get_available_symbols()
+	if args.symbol[0] == '*':
+		args.symbol = source_repository.get_available_symbols()
 
-		for chart in source_repository.get_available_charts(filter = self.get_chart_filter()):
-			simulation_repository.backfill(
-				chart = chart,
-				repository = self.args.repository,
-				from_timestamp = self.args.from_timestamp,
-				to_timestamp = self.args.to_timestamp,
-				clean = self.args.clean,
-				workers = self.args.workers,
-			)
+	for chart in source_repository.get_available_charts(filter = get_chart_filter()):
+		simulation_repository.backfill(
+			chart = chart,
+			repository = args.repository,
+			from_timestamp = args.from_timestamp,
+			to_timestamp = args.to_timestamp,
+			clean = args.clean,
+			workers = args.workers,
+		)

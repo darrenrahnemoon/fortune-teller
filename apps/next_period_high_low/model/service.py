@@ -1,5 +1,5 @@
 from typing import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import tensorflow
@@ -9,7 +9,6 @@ from keras_tuner import Hyperband
 from core.chart import ChartGroup
 from .model import NextPeriodHighLowModel
 from .preprocessor import NextPeriodHighLowPreprocessor
-from .repository import NextPeriodHighLowRepository
 from .sequence import NextPeriodHighLowSequence
 from core.utils.tensorflow.sequence import ShuffledSequence, PartialSequence, BatchedSequence, SharedMemorySequence
 
@@ -17,26 +16,24 @@ from core.utils.tensorflow.sequence import ShuffledSequence, PartialSequence, Ba
 class NextPeriodHighLowService:
 	build_input_chart_group: Callable[..., ChartGroup] = None
 	build_output_chart_group: Callable[..., ChartGroup] = None
-
 	forward_window_length: int = None
 	backward_window_length: int = None
 
-	validation_split: float = 0.3
-	batch_size: int = 2
-	epochs: int = 50
-	steps_per_epoch: int = 20
-	hyperband_max_epochs: int = 10
-	hyperband_reduction_factor: int = 3
-	hyperband_iterations: int = 100
-	use_multiprocessing: bool = True
-	max_queue_size: int = 10
-	workers: int = 5
-	use_device: str = 'CPU'
+	validation_split: float = None
+	batch_size: int = None
+	epochs: int = None
+	steps_per_epoch: int = None
+	use_multiprocessing: bool = None
+	max_queue_size: int = None
+	workers: int = None
+	use_device: str = None
+	hyperband_max_epochs: int = None
+	hyperband_reduction_factor: int = None
+	hyperband_iterations: int = None
 
-	repository: NextPeriodHighLowRepository = field(init = False)
-	preprocessor: NextPeriodHighLowPreprocessor = field(init = False)
-	model: NextPeriodHighLowModel = field(init = False)
-	dataset: NextPeriodHighLowSequence = field(init = False)
+	preprocessor: NextPeriodHighLowPreprocessor = None
+	model: NextPeriodHighLowModel = None
+	dataset: NextPeriodHighLowSequence = None
 
 	@property
 	def tensorboard_directory(self):
@@ -120,28 +117,3 @@ class NextPeriodHighLowService:
 				max_queue_size = self.max_queue_size
 			)
 		return training_dataset, validation_dataset
-
-	def __post_init__(self):
-		self.preprocessor = NextPeriodHighLowPreprocessor(
-			forward_window_length = self.forward_window_length,
-			backward_window_length = self.backward_window_length
-		)
-		self.repository = NextPeriodHighLowRepository(
-			preprocessor = self.preprocessor
-		)
-		self.model = NextPeriodHighLowModel(
-			build_input_chart_group = self.build_input_chart_group,
-			build_output_chart_group = self.build_output_chart_group,
-			forward_window_length = self.forward_window_length,
-			backward_window_length = self.backward_window_length,
-			batch_size = self.batch_size
-		)
-
-		self.dataset = NextPeriodHighLowSequence(
-			build_input_chart_group = self.build_input_chart_group,
-			build_output_chart_group = self.build_output_chart_group,
-			forward_window_length = self.forward_window_length,
-			backward_window_length = self.backward_window_length,
-			repository = self.repository,
-			preprocessor = self.preprocessor
-		)

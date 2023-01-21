@@ -1,12 +1,10 @@
-from core.utils.command import Command
+from argparse import ArgumentParser, Namespace, BooleanOptionalAction
 from core.utils.test import TestManager
 
-@Command.register
-class TestsCommand(Command):
-	def config(self):
-		self.parser.add_argument('--patterns', nargs='+', default=[ 'tests/**/*.py' ])
-		self.parser.add_argument('--filter', '-f', type=str, default='')
+def config(parser: ArgumentParser):
+	parser.add_argument('--patterns', nargs = '*', default = [ 'tests/**/*.py' ])
+	parser.add_argument('--filter', '-f', type = str, default = '')
 
-	def handler(self):
-		TestManager.load_from_files(self.args.patterns)
-		TestManager.run_all(self.args.filter)
+def handler(args: Namespace):
+	TestManager.load_from_files(args.patterns)
+	TestManager.run_all(args.filter)

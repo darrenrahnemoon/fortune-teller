@@ -1,13 +1,24 @@
-from .chart_filter import ChartFilterCommand
-from core.utils.command import Command
+from argparse import ArgumentParser, Namespace
 
-@Command.register
-class AvailableHistoricalDataCommand(ChartFilterCommand):
-	def config(self):
-		self.add_chart_arguments(nargs = '*')
+from core.repository import Repository
+from core.utils.serializer import RepresentationSerializer
+from .utils.chart import add_chart_arguments, get_chart_filter
 
-	def handler(self):
-		repository = self.args.repository()
-		charts = repository.get_available_charts(filter = self.get_chart_filter(), include_timestamps = True)
-		for chart in charts:
-			print(type(chart).__name__, *[ getattr(chart, key) for key in chart.query_fields ], chart.from_timestamp, chart.to_timestamp, sep='\t')
+def config(parser: ArgumentParser):
+	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
+	add_chart_arguments(parser, nargs = '*')
+
+def handler(args: Namespace):
+	repository = args.repository()
+	charts = repository.get_available_charts(
+		filter = get_chart_filter(args),
+		include_timestamps = True
+	)
+	for chart in charts:
+		print(
+			type(chart).__name__,
+			*[ getattr(chart, key) for key in chart.query_fields ],
+			chart.from_timestamp,
+			chart.to_timestamp,
+			sep='\t'
+		)
