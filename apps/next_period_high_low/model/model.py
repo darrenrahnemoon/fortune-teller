@@ -137,7 +137,6 @@ class NextPeriodHighLowModel:
 			loss = 'mse',
 			metrics = [ 'accuracy' ]
 		)
-		model.summary()
 		return model
 
 	def build_inputs(self):

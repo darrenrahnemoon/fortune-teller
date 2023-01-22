@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tensorflow
-from keras.callbacks import EarlyStopping, TensorBoard
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras_tuner import Hyperband
 
 from core.chart import ChartGroup
@@ -43,11 +43,18 @@ class NextPeriodHighLowService:
 	def keras_tuner_directory(self):
 		return Path(__file__).parent.joinpath('artifacts/tuner')
 
-	def tune_model(self):
-		training_dataset, validation_dataset = self.get_datasets()
-		device = self.get_device()
+	@property
+	def training_checkpoints_directory(self):
+		return Path(__file__).parent.joinpath('artifacts/checkpoints/checkpoints')
 
-		tuner = Hyperband(
+	def get_callbacks(self):
+		return [
+			EarlyStopping(monitor = 'val_loss', patience = 5),
+			TensorBoard(log_dir = self.tensorboard_directory)
+		]
+
+	def get_tuner(self):
+		return Hyperband(
 			hypermodel = self.model.build,
 			objective = 'val_loss',
 			max_epochs = self.hyperband_max_epochs,
@@ -56,6 +63,11 @@ class NextPeriodHighLowService:
 			directory = self.keras_tuner_directory,
 			project_name = 'trials'
 		)
+
+	def tune_model(self, tensorboard = False):
+		training_dataset, validation_dataset = self.get_datasets()
+		device = self.get_device()
+		tuner = self.get_tuner()
 
 		with tensorflow.device(device.name):
 			tuner.search(
@@ -67,9 +79,40 @@ class NextPeriodHighLowService:
 				validation_batch_size = self.batch_size,
 				validation_steps = int(self.steps_per_epoch / (1 - self.validation_split) * self.validation_split),
 				verbose = True,
+				callbacks = self.get_callbacks()
+			)
+
+	def train_model(self):
+		training_dataset, validation_dataset = self.get_datasets()
+		device = self.get_device()
+		tuner = self.get_tuner()
+
+		parameters = tuner.get_best_hyperparameters(1)[0]
+		model = self.model.build(parameters)
+		model.summary()
+
+		with tensorflow.device(device.name):
+			if self.training_checkpoints_directory.exists():
+				model.load_weights(self.training_checkpoints_directory)
+
+			model.fit(
+				x = training_dataset,
+				validation_data = validation_dataset,
+				epochs = self.epochs,
+				steps_per_epoch = self.steps_per_epoch,
+				batch_size = self.batch_size,
+				validation_batch_size = self.batch_size,
+				validation_steps = int(self.steps_per_epoch / (1 - self.validation_split) * self.validation_split),
+				verbose = True,
 				callbacks = [
-					EarlyStopping(monitor = 'val_loss', patience = 5),
-					TensorBoard(log_dir = self.tensorboard_directory)
+					*self.get_callbacks(),
+					ModelCheckpoint(
+						filepath = self.training_checkpoints_directory,
+						save_weights_only = True,
+						monitor = 'val_accuracy',
+						mode = 'max',
+						save_best_only = True,
+					)
 				]
 			)
 

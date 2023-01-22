@@ -41,7 +41,6 @@ class NextPeriodHighLowSequence(Sequence):
 
 		output_chart_group.dataframe = input_chart_group.dataframe[self.backward_window_length:]
 		input_chart_group.dataframe = input_chart_group.dataframe[:self.backward_window_length]
-
 		x = self.preprocessor.to_model_input(input_chart_group)
 		y = self.preprocessor.to_model_output(output_chart_group)
 		logger.debug(f'NextPeriodHighLowSequence[{index}] | {timestamp} -> x:{x.shape}, y:{y.shape}')

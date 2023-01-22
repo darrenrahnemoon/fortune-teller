@@ -3,6 +3,7 @@ from dataclasses import is_dataclass
 from caseconverter import kebabcase
 from pydantic import BaseModel
 
+from core.utils.collection import is_any_of
 from core.utils.serializer import RepresentationSerializer
 
 def get_fields(cls):
@@ -17,11 +18,11 @@ def get_fields(cls):
 	raise Exception(f'Unable to infer field type hints for {cls}')
 
 def add_class_fields_as_arguments(
-	cls,
 	parser: ArgumentParser,
+	cls,
 	select: list[str] = [],
 	omit: list[str] = [],
-	recursive: list[str] = [],
+	recursive: list = [],
 	prefix: str = '',
 	args = [],
 	kwargs = {},
@@ -34,7 +35,7 @@ def add_class_fields_as_arguments(
 		elif len(select) and field_name not in select:
 			continue
 
-		if field_name in recursive:
+		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
 			add_class_fields_as_arguments(
 				cls = field_type,
 				parser = parser,
@@ -59,14 +60,14 @@ def add_class_fields_as_arguments(
 		)
 
 def setattr_from_args(
-	instance,
 	args: Namespace,
-	recursive: list[str] = [],
+	instance,
+	recursive: list = [],
 	prefix = '',
 ):
 	fields = get_fields(type(instance))
 	for field_name, field_type in fields.items():
-		if field_name in recursive:
+		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
 			setattr_from_args(
 				instance = getattr(instance, field_name),
 				args = args,

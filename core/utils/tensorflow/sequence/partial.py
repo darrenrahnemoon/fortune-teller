@@ -12,7 +12,7 @@ class PartialSequence(Sequence):
 	portion: float = 0 # in decimals indicating percentage i.e 0.3
 
 	def __post_init__(self):
-		self.index_offset = math.floor(len(self.sequence) * self.offset) - 1 # arrays start from 0
+		self.index_offset = math.floor(len(self.sequence) * self.offset)
 
 	def __len__(self):
 		return math.floor(len(self.sequence) * self.portion)

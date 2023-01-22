@@ -1,3 +1,4 @@
+from apps.next_period_high_low.config import NextPeriodHighLowConfiguration
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Factory
 
@@ -72,3 +73,19 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 
 		service = service,
 	)
+
+	@classmethod
+	def get(
+		cls,
+		*args,
+		config: NextPeriodHighLowConfiguration = NextPeriodHighLowConfiguration(),
+		**kwargs
+	):
+		container = cls(*args, **kwargs)
+		container.config.from_pydantic(config)
+		container.config.from_dict({
+			'build_input_chart_group' : config.build_input_chart_group,
+			'build_output_chart_group' : config.build_output_chart_group
+		})
+		container.wire
+		return container
