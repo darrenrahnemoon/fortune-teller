@@ -1,3 +1,4 @@
+from typing import Literal
 import numpy
 import pandas
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ class NextPeriodHighLowPreprocessor:
 	def process_input(
 		self,
 		input_chart_group: ChartGroup,
+		truncate_from: Literal['head', 'tail'] = 'head',
 	):
 		for chart in input_chart_group.charts:
 			data: pandas.DataFrame = chart.data
@@ -25,7 +27,7 @@ class NextPeriodHighLowPreprocessor:
 
 		dataframe = input_chart_group.dataframe
 		dataframe = dataframe.fillna(0)
-		dataframe = dataframe.head(self.backward_window_length + self.forward_window_length)
+		dataframe = getattr(dataframe, truncate_from)(self.backward_window_length + self.forward_window_length)
 		if len(dataframe) < self.backward_window_length:
 			pass # SHOULD DO: pad beginning of dataframe with zeros
 

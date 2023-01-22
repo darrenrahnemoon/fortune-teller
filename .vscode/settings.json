@@ -9,9 +9,11 @@
 		"ensureattr",
 		"hybridmethod",
 		"kebabcase",
+		"keras",
 		"metatrader",
 		"pymongo",
 		"seasonalities",
+		"tensorboard",
 		"termcolor",
 		"timesteps"
 	],

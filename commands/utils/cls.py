@@ -48,9 +48,9 @@ def add_class_fields_as_arguments(
 			option_string += f'{kebabcase(prefix)}-'
 		option_string += kebabcase(field_name)
 
-		# # skip if option string has been previously defined
-		# if is_any_of(parser._actions, lambda action: option_string in action.option_strings):
-		# 	continue
+		# skip if option string has been previously defined
+		if is_any_of(parser._actions, lambda action: option_string in action.option_strings):
+			continue
 
 		parser.add_argument(
 			option_string,

@@ -49,10 +49,10 @@ def _():
 			)
 
 			simulation_repository.remove_historical_data(chart)
-			assert simulation_repository.get_min_available_timestamp_for_chart(chart) == None
-			assert simulation_repository.get_max_available_timestamp_for_chart(chart) == None
+			assert simulation_repository.get_min_available_timestamp(chart) == None
+			assert simulation_repository.get_max_available_timestamp(chart) == None
 			chart.read()
 			simulation_repository.write_chart(chart)
 
-			assert simulation_repository.get_min_available_timestamp_for_chart(chart).date() == chart.data.index[0].date()
-			assert simulation_repository.get_max_available_timestamp_for_chart(chart).date() == chart.data.index[-1].date()
+			assert simulation_repository.get_min_available_timestamp(chart).date() == chart.data.index[0].date()
+			assert simulation_repository.get_max_available_timestamp(chart).date() == chart.data.index[-1].date()

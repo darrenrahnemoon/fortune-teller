@@ -4,5 +4,6 @@ __pycache__
 
 apps/**/model/artifacts/tuner/**/*
 apps/**/model/artifacts/tensorboard/**/*
+apps/**/model/artifacts/checkpoints/**/*
 
 !**/.gitignore

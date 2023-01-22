@@ -86,8 +86,8 @@ class SimulationRepository(Repository, MongoRepository):
 		from_timestamp = []
 		to_timestamp = []
 		for chart in overridden_chart.charts:
-			from_timestamp.append(self.get_min_available_timestamp_for_chart(chart))
-			to_timestamp.append(self.get_max_available_timestamp_for_chart(chart))
+			from_timestamp.append(self.get_min_available_timestamp(chart))
+			to_timestamp.append(self.get_max_available_timestamp(chart))
 
 		return TimeWindow(
 			from_timestamp = max(from_timestamp),
@@ -131,11 +131,31 @@ class SimulationRepository(Repository, MongoRepository):
 			if should_skip:
 				continue
 			if include_timestamps:
-				chart.from_timestamp = self.get_min_available_timestamp_for_chart(chart)
-				chart.to_timestamp = self.get_max_available_timestamp_for_chart(chart)
+				chart.from_timestamp = self.get_min_available_timestamp(chart)
+				chart.to_timestamp = self.get_max_available_timestamp(chart)
 			yield chart
 
-	def get_max_available_timestamp_for_chart(
+	def count_available_data_points(
+		self,
+		chart: Chart or OverriddenChart = None,
+		**overrides,
+	):
+		overridden_chart = OverriddenChart(chart, overrides)
+		collection = self.historical_data[self.serializers.collection.to_collection_name(overridden_chart)]
+		return collection.count_documents({})
+
+	def get_gap_percentage(
+		self,
+		chart: Chart or OverriddenChart = None,
+		**overrides,
+	):
+		overridden_chart = OverriddenChart(chart, overrides)
+		delta = overridden_chart.to_timestamp - overridden_chart.from_timestamp
+		expected_data_points_count = delta / overridden_chart.interval.to_pandas_timedelta()
+		current_data_points_count = self.count_available_data_points(overridden_chart)
+		return (1 - (current_data_points_count / expected_data_points_count))
+
+	def get_max_available_timestamp(
 		self,
 		chart: Chart or OverriddenChart = None,
 		**overrides
@@ -145,7 +165,7 @@ class SimulationRepository(Repository, MongoRepository):
 		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.DESCENDING) ])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
-	def get_min_available_timestamp_for_chart(
+	def get_min_available_timestamp(
 		self,
 		chart: Chart or OverriddenChart = None,
 		**overrides

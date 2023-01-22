@@ -10,6 +10,7 @@ from core.chart import ChartGroup
 from .model import NextPeriodHighLowModel
 from .preprocessor import NextPeriodHighLowPreprocessor
 from .sequence import NextPeriodHighLowSequence
+from core.utils.time import TimestampLike, now
 from core.utils.tensorflow.sequence import ShuffledSequence, PartialSequence, BatchedSequence, SharedMemorySequence
 
 @dataclass
@@ -53,6 +54,13 @@ class NextPeriodHighLowService:
 			TensorBoard(log_dir = self.tensorboard_directory)
 		]
 
+	def predict(self, timestamp: TimestampLike = now()):
+		model = self.get_best_model()
+		input_chart_group = self.build_input_chart_group()
+		input_chart_group.read(to_timestamp = timestamp)
+		self.preprocessor.process_input(input_chart_group, truncate_from = 'tail')
+		return input_chart_group.dataframe
+
 	def get_tuner(self):
 		return Hyperband(
 			hypermodel = self.model.build,
@@ -82,19 +90,23 @@ class NextPeriodHighLowService:
 				callbacks = self.get_callbacks()
 			)
 
+	def get_best_model(self):
+		tuner = self.get_tuner()
+		parameters = tuner.get_best_hyperparameters(1)[0]
+		model = self.model.build(parameters)
+
+		if self.training_checkpoints_directory.exists():
+			model.load_weights(self.training_checkpoints_directory)
+
+		return model
+
 	def train_model(self):
 		training_dataset, validation_dataset = self.get_datasets()
 		device = self.get_device()
-		tuner = self.get_tuner()
-
-		parameters = tuner.get_best_hyperparameters(1)[0]
-		model = self.model.build(parameters)
+		model = self.get_best_model()
 		model.summary()
 
 		with tensorflow.device(device.name):
-			if self.training_checkpoints_directory.exists():
-				model.load_weights(self.training_checkpoints_directory)
-
 			model.fit(
 				x = training_dataset,
 				validation_data = validation_dataset,
