@@ -177,9 +177,11 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def backfill_worker(
 		self,
-		chart: OverriddenChart,
+		chart: Chart,
+		overrides: dict,
 		repository: type[Repository],
 	):
+		chart = OverriddenChart(chart, overrides)
 		logger.info(f'Backfilling chart:\n{pretty_repr(chart)}\n')
 		repository = repository()
 		new_data = repository.read_chart(chart)
@@ -220,13 +222,11 @@ class SimulationRepository(Repository, MongoRepository):
 						self.backfill_worker,
 						(
 							(
-								OverriddenChart(
-									chart,
-									{
-										'from_timestamp' : increments[index - 1],
-										'to_timestamp' : increments[index]
-									},
-								),
+								chart,
+								{
+									'from_timestamp' : increments[index - 1],
+									'to_timestamp' : increments[index]
+								},
 								repository
 							)
 							for index in range(1, len(increments))

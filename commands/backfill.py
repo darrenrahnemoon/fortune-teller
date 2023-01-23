@@ -24,14 +24,6 @@ def handler(args: Namespace):
 		args.symbol = source_repository.get_available_symbols()
 
 	for chart in source_repository.get_available_charts(filter = get_chart_filter(args)):
-		print(
-			chart,
-			args.repository,
-			args.from_timestamp,
-			args.to_timestamp,
-			args.clean,
-			args.workers,
-		)
 		simulation_repository.backfill(
 			chart = chart,
 			repository = args.repository,
