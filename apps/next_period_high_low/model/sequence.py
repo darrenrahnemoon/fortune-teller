@@ -10,7 +10,7 @@ from core.chart import ChartGroup
 from core.repository.simulation import SimulationRepository
 from core.utils.logging import logging
 from .preprocessor import NextPeriodHighLowPreprocessor
-from core.utils.tensorflow.sequence import sequence_dataclass_kwargs
+from core.tensorflow.sequence import sequence_dataclass_kwargs
 
 logger = logging.getLogger(__name__)
 

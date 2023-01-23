@@ -57,7 +57,7 @@ class NextPeriodHighLowConfiguration(BaseSettings):
 					repository = self.metatrader_repository,
 				)
 				for symbol in [
-					'AUDJPY', 'AUDUSD', 'CHFJPY', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPCHF', 'GBPJPY', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'AUDCAD', 'AUDCHF', 'AUDNZD', 'CADCHF', 'CADJPY', 'EURAUD', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'NATGAS', 'NL25', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'SGDJPY', 'TRYJPY', 'UK100', 'UKOIL', 'US2000', 'US30', 'US500', 'USDHKD', 'USDMXN', 'USDNOK', 'USDSEK', 'USDSGD', 'USDZAR', 'USOIL', 'XAGUSD', 'XAUUSD'
+					'GBPUSD', 'AUDUSD', 'GBPJPY', 'EURUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'GBPCHF', 'EURAUD', 'USDNOK', 'NZDJPY', 'AUDCAD', 'CADJPY', 'AUDNZD', 'AUDCHF', 'CADCHF', 'EURCAD', 'EURNZD', 'NZDCAD', 'SGDJPY', 'NZDCHF', 'GBPCAD', 'GBPAUD', 'USDSEK', 'GBPNZD', 'EURTRY', 'USDTRY', 'EURSEK', 'USDPLN', 'EURNOK'
 				]
 			]
 		)

@@ -11,7 +11,7 @@ from .model import NextPeriodHighLowModel
 from .preprocessor import NextPeriodHighLowPreprocessor
 from .sequence import NextPeriodHighLowSequence
 from core.utils.time import TimestampLike, now
-from core.utils.tensorflow.sequence import ShuffledSequence, PartialSequence, BatchedSequence, SharedMemorySequence
+from core.tensorflow.sequence import ShuffledSequence, PartialSequence, BatchedSequence, SharedMemorySequence
 
 @dataclass
 class NextPeriodHighLowService:
@@ -72,7 +72,7 @@ class NextPeriodHighLowService:
 			project_name = 'trials'
 		)
 
-	def tune_model(self, tensorboard = False):
+	def tune_model(self):
 		training_dataset, validation_dataset = self.get_datasets()
 		device = self.get_device()
 		tuner = self.get_tuner()

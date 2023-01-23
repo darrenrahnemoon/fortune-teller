@@ -7,7 +7,7 @@ from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
 from keras.optimizers import Adam
 from keras_tuner import HyperParameters
-from core.utils.tensorflow.keras_tuner.parameters import ParameterName
+from core.tensorflow.keras_tuner.parameters import ParameterName
 from core.chart import ChartGroup
 
 @dataclass

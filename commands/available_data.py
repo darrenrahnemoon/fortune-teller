@@ -42,7 +42,7 @@ def handler(args: Namespace):
 		_, edges = numpy.histogram([ chart.from_timestamp.to_pydatetime().timestamp() for chart in charts ], bins = 'auto')
 		edges = [ pandas.to_datetime(edge, unit = 's', utc = True) for edge in edges ]
 		for index in range(1, len(edges)):
-			print(f'\n\n{index}: {edges[index - 1]} - {edges[index]}')
+			print(f'\n\n{index}', edges[index - 1], edges[index], sep = '\t')
 			for chart in charts:
 				if chart.from_timestamp > edges[index - 1] and chart.from_timestamp < edges[index]:
 					print_chart(chart)

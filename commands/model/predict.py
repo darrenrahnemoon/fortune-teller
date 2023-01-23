@@ -1,10 +1,14 @@
+from argparse import ArgumentParser, Namespace
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 
 from core.repository import MetaTraderRepository
 from core.utils.time import normalize_timestamp, now
 
-def handler(args):
+def config(parser: ArgumentParser):
+	parser.add_argument('timestamp', default = now(), type = normalize_timestamp)
+
+def handler(args: Namespace):
 	container = NextPeriodHighLowContainer.get()
 	container.config.metatrader_repository.from_value(MetaTraderRepository())
 	service = container.service()
-	print(service.predict(normalize_timestamp('2017-08-25')))
+	print(service.predict(args.timestamp))
