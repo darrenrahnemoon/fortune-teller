@@ -26,17 +26,17 @@ class SimulationRepository(Repository, MongoRepository):
 		**overrides
 	) -> pandas.DataFrame:
 		database = self.client[database] if database else self.historical_data
-		overridden_chart = OverriddenChart(chart, overrides)
-		find_options = self.serializers.find_options.to_find_options(overridden_chart)
+		chart = OverriddenChart(chart, overrides)
+		find_options = self.serializers.find_options.to_find_options(chart)
 
-		collection = collection or self.serializers.collection.to_collection_name(overridden_chart)
+		collection = collection or self.serializers.collection.to_collection_name(chart)
 		collection = database.get_collection(collection)
 		records = collection.find(**find_options)
 
 		dataframe = self.serializers.records.to_dataframe(
 			records,
-			name = overridden_chart.name,
-			select = overridden_chart.select
+			name = chart.name,
+			select = chart.select
 		)
 
 		logger.debug(f'Read chart:\n{dataframe}')
@@ -49,15 +49,15 @@ class SimulationRepository(Repository, MongoRepository):
 		database: str = None,
 		**overrides
 	):
-		overridden_chart = OverriddenChart(chart, overrides)
+		chart = OverriddenChart(chart, overrides)
 		database = self.client[database] if database else self.historical_data
-		data = overridden_chart.data
+		data = chart.data
 		if len(data) == 0:
-			logger.warn(f"Attempted to write an empty {overridden_chart.name} into database. Skipping...")
+			logger.warn(f"Attempted to write an empty {chart.name} into database. Skipping...")
 			return
 
 		logger.debug(f'Writing chart:\n{data}')
-		collection = collection or self.serializers.collection.to_collection_name(overridden_chart)
+		collection = collection or self.serializers.collection.to_collection_name(chart)
 		collection = self.ensure_time_series_collection(
 			database = database,
 			name = collection
@@ -73,8 +73,8 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart or OverriddenChart = None,
 		**overrides
 	):
-		overridden_chart = OverriddenChart(chart, overrides)
-		collection = self.serializers.collection.to_collection_name(overridden_chart)
+		chart = OverriddenChart(chart, overrides)
+		collection = self.serializers.collection.to_collection_name(chart)
 		self.historical_data.drop_collection(collection)
 
 	def get_common_time_window(
@@ -82,10 +82,10 @@ class SimulationRepository(Repository, MongoRepository):
 		chart_group: ChartGroup or OverriddenChart = None,
 		**overrides
 	) -> TimeWindow:
-		overridden_chart = OverriddenChart(chart_group, overrides)
+		chart = OverriddenChart(chart_group, overrides)
 		from_timestamp = []
 		to_timestamp = []
-		for chart in overridden_chart.charts:
+		for chart in chart.charts:
 			from_timestamp.append(self.get_min_available_timestamp(chart))
 			to_timestamp.append(self.get_max_available_timestamp(chart))
 
@@ -140,8 +140,8 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart or OverriddenChart = None,
 		**overrides,
 	):
-		overridden_chart = OverriddenChart(chart, overrides)
-		collection = self.historical_data[self.serializers.collection.to_collection_name(overridden_chart)]
+		chart = OverriddenChart(chart, overrides)
+		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
 		return collection.count_documents({})
 
 	def get_gap_percentage(
@@ -149,10 +149,10 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart or OverriddenChart = None,
 		**overrides,
 	):
-		overridden_chart = OverriddenChart(chart, overrides)
-		delta = overridden_chart.to_timestamp - overridden_chart.from_timestamp
-		expected_data_points_count = delta / overridden_chart.interval.to_pandas_timedelta()
-		current_data_points_count = self.count_available_data_points(overridden_chart)
+		chart = OverriddenChart(chart, overrides)
+		delta = chart.to_timestamp - chart.from_timestamp
+		expected_data_points_count = delta / chart.interval.to_pandas_timedelta()
+		current_data_points_count = self.count_available_data_points(chart)
 		return (1 - (current_data_points_count / expected_data_points_count))
 
 	def get_max_available_timestamp(
@@ -160,8 +160,8 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart or OverriddenChart = None,
 		**overrides
 	) -> pandas.Timestamp:
-		overridden_chart = OverriddenChart(chart, overrides)
-		collection = self.historical_data[self.serializers.collection.to_collection_name(overridden_chart)]
+		chart = OverriddenChart(chart, overrides)
+		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
 		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.DESCENDING) ])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
@@ -170,24 +170,24 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart or OverriddenChart = None,
 		**overrides
 	) -> pandas.Timestamp:
-		overridden_chart = OverriddenChart(chart, overrides)
-		collection = self.historical_data[self.serializers.collection.to_collection_name(overridden_chart)]
+		chart = OverriddenChart(chart, overrides)
+		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
 		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.ASCENDING) ])
 		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
 
 	def backfill_worker(
 		self,
-		overridden_chart: OverriddenChart,
+		chart: OverriddenChart,
 		repository: type[Repository],
 	):
-		logger.info(f'Backfilling chart:\n{pretty_repr(overridden_chart)}\n')
+		logger.info(f'Backfilling chart:\n{pretty_repr(chart)}\n')
 		repository = repository()
-		new_data = repository.read_chart(overridden_chart)
+		new_data = repository.read_chart(chart)
 
 		# Columns get processed into a MultiIndex we only need the fields not the time series names
 		new_data.columns = [ column[-1] for column in new_data.columns ]
 		self.write_chart(
-			overridden_chart,
+			chart,
 			data = new_data,
 		)
 
