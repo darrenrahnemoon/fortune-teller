@@ -203,8 +203,7 @@ class SimulationRepository(Repository, MongoRepository):
 		if clean:
 			self.remove_historical_data(chart)
 
-		pool = Pool(workers)
-		try:
+		with Pool(workers) as pool:
 			if from_timestamp and to_timestamp:
 				increments = list(pandas.date_range(
 					start = from_timestamp,
@@ -237,9 +236,6 @@ class SimulationRepository(Repository, MongoRepository):
 			else:
 				chart.read()
 				self.write_chart(chart)
-		finally:
-			pool.close()
-			pool.join()
 
 	@property
 	def historical_data(self):

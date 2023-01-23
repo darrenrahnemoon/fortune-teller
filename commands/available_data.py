@@ -1,6 +1,7 @@
 import numpy
 import pandas
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
+from multiprocess import Pool
 
 from core.repository import Repository
 from core.utils.serializer import RepresentationSerializer
@@ -31,8 +32,11 @@ def handler(args: Namespace):
 	charts = list(charts)
 
 	if args.gap_percentage:
-		for chart in charts:
-			chart.gap_percentage = repository.get_gap_percentage(chart)
+		with Pool(5) as pool:
+			interval_charts = [ chart for chart in charts if hasattr(chart, 'interval') ]
+			percentages = pool.map(repository.get_gap_percentage, interval_charts)
+			for chart, percentage in zip(interval_charts, percentages):
+				chart.gap_percentage = percentage
 
 	if args.histogram:
 		_, edges = numpy.histogram([ chart.from_timestamp.to_pydatetime().timestamp() for chart in charts ], bins = 'auto')
