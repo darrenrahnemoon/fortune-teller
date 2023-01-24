@@ -1,32 +1,17 @@
 from pydantic import BaseSettings, Field
 
+from core.tensorflow.device.config import DeviceConfig
+from core.tensorflow.dataset.config import DatasetConfig
+from core.tensorflow.tuner.hyperband.config import HyperbandTunerConfig
+from core.tensorflow.training.config import TrainingConfig
+from core.tensorflow.tensorboard.config import TensorboardConfig
+
 from core.interval import Interval
 from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
 from core.repository import Repository, SimulationRepository
 
-class NextPeriodHighLowModelConfiguration(BaseSettings):
-	validation_split: float = 0.3
-	batch_size: int = 2
-	epochs: int = 50
-	steps_per_epoch: int = 20
-	use_multiprocessing: bool = True
-	max_queue_size: int = 10
-	workers: int = 5
-	use_device: str = 'CPU'
-	hyperband_max_epochs: int = 10
-	hyperband_reduction_factor: int = 3
-	hyperband_iterations: int = 100
-
-	repository: Repository = Field(default_factory = SimulationRepository)
-	class Config:
-		arbitrary_types_allowed = True
-
-class NextPeriodHighLowConfiguration(BaseSettings):
-	model: NextPeriodHighLowModelConfiguration = Field(
-		default_factory = NextPeriodHighLowModelConfiguration
-	)
-
+class NextPeriodHighLowStrategyConfig(BaseSettings):
 	interval: Interval = Interval.Minute(1)
 	forward_window_length: Interval = Interval.Minute(10)
 	backward_window_length: Interval = Interval.Day(1)
@@ -67,6 +52,17 @@ class NextPeriodHighLowConfiguration(BaseSettings):
 		chart_group = self.build_output_chart_group()
 		chart_group.charts[0].attach_indicator(SeasonalityIndicator)
 		return chart_group
+
+	class Config:
+		arbitrary_types_allowed = True
+
+class NextPeriodHighLowConfig(BaseSettings):
+	dataset: DatasetConfig = Field(default_factory = DatasetConfig)
+	device: DeviceConfig = Field(default_factory = DeviceConfig)
+	tensorboard: TensorboardConfig = Field(default_factory = TensorboardConfig)
+	training: TrainingConfig = Field(default_factory = TrainingConfig)
+	tuner: HyperbandTunerConfig = Field(default_factory = HyperbandTunerConfig)
+	strategy: NextPeriodHighLowStrategyConfig = Field(default_factory = NextPeriodHighLowStrategyConfig)
 
 	class Config:
 		arbitrary_types_allowed = True

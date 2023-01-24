@@ -5,14 +5,14 @@ from dataclasses import dataclass
 
 from core.chart.group import ChartGroup
 from core.utils.logging import logging
-from core.utils.math import mean_normalize
+
+from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class NextPeriodHighLowPreprocessor:
-	forward_window_length: int = None
-	backward_window_length: int = None
+	strategy_config: NextPeriodHighLowStrategyConfig = None
 
 	def process_input(
 		self,
@@ -27,8 +27,8 @@ class NextPeriodHighLowPreprocessor:
 
 		dataframe = input_chart_group.dataframe
 		dataframe = dataframe.fillna(0)
-		dataframe = getattr(dataframe, truncate_from)(self.backward_window_length + self.forward_window_length)
-		if len(dataframe) < self.backward_window_length:
+		dataframe = getattr(dataframe, truncate_from)(self.strategy_config.backward_window_length + self.strategy_config.forward_window_length)
+		if len(dataframe) < self.strategy_config.backward_window_length:
 			pass # SHOULD DO: pad beginning of dataframe with zeros
 
 		input_chart_group.dataframe = dataframe

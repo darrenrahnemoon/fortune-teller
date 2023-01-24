@@ -1,77 +1,65 @@
-from apps.next_period_high_low.config import NextPeriodHighLowConfiguration
-from dependency_injector.containers import DeclarativeContainer
-from dependency_injector.providers import Configuration, Factory
+from pathlib import Path
 
-from .strategy import NextPeriodHighLowStrategy
-from .model.model import NextPeriodHighLowModel
-from .model.preprocessor import NextPeriodHighLowPreprocessor
-from .model.sequence import NextPeriodHighLowSequence
-from .model.service import NextPeriodHighLowService
+from core.tensorflow.tensorboard.service import TensorboardService
+from core.tensorflow.device.service import DeviceService
+from core.tensorflow.dataset.service import DatasetService
+from core.tensorflow.training.service import TrainingService
+from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
+
+from apps.next_period_high_low.config import NextPeriodHighLowConfiguration
+from apps.next_period_high_low.model.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.model.sequence import NextPeriodHighLowSequence
+from apps.next_period_high_low.model.model import NextPeriodHighLowModelService
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.providers import Configuration, Singleton
+
+artifacts_directory = Path('./apps/next_period_high_low/artifacts')
 
 class NextPeriodHighLowContainer(DeclarativeContainer):
 	config = Configuration()
 
-	model = Factory(
-		NextPeriodHighLowModel,
-		build_input_chart_group = config.build_input_chart_group,
-		build_output_chart_group = config.build_output_chart_group,
-		forward_window_length = config.forward_window_length,
-		backward_window_length = config.backward_window_length,
-
-		batch_size = config.model.batch_size,
-	)
-
-	preprocessor = Factory(
+	preprocessor = Singleton(
 		NextPeriodHighLowPreprocessor,
-		forward_window_length = config.forward_window_length,
-		backward_window_length = config.backward_window_length,
+		strategy_config = config.strategy,
 	)
-
-	dataset = Factory(
+	sequence = Singleton(
 		NextPeriodHighLowSequence,
-		build_input_chart_group = config.build_input_chart_group,
-		build_output_chart_group = config.build_output_chart_group,
-		backward_window_length = config.backward_window_length,
-		forward_window_length = config.forward_window_length,
-
-		repository = config.model.repository,
+		strategy_config = config.strategy,
 		preprocessor = preprocessor,
 	)
-
-	service = Factory(
-		NextPeriodHighLowService,
-		build_input_chart_group = config.build_input_chart_group,
-		build_output_chart_group = config.build_output_chart_group,
-		forward_window_length = config.forward_window_length,
-		backward_window_length = config.backward_window_length,
-
-		validation_split = config.model.validation_split,
-		batch_size = config.model.batch_size,
-		epochs = config.model.epochs,
-		steps_per_epoch = config.model.steps_per_epoch,
-		hyperband_max_epochs = config.model.hyperband_max_epochs,
-		hyperband_reduction_factor = config.model.hyperband_reduction_factor,
-		hyperband_iterations = config.model.hyperband_iterations,
-		use_multiprocessing = config.model.use_multiprocessing,
-		max_queue_size = config.model.max_queue_size,
-		workers = config.model.workers,
-		use_device = config.model.use_device,
-
-		preprocessor = preprocessor,
-		model = model,
+	dataset = Singleton(
+		DatasetService,
+		config = config.dataset,
+		dataset = sequence,
+	)
+	tensorboard = Singleton(
+		TensorboardService,
+		config = config.tensorboard,
+		artifacts_directory = artifacts_directory
+	)
+	device = Singleton(
+		DeviceService,
+		config = config.device,
+	)
+	training = Singleton(
+		TrainingService,
+		config = config.training,
+		tensorboard = tensorboard,
+		device = device,
 		dataset = dataset,
 	)
-
-	strategy = Factory(
-		NextPeriodHighLowStrategy,
-		metatrader_repository = config.metatrader_repository,
-		alphavantage_repository = config.alphavantage_repository,
-		forward_window_length = config.forward_window_length,
-		backward_window_length = config.backward_window_length,
-		build_input_chart_group = config.build_input_chart_group,
-		build_output_chart_group = config.build_output_chart_group,
-
-		service = service,
+	model = Singleton(
+		NextPeriodHighLowModelService,
+		training = training,
+		strategy_config = config.strategy
+	)
+	tuner = Singleton(
+		HyperbandTunerService,
+		config = config.tuner,
+		model = model,
+		device = device,
+		training = training,
+		tensorboard = tensorboard,
 	)
 
 	@classmethod
@@ -83,9 +71,8 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 	):
 		container = cls(*args, **kwargs)
 		container.config.from_pydantic(config)
-		container.config.from_dict({
+		container.config.strategy.from_dict({
 			'build_input_chart_group' : config.build_input_chart_group,
 			'build_output_chart_group' : config.build_output_chart_group
 		})
-		container.wire
 		return container

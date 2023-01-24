@@ -14,4 +14,5 @@ class ParameterName:
 
 	def name(self, *args):
 		args = [ str(arg) for arg in args ]
+
 		return f'{self.prefix_delimiter.join(self.prefix)}{self.prefix_delimiter}{self.name_delimiter.join(args)}'

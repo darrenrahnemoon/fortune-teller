@@ -1,23 +1,19 @@
 
 import math
-from typing import Callable
 from dataclasses import dataclass
 
 from keras import Model
 from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
 from keras.optimizers import Adam
 from keras_tuner import HyperParameters
-from core.tensorflow.keras_tuner.parameters import ParameterName
-from core.chart import ChartGroup
+
+from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
+from core.tensorflow.tuner.parameters import ParameterName
+from core.tensorflow.model.service import ModelService
 
 @dataclass
-class NextPeriodHighLowModel:
-	build_input_chart_group: Callable[..., ChartGroup] = None
-	build_output_chart_group: Callable[..., ChartGroup] = None
-	forward_window_length: int = None
-	backward_window_length: int = None
-
-	batch_size: int = False
+class NextPeriodHighLowModelService(ModelService):
+	strategy_config: NextPeriodHighLowStrategyConfig = None
 
 	def build(self, parameters: HyperParameters):
 		inputs = self.build_inputs()
@@ -60,7 +56,7 @@ class NextPeriodHighLowModel:
 					kernel_size = parameters.Int(
 						name = parameter.name('kernel_size'),
 						min_value = 2,
-						max_value = self.backward_window_length
+						max_value = self.strategy_config.backward_window_length
 					),
 					padding = 'same',
 					activation = 'relu'
@@ -73,19 +69,21 @@ class NextPeriodHighLowModel:
 
 			lstm_layers_count = parameters.Int(
 				name = 'lstm_layers_count',
-				min_value = 0,
+				min_value = 1,
 				max_value = 4
 			)
 			for lstm_index in range(lstm_layers_count):
+				is_last_lstm = lstm_index == lstm_layers_count - 1
+
 				parameter.add_prefix(f'lstm_{lstm_index}')
 				flow = LSTM(
 					name = parameter.name('lstm'),
 					units = parameters.Int(
-						name = parameter.name('units'),
+						name = 'last_lstm_units' if is_last_lstm else parameter.name('units'),
 						min_value = 1,
 						max_value = features_length,
 					),
-					return_sequences = lstm_index != lstm_layers_count - 1
+					return_sequences = not is_last_lstm
 				)(flow)
 				flow = Dropout(
 					name = parameter.name('dropout'),
@@ -134,25 +132,25 @@ class NextPeriodHighLowModel:
 					step = 10 ** -4
 				)
 			),
-			loss = 'mse',
-			metrics = [ 'accuracy' ]
+			loss = 'mae',
+			metrics = [ 'accuracy', 'mae' ]
 		)
 		return model
 
 	def build_inputs(self):
-		input_chart_group = self.build_input_chart_group()
+		input_chart_group = self.strategy_config.build_input_chart_group()
 		features_length = 0
 		for chart in input_chart_group.charts:
 			features_length += len(chart.select)
 			for indicator in chart.indicators.values():
 				features_length += len(indicator.value_fields)
 		return Input(
-			batch_size = self.batch_size,
-			shape = (self.backward_window_length, features_length)
+			batch_size = self.training.batch_size,
+			shape = (self.strategy_config.backward_window_length, features_length)
 		)
 
 	def build_outputs(self, x):
-		output_chart_group = self.build_output_chart_group()
+		output_chart_group = self.strategy_config.build_output_chart_group()
 		output_shape = (len(output_chart_group.charts), 2)
 		x = Dense(math.prod(iter(output_shape)))(x)
 		x = Reshape(output_shape)(x)
