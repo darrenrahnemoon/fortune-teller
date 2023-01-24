@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from keras_tuner import Hyperband
 
 from core.tensorflow.tuner.hyperband.config import HyperbandTunerConfig
-from core.tensorflow.tuner.base.service import TunerService
+from core.tensorflow.tuner.tuner.service import TunerService
 
 @dataclass
 class HyperbandTunerService(TunerService):

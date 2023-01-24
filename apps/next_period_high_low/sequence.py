@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from keras.utils.data_utils import Sequence
 
 from core.utils.logging import logging
-from apps.next_period_high_low.model.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
 

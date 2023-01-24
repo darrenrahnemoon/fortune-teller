@@ -5,8 +5,8 @@ from core.repository import SimulationRepository
 from core.interval import Interval
 from core.utils.test import describe, it
 
-from apps.next_period_high_low.model.preprocessor import NextPeriodHighLowPreprocessor
-from apps.next_period_high_low.model.sequence import NextPeriodHighLowSequence
+from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
 
 @describe('NextPeriodHighLowSequence')
 def _():

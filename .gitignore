@@ -2,8 +2,8 @@ __pycache__
 .env
 .DS_Store
 
-apps/**/model/artifacts/tuner/**/*
-apps/**/model/artifacts/tensorboard/**/*
-apps/**/model/artifacts/checkpoints/**/*
+apps/**/artifacts/tuner/**/*
+apps/**/artifacts/tensorboard/**/*
+apps/**/artifacts/checkpoints/**/*
 
 !**/.gitignore

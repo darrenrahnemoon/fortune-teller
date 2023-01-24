@@ -7,9 +7,9 @@ from core.tensorflow.training.service import TrainingService
 from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
 
 from apps.next_period_high_low.config import NextPeriodHighLowConfiguration
-from apps.next_period_high_low.model.preprocessor import NextPeriodHighLowPreprocessor
-from apps.next_period_high_low.model.sequence import NextPeriodHighLowSequence
-from apps.next_period_high_low.model.model import NextPeriodHighLowModelService
+from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
+from apps.next_period_high_low.model import NextPeriodHighLowModelService
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Singleton
 
