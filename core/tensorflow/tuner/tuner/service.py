@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from keras import Model
-from keras_tuner import Tuner
+from keras_tuner import Tuner, HyperParameters
 
 if TYPE_CHECKING:
 	from core.tensorflow.training.service import TrainingService
@@ -28,14 +28,21 @@ class TunerService(ArtifactService):
 	def create(self, *args, **kwargs) -> Tuner:
 		pass
 
-	def get_best_model(self) -> Model:
+	def get_best_parameters(self) -> HyperParameters:
 		tuner = self.create()
-		parameters = tuner.get_best_hyperparameters(1)[0]
+		return tuner.get_best_hyperparameters(1)[0]
+
+	def get_best_model(self) -> Model:
+		parameters = self.get_best_parameters()
 		return self.model.build(parameters)
 
 	def train_best_model(self):
 		model = self.get_best_model()
 		self.training.train(model)
+
+	def predict_with_best_model(self, *args, **kwargs):
+		model = self.get_best_model()
+		return self.training.predict(model, *args, **kwargs)
 
 	def tune(self):
 		tuner = self.create()

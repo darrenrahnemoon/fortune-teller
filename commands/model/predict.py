@@ -10,5 +10,5 @@ def config(parser: ArgumentParser):
 def handler(args: Namespace):
 	container = NextPeriodHighLowContainer.get()
 	container.config.metatrader_repository.from_value(MetaTraderRepository())
-	service = container.service()
-	print(service.predict(args.timestamp))
+	tuner = container.tuner()
+	tuner.predict_with_best_model(args.timestamp)
