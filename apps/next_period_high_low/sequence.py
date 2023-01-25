@@ -1,10 +1,12 @@
 import functools
 import pandas
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from keras.utils.data_utils import Sequence
 
+from core.repository import SimulationRepository
 from core.utils.logging import logging
+
 from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
@@ -15,6 +17,7 @@ logger = logging.getLogger(__name__)
 class NextPeriodHighLowSequence(Sequence):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 	preprocessor: NextPeriodHighLowPreprocessor = None
+	repository: SimulationRepository = field(default_factory = SimulationRepository)
 
 	def __len__(self):
 		return len(self.timestamps)

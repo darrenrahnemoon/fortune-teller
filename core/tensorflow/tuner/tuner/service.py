@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 	from core.tensorflow.tensorboard.service import TensorboardService
 	from core.tensorflow.device.service import DeviceService
 	from core.tensorflow.model.service import ModelService
-from core.tensorflow.artifact import ArtifactService
+from core.tensorflow.artifact.service import ArtifactService
 
 @dataclass
 class TunerService(ArtifactService):
@@ -19,7 +19,7 @@ class TunerService(ArtifactService):
 
 	@property
 	def directory(self):
-		self.artifacts_directory.joinpath('tuner')
+		return self.artifacts_directory.joinpath('tuner')
 
 	@property
 	def callbacks(self):

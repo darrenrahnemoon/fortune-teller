@@ -1,4 +1,4 @@
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from dataclasses import is_dataclass
 from caseconverter import kebabcase
 from pydantic import BaseModel
@@ -52,12 +52,20 @@ def add_class_fields_as_arguments(
 		if is_any_of(parser._actions, lambda action: option_string in action.option_strings):
 			continue
 
-		parser.add_argument(
-			option_string,
-			*args,
-			type = RepresentationSerializer(field_type).deserialize,
-			**kwargs
-		)
+		if field_type == bool:
+			parser.add_argument(
+				option_string,
+				*args,
+				action = BooleanOptionalAction,
+				**kwargs
+			)
+		else:
+			parser.add_argument(
+				option_string,
+				*args,
+				type = RepresentationSerializer(field_type).deserialize,
+				**kwargs
+			)
 
 def setattr_from_args(
 	args: Namespace,

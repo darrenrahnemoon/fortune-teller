@@ -29,7 +29,7 @@ class DatasetService:
 			training_dataset = SharedMemorySequence(
 				sequence = training_dataset,
 				workers = self.config.workers,
-				max_queue_size = self.max_queue_size
+				max_queue_size = self.config.max_queue_size
 			)
 
 		# Validation Dataset
@@ -46,6 +46,6 @@ class DatasetService:
 			validation_dataset = SharedMemorySequence(
 				sequence = validation_dataset,
 				workers = self.config.workers,
-				max_queue_size = self.max_queue_size
+				max_queue_size = self.config.max_queue_size
 			)
 		return training_dataset, validation_dataset

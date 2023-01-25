@@ -49,13 +49,12 @@ class TrainingService(ArtifactService):
 		)
 
 	def train(self, model: Model):
-		model = self.load_best_model()
 		if self.directory.exists():
 			model.load_weights(self.directory)
 
 		with self.device.selected:
 			model.fit(
-				callbacks = self.callbacks
+				callbacks = self.callbacks,
 				**self.train_arguments,
 			)
 

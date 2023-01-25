@@ -1,4 +1,5 @@
 from pydantic import BaseSettings, Field
+from pathlib import Path
 
 from core.tensorflow.device.config import DeviceConfig
 from core.tensorflow.dataset.config import DatasetConfig
@@ -17,6 +18,7 @@ class NextPeriodHighLowStrategyConfig(BaseSettings):
 	backward_window_length: Interval = Interval.Day(1)
 	metatrader_repository: Repository = Field(default_factory = SimulationRepository)
 	alphavantage_repository: Repository = Field(default_factory = SimulationRepository)
+	metatrader_symbols: list[str] = [ 'GBPUSD', 'AUDUSD', 'GBPJPY', 'EURUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'GBPCHF', 'EURAUD', 'USDNOK', 'NZDJPY', 'AUDCAD', 'CADJPY', 'AUDNZD', 'AUDCHF', 'CADCHF', 'EURCAD', 'EURNZD', 'NZDCAD', 'SGDJPY', 'NZDCHF', 'GBPCAD', 'GBPAUD', 'USDSEK', 'GBPNZD', 'EURTRY', 'USDTRY', 'EURSEK', 'USDPLN', 'EURNOK' ]
 
 	def __init__(self, *args, **kwargs) -> None:
 		super().__init__(*args, **kwargs)
@@ -41,9 +43,7 @@ class NextPeriodHighLowStrategyConfig(BaseSettings):
 					count = self.backward_window_length,
 					repository = self.metatrader_repository,
 				)
-				for symbol in [
-					'GBPUSD', 'AUDUSD', 'GBPJPY', 'EURUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'GBPCHF', 'EURAUD', 'USDNOK', 'NZDJPY', 'AUDCAD', 'CADJPY', 'AUDNZD', 'AUDCHF', 'CADCHF', 'EURCAD', 'EURNZD', 'NZDCAD', 'SGDJPY', 'NZDCHF', 'GBPCAD', 'GBPAUD', 'USDSEK', 'GBPNZD', 'EURTRY', 'USDTRY', 'EURSEK', 'USDPLN', 'EURNOK'
-				]
+				for symbol in self.metatrader_symbols
 			]
 		)
 		return chart_group
@@ -63,6 +63,7 @@ class NextPeriodHighLowConfig(BaseSettings):
 	training: TrainingConfig = Field(default_factory = TrainingConfig)
 	tuner: HyperbandTunerConfig = Field(default_factory = HyperbandTunerConfig)
 	strategy: NextPeriodHighLowStrategyConfig = Field(default_factory = NextPeriodHighLowStrategyConfig)
+	artifacts_directory: Path = Path('./apps/next_period_high_low/artifacts')
 
 	class Config:
 		arbitrary_types_allowed = True

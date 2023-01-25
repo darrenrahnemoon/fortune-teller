@@ -11,7 +11,7 @@ class TensorboardService(ArtifactService):
 
 	@property
 	def callbacks(self):
-		if self.enabled:
+		if self.config.enabled:
 			return [ TensorBoard(log_dir = self.directory) ]
 		return []
 

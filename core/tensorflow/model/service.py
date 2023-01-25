@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from keras_tuner import HyperParameters
-from core.tensorflow.training.service import TrainingService
+from core.tensorflow.dataset.service import DatasetService
 
 @dataclass
 class ModelService:
-	training: TrainingService = None
+	dataset: DatasetService = None
 
 	def build(parameters: HyperParameters):
 		pass

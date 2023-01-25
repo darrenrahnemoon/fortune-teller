@@ -6,14 +6,12 @@ from core.tensorflow.dataset.service import DatasetService
 from core.tensorflow.training.service import TrainingService
 from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
 
-from apps.next_period_high_low.config import NextPeriodHighLowConfiguration
+from apps.next_period_high_low.config import NextPeriodHighLowConfig
 from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
 from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
 from apps.next_period_high_low.model import NextPeriodHighLowModelService
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Singleton
-
-artifacts_directory = Path('./apps/next_period_high_low/artifacts')
 
 class NextPeriodHighLowContainer(DeclarativeContainer):
 	config = Configuration()
@@ -35,7 +33,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 	tensorboard = Singleton(
 		TensorboardService,
 		config = config.tensorboard,
-		artifacts_directory = artifacts_directory
+		artifacts_directory = config.artifacts_directory
 	)
 	device = Singleton(
 		DeviceService,
@@ -47,10 +45,11 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		tensorboard = tensorboard,
 		device = device,
 		dataset = dataset,
+		artifacts_directory = config.artifacts_directory,
 	)
 	model = Singleton(
 		NextPeriodHighLowModelService,
-		training = training,
+		dataset = dataset,
 		strategy_config = config.strategy
 	)
 	tuner = Singleton(
@@ -60,19 +59,22 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		device = device,
 		training = training,
 		tensorboard = tensorboard,
+		artifacts_directory = config.artifacts_directory,
 	)
 
 	@classmethod
 	def get(
 		cls,
 		*args,
-		config: NextPeriodHighLowConfiguration = NextPeriodHighLowConfiguration(),
+		config: NextPeriodHighLowConfig = NextPeriodHighLowConfig(),
 		**kwargs
 	):
 		container = cls(*args, **kwargs)
-		container.config.from_pydantic(config)
-		container.config.strategy.from_dict({
-			'build_input_chart_group' : config.build_input_chart_group,
-			'build_output_chart_group' : config.build_output_chart_group
-		})
+		container.config.dataset.from_value(config.dataset)
+		container.config.device.from_value(config.device)
+		container.config.tensorboard.from_value(config.tensorboard)
+		container.config.training.from_value(config.training)
+		container.config.tuner.from_value(config.tuner)
+		container.config.strategy.from_value(config.strategy)
+		container.config.artifacts_directory.from_value(config.artifacts_directory)
 		return container
