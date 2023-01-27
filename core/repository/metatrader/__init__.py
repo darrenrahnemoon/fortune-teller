@@ -50,36 +50,59 @@ class MetaTraderRepository(Repository):
 		chart = OverriddenChart(chart, overrides)
 		dataframe = None
 		if chart.type == CandleStickChart:
-			records = self.api.copy_rates_range(
-				chart.symbol,
-				self.serializers.interval.serialize(chart.interval),
-				chart.from_timestamp.to_pydatetime(),
-				chart.to_timestamp.to_pydatetime(),
-			)
-			dataframe = self.serializers.records.candlestick.to_dataframe(
-				records,
-				name = chart.name,
-				select = chart.select,
-				tz = self.timezone,
-			)
+			dataframe = self.read_raw_candlestick_chart(chart)
 			dataframe = self.ensure_interval_integrity(
 				dataframe = dataframe,
 				chart = chart
 			)
 		elif chart.type == TickChart:
+			dataframe = self.read_raw_tick_chart(chart)
+
+		return dataframe
+
+	def read_raw_tick_chart(self, chart: TickChart):
+		if chart.count:
+			records = self.api.copy_ticks_from(
+				chart.symbol,
+				chart.to_timestamp.to_pydatetime(),
+				chart.count,
+				self.api.COPY_TICKS_ALL,
+			)
+		else:
 			records = self.api.copy_ticks_range(
 				chart.symbol,
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 				self.api.COPY_TICKS_ALL
 			)
-			dataframe = self.serializers.records.tick.to_dataframe(
-				records,
-				name = chart.name,
-				select = chart.select,
-				tz = self.timezone,
+		return self.serializers.records.tick.to_dataframe(
+			records,
+			name = chart.name,
+			select = chart.select,
+			tz = self.timezone,
+		)
+
+	def read_raw_candlestick_chart(self, chart: CandleStickChart):
+		if chart.count:
+			records = self.api.copy_rates_from(
+				chart.symbol,
+				self.serializers.interval.serialize(chart.interval),
+				chart.to_timestamp.to_pydatetime(),
+				chart.count
 			)
-		return dataframe
+		else:
+			records = self.api.copy_rates_range(
+				chart.symbol,
+				self.serializers.interval.serialize(chart.interval),
+				chart.from_timestamp.to_pydatetime(),
+				chart.to_timestamp.to_pydatetime(),
+			)
+		return self.serializers.records.candlestick.to_dataframe(
+			records,
+			name = chart.name,
+			select = chart.select,
+			tz = self.timezone,
+		)
 
 	def ensure_interval_integrity(
 		self,
