@@ -4,7 +4,7 @@ from keras import Model
 from keras_tuner import Tuner, HyperParameters
 
 if TYPE_CHECKING:
-	from core.tensorflow.training.service import TrainingService
+	from core.tensorflow.trainer.service import TrainerService
 	from core.tensorflow.tensorboard.service import TensorboardService
 	from core.tensorflow.device.service import DeviceService
 	from core.tensorflow.model.service import ModelService
@@ -14,7 +14,7 @@ from core.tensorflow.artifact.service import ArtifactService
 class TunerService(ArtifactService):
 	model: 'ModelService' = None
 	device: 'DeviceService' = None
-	training: 'TrainingService' = None
+	trainer: 'TrainerService' = None
 	tensorboard: 'TensorboardService' = None
 
 	@property
@@ -38,17 +38,17 @@ class TunerService(ArtifactService):
 
 	def train_best_model(self):
 		model = self.get_best_model()
-		self.training.train(model)
+		self.trainer.train(model)
 
 	def predict_with_best_model(self, *args, **kwargs):
 		model = self.get_best_model()
-		return self.training.predict(model, *args, **kwargs)
+		return self.trainer.predict(model, *args, **kwargs)
 
 	def tune(self):
 		tuner = self.create()
-
+		self.tensorboard.ensure_running()
 		with self.device.selected:
 			tuner.search(
-				**self.training.train_arguments,
+				**self.trainer.train_arguments,
 				callbacks = self.callbacks,
 			)

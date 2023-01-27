@@ -4,15 +4,15 @@ from typing import TYPE_CHECKING
 from keras import Model
 from keras.callbacks import ModelCheckpoint
 
-from core.tensorflow.training.config import TrainingConfig
+from core.tensorflow.trainer.config import TrainerConfig
 from core.tensorflow.dataset.service import DatasetService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.artifact.service import ArtifactService
 
 @dataclass
-class TrainingService(ArtifactService):
-	config: TrainingConfig = None
+class TrainerService(ArtifactService):
+	config: TrainerConfig = None
 	tensorboard: TensorboardService = None
 	device: DeviceService = None
 	dataset: DatasetService = None
@@ -51,6 +51,7 @@ class TrainingService(ArtifactService):
 	def train(self, model: Model):
 		if self.directory.exists():
 			model.load_weights(self.directory)
+		self.tensorboard.ensure_running()
 
 		with self.device.selected:
 			model.fit(

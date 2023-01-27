@@ -133,7 +133,7 @@ class NextPeriodHighLowModelService(ModelService):
 				)
 			),
 			loss = 'mae',
-			metrics = [ 'accuracy', 'mae' ]
+			metrics = [ 'mae' ]
 		)
 		return model
 

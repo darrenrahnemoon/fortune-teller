@@ -4,7 +4,7 @@ from pathlib import Path
 from core.tensorflow.device.config import DeviceConfig
 from core.tensorflow.dataset.config import DatasetConfig
 from core.tensorflow.tuner.hyperband.config import HyperbandTunerConfig
-from core.tensorflow.training.config import TrainingConfig
+from core.tensorflow.trainer.config import TrainerConfig
 from core.tensorflow.tensorboard.config import TensorboardConfig
 
 from core.interval import Interval
@@ -60,7 +60,7 @@ class NextPeriodHighLowConfig(BaseSettings):
 	dataset: DatasetConfig = Field(default_factory = DatasetConfig)
 	device: DeviceConfig = Field(default_factory = DeviceConfig)
 	tensorboard: TensorboardConfig = Field(default_factory = TensorboardConfig)
-	training: TrainingConfig = Field(default_factory = TrainingConfig)
+	trainer: TrainerConfig = Field(default_factory = TrainerConfig)
 	tuner: HyperbandTunerConfig = Field(default_factory = HyperbandTunerConfig)
 	strategy: NextPeriodHighLowStrategyConfig = Field(default_factory = NextPeriodHighLowStrategyConfig)
 	artifacts_directory: Path = Path('./apps/next_period_high_low/artifacts')

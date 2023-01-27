@@ -16,7 +16,7 @@ class DatasetService:
 		# Dataset
 		dataset = ShuffledSequence(self.dataset)
 
-		# Training Dataset
+		# Trainer Dataset
 		training_dataset = PartialSequence(
 			sequence = dataset,
 			portion = 1 - self.config.validation_split
