@@ -1,4 +1,5 @@
-from pydantic import BaseSettings
+from core.utils.config import Config, dataclass
 
-class DeviceConfig(BaseSettings):
+@dataclass
+class DeviceConfig(Config):
 	use: str = 'CPU'

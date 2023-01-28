@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from commands.utils.pydantic import add_configuration_as_arguments, get_overridden_configuration_from_arguments
+from commands.utils.config import add_configuration_as_arguments, get_overridden_configuration_from_arguments
 
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.config import NextPeriodHighLowConfig

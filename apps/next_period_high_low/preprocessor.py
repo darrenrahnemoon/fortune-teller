@@ -52,14 +52,12 @@ class NextPeriodHighLowPreprocessor:
 			])
 		return numpy.array(outputs)
 
-	def from_model_output(self, outputs: numpy.ndarray) -> dict[Chart, dict[Literal['high', 'low'], float]]:
+	def from_model_output(self, outputs: numpy.ndarray) -> list[dict[Literal['chart', 'high', 'low']]]:
 		return [
-			(
-				chart,
-				{
-					'high': output[0],
-					'low': output[1]
-				}
-			)
+			{
+				'chart': chart,
+				'high': output[0],
+				'low': output[1]
+			}
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

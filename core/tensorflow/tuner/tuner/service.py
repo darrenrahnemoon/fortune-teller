@@ -34,11 +34,11 @@ class TunerService(ArtifactService):
 
 	def get_best_model(self) -> Model:
 		parameters = self.get_best_parameters()
-		return self.model.build(parameters)
+		model = self.model.build(parameters)
+		return model
 
 	def train_best_model(self):
 		model = self.get_best_model()
-		self.trainer.load_weights(model)
 		self.trainer.train(model)
 
 	def predict_with_best_model(self, *args, **kwargs):

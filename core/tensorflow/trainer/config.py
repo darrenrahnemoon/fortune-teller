@@ -1,5 +1,6 @@
-from pydantic import BaseSettings
+from core.utils.config import Config, dataclass
 
-class TrainerConfig(BaseSettings):
+@dataclass
+class TrainerConfig(Config):
 	epochs: int = 100
 	steps_per_epoch: int = 20

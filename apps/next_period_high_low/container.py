@@ -1,4 +1,7 @@
-from pathlib import Path
+from dataclasses import asdict
+
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.providers import Configuration, Singleton
 
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
@@ -10,8 +13,7 @@ from .config import NextPeriodHighLowConfig
 from .preprocessor import NextPeriodHighLowPreprocessor
 from .sequence import NextPeriodHighLowSequence
 from .model import NextPeriodHighLowModelService
-from dependency_injector.containers import DeclarativeContainer
-from dependency_injector.providers import Configuration, Singleton
+from .strategy import NextPeriodHighLowStrategy
 
 class NextPeriodHighLowContainer(DeclarativeContainer):
 	config = Configuration()
@@ -63,14 +65,22 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		tensorboard = tensorboard,
 		artifacts_directory = config.artifacts_directory,
 	)
+	strategy = Singleton(
+		NextPeriodHighLowStrategy,
+		config = config.strategy,
+		trainer = trainer,
+		tuner = tuner,
+	)
 
 	@classmethod
 	def get(
 		cls,
 		*args,
-		config: NextPeriodHighLowConfig = NextPeriodHighLowConfig(),
+		config: NextPeriodHighLowConfig = None,
 		**kwargs
 	):
+		if config == None:
+			config = NextPeriodHighLowConfig()
 		container = cls(*args, **kwargs)
 		container.config.dataset.from_value(config.dataset)
 		container.config.device.from_value(config.device)

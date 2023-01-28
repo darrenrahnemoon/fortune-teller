@@ -1,5 +1,6 @@
-from pydantic import BaseSettings
+from core.utils.config import Config, dataclass
 
-class TensorboardConfig(BaseSettings):
+@dataclass
+class TensorboardConfig(Config):
 	enabled: bool = False
 	port: str or int = 'default'
