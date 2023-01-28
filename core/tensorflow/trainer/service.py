@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from keras import Model
 from keras.callbacks import ModelCheckpoint
@@ -48,9 +47,11 @@ class TrainerService(ArtifactService):
 			verbose = True
 		)
 
-	def train(self, model: Model):
+	def load_weights(self, model: Model):
 		if self.directory.exists():
 			model.load_weights(self.directory)
+
+	def train(self, model: Model):
 		self.tensorboard.ensure_running()
 
 		with self.device.selected:
@@ -59,5 +60,5 @@ class TrainerService(ArtifactService):
 				**self.train_arguments,
 			)
 
-	def predict(self, model: Model):
+	def predict(self, model: Model, *args, **kwargs):
 		pass

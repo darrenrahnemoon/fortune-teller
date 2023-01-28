@@ -50,6 +50,10 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 		return self
 
 	@property
+	def type(self):
+		return type(self)
+
+	@property
 	def dataframe(self):
 		"""
 		Returns:

@@ -32,7 +32,8 @@ class NextPeriodHighLowStrategyConfig(BaseSettings):
 					int(field.to_pandas_timedelta() // self.interval.to_pandas_timedelta())
 				)
 
-	def build_output_chart_group(self):
+	@property
+	def output_chart_group(self):
 		chart_group = ChartGroup(
 			name = 'NextPeriodHighLow',
 			charts = [
@@ -48,8 +49,9 @@ class NextPeriodHighLowStrategyConfig(BaseSettings):
 		)
 		return chart_group
 
-	def build_input_chart_group(self):
-		chart_group = self.build_output_chart_group()
+	@property
+	def input_chart_group(self):
+		chart_group = self.output_chart_group
 		chart_group.charts[0].attach_indicator(SeasonalityIndicator)
 		return chart_group
 

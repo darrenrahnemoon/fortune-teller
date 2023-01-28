@@ -38,10 +38,12 @@ class TunerService(ArtifactService):
 
 	def train_best_model(self):
 		model = self.get_best_model()
+		self.trainer.load_weights(model)
 		self.trainer.train(model)
 
 	def predict_with_best_model(self, *args, **kwargs):
 		model = self.get_best_model()
+		self.trainer.load_weights(model)
 		return self.trainer.predict(model, *args, **kwargs)
 
 	def tune(self):

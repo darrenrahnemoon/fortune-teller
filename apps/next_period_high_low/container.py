@@ -3,13 +3,13 @@ from pathlib import Path
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.dataset.service import DatasetService
-from core.tensorflow.trainer.service import TrainerService
 from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
 
-from apps.next_period_high_low.config import NextPeriodHighLowConfig
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
-from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
-from apps.next_period_high_low.model import NextPeriodHighLowModelService
+from .trainer import NextPeriodHighLowTrainerService
+from .config import NextPeriodHighLowConfig
+from .preprocessor import NextPeriodHighLowPreprocessor
+from .sequence import NextPeriodHighLowSequence
+from .model import NextPeriodHighLowModelService
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Singleton
 
@@ -40,12 +40,14 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		config = config.device,
 	)
 	trainer = Singleton(
-		TrainerService,
+		NextPeriodHighLowTrainerService,
 		config = config.trainer,
+		strategy_config = config.strategy,
 		tensorboard = tensorboard,
 		device = device,
 		dataset = dataset,
 		artifacts_directory = config.artifacts_directory,
+		preprocessor = preprocessor
 	)
 	model = Singleton(
 		NextPeriodHighLowModelService,

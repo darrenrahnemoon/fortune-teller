@@ -56,7 +56,7 @@ def _():
 		)
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
 		assert len(sequence) != 0
-		input_chart_group = sequence.build_input_chart_group()
+		input_chart_group = sequence.input_chart_group
 		expected_columns_count = sum([ len(chart.select) for chart in input_chart_group.charts ])
 		expected_columns_count += len(input_chart_group.charts[0].indicators['seasonality'].value_fields)
 		for i in range(5):

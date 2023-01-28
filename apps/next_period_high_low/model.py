@@ -138,7 +138,7 @@ class NextPeriodHighLowModelService(ModelService):
 		return model
 
 	def build_inputs(self):
-		input_chart_group = self.strategy_config.build_input_chart_group()
+		input_chart_group = self.strategy_config.input_chart_group
 		features_length = 0
 		for chart in input_chart_group.charts:
 			features_length += len(chart.select)
@@ -150,7 +150,7 @@ class NextPeriodHighLowModelService(ModelService):
 		)
 
 	def build_outputs(self, x):
-		output_chart_group = self.strategy_config.build_output_chart_group()
+		output_chart_group = self.strategy_config.output_chart_group
 		output_shape = (len(output_chart_group.charts), 2)
 		x = Dense(math.prod(iter(output_shape)))(x)
 		x = Reshape(output_shape)(x)

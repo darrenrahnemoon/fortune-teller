@@ -3,7 +3,7 @@ import numpy
 import pandas
 from dataclasses import dataclass
 
-from core.chart.group import ChartGroup
+from core.chart import Chart, ChartGroup
 from core.utils.logging import logging
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -18,7 +18,11 @@ class NextPeriodHighLowPreprocessor:
 		self,
 		input_chart_group: ChartGroup,
 		truncate_from: Literal['head', 'tail'] = 'head',
+		truncate_len: int = 0,
 	):
+		if truncate_len == 0:
+			truncate_len = self.strategy_config.backward_window_length + self.strategy_config.forward_window_length
+
 		for chart in input_chart_group.charts:
 			data: pandas.DataFrame = chart.data
 			data = data.pct_change()
@@ -27,9 +31,10 @@ class NextPeriodHighLowPreprocessor:
 
 		dataframe = input_chart_group.dataframe
 		dataframe = dataframe.fillna(0)
-		dataframe = getattr(dataframe, truncate_from)(self.strategy_config.backward_window_length + self.strategy_config.forward_window_length)
+
+		dataframe = getattr(dataframe, truncate_from)(truncate_len)
 		if len(dataframe) < self.strategy_config.backward_window_length:
-			pass # SHOULD DO: pad beginning of dataframe with zeros
+			raise Exception('If this error ever raised then implement padding...')
 
 		input_chart_group.dataframe = dataframe
 
@@ -46,3 +51,15 @@ class NextPeriodHighLowPreprocessor:
 				chart.data['low'].min()
 			])
 		return numpy.array(outputs)
+
+	def from_model_output(self, outputs: numpy.ndarray) -> dict[Chart, dict[Literal['high', 'low'], float]]:
+		return [
+			(
+				chart,
+				{
+					'high': output[0],
+					'low': output[1]
+				}
+			)
+			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
+		]

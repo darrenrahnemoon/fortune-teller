@@ -25,7 +25,9 @@ class TensorboardService(ArtifactService):
 			[
 				'tensorboard',
 				'--logdir',
-				self.directory
+				self.directory,
+				'--port',
+				self.config.port
 			],
 			stdout = PIPE,
 			stderr = PIPE
