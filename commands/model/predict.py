@@ -4,15 +4,15 @@ from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
 
 from core.utils.time import normalize_timestamp, now
-import commands.utils.config
+import core.utils.command.config
 
 def config(parser: ArgumentParser):
-	commands.utils.config.add_args(parser, NextPeriodHighLowConfig)
+	core.utils.command.config.add_args(parser, NextPeriodHighLowConfig)
 
 	parser.add_argument('--timestamp', default = now(), type = normalize_timestamp)
 
 def handler(args: Namespace):
-	config = commands.utils.config.create_config_from_args(args, NextPeriodHighLowConfig)
+	config = core.utils.command.config.create_config_from_args(args, NextPeriodHighLowConfig)
 
 	print('As of:', args.timestamp)
 	container = NextPeriodHighLowContainer.get(config = config)

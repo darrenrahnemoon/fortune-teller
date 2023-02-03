@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
 from core.chart import Chart
 from core.utils.serializer import RepresentationSerializer
-import commands.utils.cls
+import core.utils.command.cls
 
 def add_args(
 	parser: ArgumentParser,
@@ -22,7 +22,7 @@ def add_args(
 		for field in fields:
 			chart_fields.add(field)
 
-		commands.utils.cls.add_fields_to_args(
+		core.utils.command.cls.add_fields_to_args(
 			cls = chart_class,
 			parser = parser,
 			select = fields,

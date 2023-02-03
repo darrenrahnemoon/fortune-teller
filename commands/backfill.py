@@ -4,12 +4,12 @@ from core.repository import SimulationRepository, Repository
 from core.utils.time import normalize_timestamp, now
 from core.utils.logging import logging
 from core.utils.serializer import RepresentationSerializer
-import commands.utils.chart
+import core.utils.command.chart
 
 logger = logging.getLogger(__name__)
 
 def config(parser: ArgumentParser):
-	commands.utils.chart.add_args(parser, nargs = '*')
+	core.utils.command.chart.add_args(parser, nargs = '*')
 	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
 	parser.add_argument('--from', dest = 'from_timestamp', type = normalize_timestamp)
 	parser.add_argument('--to', dest = 'to_timestamp', type = normalize_timestamp, default = now())
@@ -24,7 +24,7 @@ def handler(args: Namespace):
 		args.symbol = source_repository.get_available_symbols()
 
 	for chart in source_repository.get_available_charts(
-		filter = commands.utils.chart.get_filter_from_args(args)
+		filter = core.utils.command.chart.get_filter_from_args(args)
 	):
 		simulation_repository.backfill(
 			chart = chart,
