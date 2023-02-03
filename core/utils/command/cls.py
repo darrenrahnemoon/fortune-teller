@@ -18,7 +18,7 @@ def get_fields(cls):
 	
 	raise Exception(f'Unable to infer field type hints for {cls}')
 
-def add_fields_to_args(
+def add_fields_to_arguments(
 	parser: ArgumentParser,
 	cls,
 	select: list[str] = [],
@@ -37,7 +37,7 @@ def add_fields_to_args(
 			continue
 
 		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
-			add_fields_to_args(
+			add_fields_to_arguments(
 				cls = field_type,
 				parser = parser,
 				prefix = field_name
@@ -69,7 +69,7 @@ def add_fields_to_args(
 			)
 
 T = TypeVar('T')
-def set_fields_from_args(
+def set_fields_from_arguments(
 	args: Namespace,
 	instance: T,
 	recursive: list = [],
@@ -78,7 +78,7 @@ def set_fields_from_args(
 	fields = get_fields(type(instance))
 	for field_name, field_type in fields.items():
 		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
-			set_fields_from_args(
+			set_fields_from_arguments(
 				instance = getattr(instance, field_name),
 				args = args,
 				prefix = field_name,

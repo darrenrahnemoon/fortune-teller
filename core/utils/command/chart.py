@@ -3,7 +3,7 @@ from core.chart import Chart
 from core.utils.serializer import RepresentationSerializer
 import core.utils.command.cls
 
-def add_args(
+def add_to_arguments(
 	parser: ArgumentParser,
 	chart_cls: type[Chart] = Chart,
 	nargs = None
@@ -22,7 +22,7 @@ def add_args(
 		for field in fields:
 			chart_fields.add(field)
 
-		core.utils.command.cls.add_fields_to_args(
+		core.utils.command.cls.add_fields_to_arguments(
 			cls = chart_class,
 			parser = parser,
 			select = fields,
@@ -34,7 +34,7 @@ def add_args(
 		chart_fields = chart_fields
 	)
 
-def get_filter_from_args(args: Namespace):
+def get_filter_from_arguments(args: Namespace):
 	return {
 		key: value
 		for key, value in args.__dict__.items()
