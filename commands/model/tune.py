@@ -10,5 +10,5 @@ def config(parser: ArgumentParser):
 def handler(args: Namespace):
 	config = commands.utils.config.set_fields_from_args(args, NextPeriodHighLowConfig())
 	container = NextPeriodHighLowContainer.get(config = config)
-	tuner = container.tuner()
-	tuner.tune()
+	tuner_service = container.tuner_service()
+	tuner_service.tune()

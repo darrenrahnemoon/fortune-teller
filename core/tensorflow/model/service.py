@@ -4,7 +4,7 @@ from core.tensorflow.dataset.service import DatasetService
 
 @dataclass
 class ModelService:
-	dataset: DatasetService = None
+	dataset_service: DatasetService = None
 
 	def build(parameters: HyperParameters):
 		pass

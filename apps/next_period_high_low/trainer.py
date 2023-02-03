@@ -2,7 +2,7 @@ import numpy
 from keras import Model
 from dataclasses import dataclass
 
-from .preprocessor import NextPeriodHighLowPreprocessor
+from .preprocessor import NextPeriodHighLowPreprocessorService
 from .config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.trainer.service import TrainerService
 from core.utils.time import TimestampLike, normalize_timestamp
@@ -10,7 +10,7 @@ from core.utils.time import TimestampLike, normalize_timestamp
 @dataclass
 class NextPeriodHighLowTrainerService(TrainerService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
-	preprocessor: NextPeriodHighLowPreprocessor = None
+	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 
 	def predict(self, model: Model, timestamp: TimestampLike):
 		timestamp = normalize_timestamp(timestamp)
@@ -19,9 +19,9 @@ class NextPeriodHighLowTrainerService(TrainerService):
 		for chart in input_chart_group.charts:
 			chart.refresh_indicators()
 
-		model_input = self.preprocessor.to_model_input(input_chart_group)
-		model_input = numpy.array([ model_input ] * self.dataset.config.batch_size)
-		with self.device.selected:
+		model_input = self.preprocessor_service.to_model_input(input_chart_group)
+		model_input = numpy.array([ model_input ] * self.dataset_service.config.batch_size)
+		with self.device.selected_device:
 			model_output = model.predict(model_input)
-			return self.preprocessor.from_model_output(model_output[0])
+			return self.preprocessor_service.from_model_output(model_output[0])
 

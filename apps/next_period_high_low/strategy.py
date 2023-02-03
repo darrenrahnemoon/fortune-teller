@@ -10,16 +10,16 @@ from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 @dataclass
 class NextPeriodHighLowStrategy(Strategy):
 	config: NextPeriodHighLowStrategyConfig = None
-	trainer: NextPeriodHighLowTrainerService = None
-	tuner: TunerService = None
+	trainer_service: NextPeriodHighLowTrainerService = None
+	tuner_service: TunerService = None
 
 	def __post_init__(self):
-		self.model = self.tuner.get_model(self.trainer.config.trial)
-		self.trainer.load_weights(self.model)
+		self.model = self.tuner_service.get_model(self.trainer_service.config.trial)
+		self.trainer_service.load_weights(self.model)
 		return super().__post_init__()
 
 	def predict_changes(self, timestamp: TimestampLike):
-		return self.trainer.predict(self.model, timestamp)
+		return self.trainer_service.predict(self.model, timestamp)
 
 	def predict_prices(self, timestamp: TimestampLike):
 		predictions = self.predict_changes(timestamp)

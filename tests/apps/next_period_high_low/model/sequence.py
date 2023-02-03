@@ -5,7 +5,7 @@ from core.repository import SimulationRepository
 from core.interval import Interval
 from core.utils.test import describe, it
 
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
 
 @describe('NextPeriodHighLowSequence')
@@ -49,7 +49,7 @@ def _():
 				]
 			),
 			repository = SimulationRepository(),
-			preprocessor = NextPeriodHighLowPreprocessor(
+			preprocessor_service = NextPeriodHighLowPreprocessorService(
 				backward_window_length = backward_window_length,
 				forward_window_length = forward_window_length
 			)

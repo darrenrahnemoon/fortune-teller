@@ -7,7 +7,7 @@ class DeviceService:
 	config: DeviceConfig
 
 	@property
-	def selected(self):
+	def selected_device(self):
 		"""Used as a context manager to enable tensorflow to use the specified device"""
 		device = self.get()
 		return tensorflow.device(device.name)

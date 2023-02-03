@@ -12,9 +12,9 @@ from core.tensorflow.artifact.service import ArtifactService
 @dataclass
 class TrainerService(ArtifactService):
 	config: TrainerConfig = None
-	tensorboard: TensorboardService = None
-	device: DeviceService = None
-	dataset: DatasetService = None
+	tensorboard_service: TensorboardService = None
+	device_service: DeviceService = None
+	dataset_service: DatasetService = None
 
 	@property
 	def directory(self):
@@ -31,19 +31,19 @@ class TrainerService(ArtifactService):
 				save_best_only = True,
 			)
 		]
-		return callbacks + self.tensorboard.callbacks
+		return callbacks + self.tensorboard_service.callbacks
 
 	@property
 	def train_args(self):
-		training_dataset, validation_dataset = self.dataset.get()
+		training_dataset, validation_dataset = self.dataset_service.get()
 		return dict(
 			x = training_dataset,
 			validation_data = validation_dataset,
 			epochs = self.config.epochs,
 			steps_per_epoch = self.config.steps_per_epoch,
-			batch_size = self.dataset.config.batch_size,
-			validation_batch_size = self.dataset.config.batch_size,
-			validation_steps = int(self.config.steps_per_epoch / (1 - self.dataset.config.validation_split) * self.dataset.config.validation_split),
+			batch_size = self.dataset_service.config.batch_size,
+			validation_batch_size = self.dataset_service.config.batch_size,
+			validation_steps = int(self.config.steps_per_epoch / (1 - self.dataset_service.config.validation_split) * self.dataset_service.config.validation_split),
 			verbose = True
 		)
 
@@ -52,9 +52,9 @@ class TrainerService(ArtifactService):
 			model.load_weights(self.directory)
 
 	def train(self, model: Model):
-		self.tensorboard.ensure_running()
+		self.tensorboard_service.ensure_running()
 
-		with self.device.selected:
+		with self.device_service.selected_device:
 			model.fit(
 				callbacks = self.callbacks,
 				**self.train_args,

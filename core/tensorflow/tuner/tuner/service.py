@@ -1,3 +1,4 @@
+from functools import cache
 from typing import Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from keras import Model
@@ -13,10 +14,11 @@ from core.tensorflow.artifact.service import ArtifactService
 
 @dataclass
 class TunerService(ArtifactService):
-	model: 'ModelService' = None
-	device: 'DeviceService' = None
-	trainer: 'TrainerService' = None
-	tensorboard: 'TensorboardService' = None
+	model_service: 'ModelService' = None
+	device_service: 'DeviceService' = None
+	trainer_service: 'TrainerService' = None
+	tensorboard_service: 'TensorboardService' = None
+	tuner: Tuner = None
 
 	@property
 	def directory(self):
@@ -24,29 +26,24 @@ class TunerService(ArtifactService):
 
 	@property
 	def callbacks(self):
-		return self.tensorboard.callbacks
-
-	def create(self, *args, **kwargs) -> Tuner:
-		pass
+		return self.tensorboard_service.callbacks
 
 	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
-		tuner = self.create()
 		if (trial_id == 'best'):
-			return tuner.oracle.get_best_trials(1)
-		return tuner.oracle.get_trial(trial_id)
+			return self.tuner.oracle.get_best_trials(1)[0]
+		return self.tuner.oracle.get_trial(trial_id)
 
 	def get_hyperparameters(self, trial_id: str or Literal['best']) -> HyperParameters:
 		return self.get_trial(trial_id).hyperparameters
 
 	def get_model(self, trial_id: str or Literal['best']) -> Model:
 		hyperparameters = self.get_hyperparameters(trial_id)
-		return self.model.build(hyperparameters)
+		return self.model_service.build(hyperparameters)
 
 	def tune(self):
-		tuner = self.create()
-		self.tensorboard.ensure_running()
-		with self.device.selected:
-			tuner.search(
-				**self.trainer.train_args,
+		self.tensorboard_service.ensure_running()
+		with self.device_service.selected_device:
+			self.tuner.search(
+				**self.trainer_service.train_args,
 				callbacks = self.callbacks,
 			)

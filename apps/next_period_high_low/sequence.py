@@ -8,7 +8,7 @@ from keras.utils.data_utils import Sequence
 from core.repository import SimulationRepository
 from core.utils.logging import logging
 
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessor
+from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass(**sequence_dataclass_kwargs)
 class NextPeriodHighLowSequence(Sequence):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
-	preprocessor: NextPeriodHighLowPreprocessor = None
+	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 	repository: SimulationRepository = field(default_factory = SimulationRepository)
 
 	def __len__(self):
@@ -38,8 +38,8 @@ class NextPeriodHighLowSequence(Sequence):
 		input_chart_group.dataframe = dataframe[:self.strategy_config.backward_window_length]
 		output_chart_group.dataframe = dataframe[self.strategy_config.backward_window_length:]
 
-		x = self.preprocessor.to_model_input(input_chart_group)
-		y = self.preprocessor.to_model_output(output_chart_group)
+		x = self.preprocessor_service.to_model_input(input_chart_group)
+		y = self.preprocessor_service.to_model_output(output_chart_group)
 
 		logger.debug(f'NextPeriodHighLowSequence[{index}] | {timestamp} -> x:{x.shape}, y:{y.shape}')
 		return x, y

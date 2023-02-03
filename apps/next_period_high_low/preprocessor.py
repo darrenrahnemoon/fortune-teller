@@ -11,7 +11,7 @@ from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 logger = logging.getLogger(__name__)
 
 @dataclass
-class NextPeriodHighLowPreprocessor:
+class NextPeriodHighLowPreprocessorService:
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 
 	def to_model_input(self, input_chart_group: ChartGroup):

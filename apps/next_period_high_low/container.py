@@ -10,7 +10,7 @@ from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
 
 from .trainer import NextPeriodHighLowTrainerService
 from .config import NextPeriodHighLowConfig
-from .preprocessor import NextPeriodHighLowPreprocessor
+from .preprocessor import NextPeriodHighLowPreprocessorService
 from .sequence import NextPeriodHighLowSequence
 from .model import NextPeriodHighLowModelService
 from .strategy import NextPeriodHighLowStrategy
@@ -18,58 +18,58 @@ from .strategy import NextPeriodHighLowStrategy
 class NextPeriodHighLowContainer(DeclarativeContainer):
 	config = Configuration()
 
-	preprocessor = Singleton(
-		NextPeriodHighLowPreprocessor,
+	preprocessor_service = Singleton(
+		NextPeriodHighLowPreprocessorService,
 		strategy_config = config.strategy,
 	)
 	sequence = Singleton(
 		NextPeriodHighLowSequence,
 		strategy_config = config.strategy,
-		preprocessor = preprocessor,
+		preprocessor_service = preprocessor_service,
 	)
-	dataset = Singleton(
+	dataset_service = Singleton(
 		DatasetService,
 		config = config.dataset,
 		dataset = sequence,
 	)
-	tensorboard = Singleton(
+	tensorboard_service = Singleton(
 		TensorboardService,
 		config = config.tensorboard,
 		artifacts_directory = config.artifacts_directory
 	)
-	device = Singleton(
+	device_service = Singleton(
 		DeviceService,
 		config = config.device,
 	)
-	trainer = Singleton(
+	trainer_service = Singleton(
 		NextPeriodHighLowTrainerService,
 		config = config.trainer,
 		strategy_config = config.strategy,
-		tensorboard = tensorboard,
-		device = device,
-		dataset = dataset,
+		tensorboard_service = tensorboard_service,
+		device_service = device_service,
+		dataset_service = dataset_service,
 		artifacts_directory = config.artifacts_directory,
-		preprocessor = preprocessor
+		preprocessor_service = preprocessor_service
 	)
-	model = Singleton(
+	model_service = Singleton(
 		NextPeriodHighLowModelService,
-		dataset = dataset,
+		dataset_service = dataset_service,
 		strategy_config = config.strategy
 	)
-	tuner = Singleton(
+	tuner_service = Singleton(
 		HyperbandTunerService,
 		config = config.tuner,
-		model = model,
-		device = device,
-		trainer = trainer,
-		tensorboard = tensorboard,
+		model_service = model_service,
+		device_service = device_service,
+		trainer_service = trainer_service,
+		tensorboard_service = tensorboard_service,
 		artifacts_directory = config.artifacts_directory,
 	)
-	strategy = Singleton(
+	strategy_service = Singleton(
 		NextPeriodHighLowStrategy,
 		config = config.strategy,
-		trainer = trainer,
-		tuner = tuner,
+		trainer_service = trainer_service,
+		tuner_service = tuner_service,
 	)
 
 	@classmethod
