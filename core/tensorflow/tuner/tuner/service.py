@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from keras import Model
 from keras_tuner import Tuner, HyperParameters
+from keras_tuner.engine.trial import Trial
 
 if TYPE_CHECKING:
 	from core.tensorflow.trainer.service import TrainerService
@@ -28,29 +29,24 @@ class TunerService(ArtifactService):
 	def create(self, *args, **kwargs) -> Tuner:
 		pass
 
-	def get_best_parameters(self) -> HyperParameters:
+	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
 		tuner = self.create()
-		return tuner.get_best_hyperparameters(1)[0]
+		if (trial_id == 'best'):
+			return tuner.oracle.get_best_trials(1)
+		return tuner.oracle.get_trial(trial_id)
 
-	def get_best_model(self) -> Model:
-		parameters = self.get_best_parameters()
-		model = self.model.build(parameters)
-		return model
+	def get_hyperparameters(self, trial_id: str or Literal['best']) -> HyperParameters:
+		return self.get_trial(trial_id).hyperparameters
 
-	def train_best_model(self):
-		model = self.get_best_model()
-		self.trainer.train(model)
-
-	def predict_with_best_model(self, *args, **kwargs):
-		model = self.get_best_model()
-		self.trainer.load_weights(model)
-		return self.trainer.predict(model, *args, **kwargs)
+	def get_model(self, trial_id: str or Literal['best']) -> Model:
+		hyperparameters = self.get_hyperparameters(trial_id)
+		return self.model.build(hyperparameters)
 
 	def tune(self):
 		tuner = self.create()
 		self.tensorboard.ensure_running()
 		with self.device.selected:
 			tuner.search(
-				**self.trainer.train_arguments,
+				**self.trainer.train_args,
 				callbacks = self.callbacks,
 			)

@@ -9,9 +9,9 @@ from core.tensorflow.tensorboard.config import TensorboardConfig
 from core.interval import Interval
 from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
-from core.repository import Repository, SimulationRepository
-from core.broker import Broker, SimulationBroker
-from core.utils.config import Config, dataclass, field
+from core.repository import Repository, SimulationRepository, AlphaVantageRepository
+from core.broker import Broker, SimulationBroker, MetaTraderBroker
+from core.utils.config import Config, dataclass, field, on_env
 
 @dataclass
 class NextPeriodHighLowStrategyConfig(Config):
@@ -24,9 +24,20 @@ class NextPeriodHighLowStrategyConfig(Config):
 			'GBPUSD', 'AUDUSD', 'GBPJPY', 'EURUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'GBPCHF', 'EURAUD', 'USDNOK', 'NZDJPY', 'AUDCAD', 'CADJPY', 'AUDNZD', 'AUDCHF', 'CADCHF', 'EURCAD', 'EURNZD', 'NZDCAD', 'SGDJPY', 'NZDCHF', 'GBPCAD', 'GBPAUD', 'USDSEK', 'GBPNZD', 'EURTRY', 'USDTRY', 'EURSEK', 'USDPLN', 'EURNOK'
 		]
 	)
-	metatrader_broker: Broker = field(default_factory = SimulationBroker)
-	
-	alphavantage_repository: Repository = field(default_factory = SimulationRepository)
+
+	metatrader_broker: Broker = field(
+		default_factory = on_env(
+			training = SimulationBroker,
+			production = MetaTraderBroker,
+		)
+	)
+
+	alphavantage_repository: Repository = field(
+		default_factory = on_env(
+			training = SimulationRepository,
+			production = AlphaVantageRepository,
+		)
+	)
 
 	def __post_init__(self) -> None:
 		for field_name in [ 'forward_window_length', 'backward_window_length' ]:

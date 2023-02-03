@@ -1,18 +1,27 @@
 from argparse import ArgumentParser, Namespace
+from typing import TypeVar
 from core.utils.config import Config
+import commands.utils.cls
 
-from .cls import add_class_fields_as_arguments, setattr_from_args
-
-def add_configuration_as_arguments(
+def add_fields_to_args(
 	parser: ArgumentParser,
 	cls: type[Config],
 ):
-	add_class_fields_as_arguments(parser, cls, recursive = [ Config ])
+	commands.utils.cls.add_fields_to_args(
+		parser = parser,
+		cls = cls,
+		recursive = [ Config ]
+	)
 
-def get_overridden_configuration_from_arguments(
+T = TypeVar('T')
+def set_fields_from_args(
 	args: Namespace,
-	cls: type[Config],
-):
+	cls: type[T],
+) -> T:
 	config = cls()
-	setattr_from_args(args, config, recursive = [ Config ])
+	commands.utils.cls.set_fields_from_args(
+		args = args,
+		instance = config,
+		recursive = [ Config ]
+	)
 	return config

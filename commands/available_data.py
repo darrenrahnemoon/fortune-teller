@@ -5,13 +5,13 @@ from multiprocess import Pool
 
 from core.repository import Repository
 from core.utils.serializer import RepresentationSerializer
-from .utils.chart import add_chart_arguments, get_chart_filter
+import commands.utils.chart
 
 def config(parser: ArgumentParser):
 	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
 	parser.add_argument('--gap-percentage', action = BooleanOptionalAction)
 	parser.add_argument('--histogram', action = BooleanOptionalAction)
-	add_chart_arguments(parser, nargs = '*')
+	commands.utils.chart.add_args(parser, nargs = '*')
 
 def print_chart(chart):
 	print(
@@ -26,7 +26,7 @@ def print_chart(chart):
 def handler(args: Namespace):
 	repository = args.repository()
 	charts = repository.get_available_charts(
-		filter = get_chart_filter(args),
+		filter = commands.utils.chart.get_filter_from_args(args),
 		include_timestamps = True
 	)
 	charts = list(charts)

@@ -15,13 +15,10 @@ class NextPeriodHighLowTrainerService(TrainerService):
 	def predict(self, model: Model, timestamp: TimestampLike):
 		timestamp = normalize_timestamp(timestamp)
 		input_chart_group = self.strategy_config.input_chart_group
-		input_chart_group.read(to_timestamp = timestamp)
+		input_chart_group.read(to_timestamp = timestamp, refresh_indicators = False)
+		for chart in input_chart_group.charts:
+			chart.refresh_indicators()
 
-		self.preprocessor.process_input(
-			input_chart_group,
-			truncate_from = 'tail',
-			truncate_len = self.strategy_config.backward_window_length
-		)
 		model_input = self.preprocessor.to_model_input(input_chart_group)
 		model_input = numpy.array([ model_input ] * self.dataset.config.batch_size)
 		with self.device.selected:

@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from dataclasses import is_dataclass
+from typing import TypeVar
 from caseconverter import kebabcase
 from pydantic import BaseModel
 
@@ -17,7 +18,7 @@ def get_fields(cls):
 	
 	raise Exception(f'Unable to infer field type hints for {cls}')
 
-def add_class_fields_as_arguments(
+def add_fields_to_args(
 	parser: ArgumentParser,
 	cls,
 	select: list[str] = [],
@@ -36,7 +37,7 @@ def add_class_fields_as_arguments(
 			continue
 
 		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
-			add_class_fields_as_arguments(
+			add_fields_to_args(
 				cls = field_type,
 				parser = parser,
 				prefix = field_name
@@ -67,16 +68,17 @@ def add_class_fields_as_arguments(
 				**kwargs
 			)
 
-def setattr_from_args(
+T = TypeVar('T')
+def set_fields_from_args(
 	args: Namespace,
-	instance,
+	instance: T,
 	recursive: list = [],
 	prefix = '',
-):
+) -> T:
 	fields = get_fields(type(instance))
 	for field_name, field_type in fields.items():
 		if is_any_of(recursive, lambda x: issubclass(field_type, x)):
-			setattr_from_args(
+			set_fields_from_args(
 				instance = getattr(instance, field_name),
 				args = args,
 				prefix = field_name,

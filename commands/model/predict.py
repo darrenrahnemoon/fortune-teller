@@ -1,22 +1,26 @@
 from argparse import ArgumentParser, Namespace
+
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
-from core.broker import MetaTraderBroker
+from apps.next_period_high_low.config import NextPeriodHighLowConfig
+
 from core.utils.time import normalize_timestamp, now
+import commands.utils.config
 
 def config(parser: ArgumentParser):
+	commands.utils.config.add_args(parser, NextPeriodHighLowConfig)
+
 	parser.add_argument('--timestamp', default = now(), type = normalize_timestamp)
-	parser.add_argument('--environment', default = 'validation')
+
 def handler(args: Namespace):
+	config = commands.utils.config.create_config_from_args(args, NextPeriodHighLowConfig)
+
 	print('As of:', args.timestamp)
-	container = NextPeriodHighLowContainer.get()
-	strategy_config = container.config.get('strategy')
-	if args.environment == 'production':
-		strategy_config.metatrader_broker = MetaTraderBroker()
+	container = NextPeriodHighLowContainer.get(config = config)
 
 	strategy = container.strategy()
 	prediction = strategy.get_prediction_for_largest_change(args.timestamp)
 	print('chart:', prediction['chart'].name)
-	print('price:', prediction['from_price'])
+	print('price:', prediction['last_price'])
 	print('high:', prediction['high'])
 	print('low:', prediction['low'])
 	print('action:', prediction['action'])

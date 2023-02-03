@@ -9,6 +9,7 @@
 		"ensureattr",
 		"hybridmethod",
 		"hyperband",
+		"hyperparameters",
 		"kebabcase",
 		"keras",
 		"macd",

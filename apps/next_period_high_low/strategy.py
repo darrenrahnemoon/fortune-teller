@@ -14,7 +14,7 @@ class NextPeriodHighLowStrategy(Strategy):
 	tuner: TunerService = None
 
 	def __post_init__(self):
-		self.model = self.tuner.get_best_model()
+		self.model = self.tuner.get_model(self.trainer.config.trial)
 		self.trainer.load_weights(self.model)
 		return super().__post_init__()
 
@@ -24,18 +24,22 @@ class NextPeriodHighLowStrategy(Strategy):
 	def predict_prices(self, timestamp: TimestampLike):
 		predictions = self.predict_changes(timestamp)
 		for prediction in predictions:
-			prediction['from_price'] = self.config.metatrader_broker.get_last_price(prediction['chart'].symbol)
-			prediction['high'] = prediction['from_price'] * (1 + prediction['high'])
-			prediction['low'] = prediction['from_price'] * (1 + prediction['low'])
+			prediction['last_price'] = self.config.metatrader_broker.get_last_price(prediction['chart'].symbol)
+			print('chart:', prediction['chart'].name)
+			print('price:', prediction['last_price'])
+			print('high:', prediction['high'])
+			print('low:', prediction['low'], end='\n\n')
+			prediction['high'] = prediction['last_price'] * prediction['high']
+			prediction['low'] = prediction['last_price'] * prediction['low']
 		return predictions
 
 	def get_prediction_for_largest_change(self, timestamp: TimestampLike):
 		predictions = self.predict_prices(timestamp)
 
 		def get_max_diff(prediction):
-			high_diff = abs(prediction['high'] - prediction['from_price'])
-			low_diff = abs(prediction['low'] - prediction['from_price'])
-			prediction['action'] = 'buy' if high_diff > low_diff else 'sell'
+			high_diff = abs(prediction['high'] - prediction['last_price'])
+			low_diff = abs(prediction['low'] - prediction['last_price'])
+			prediction['action'] = 'long' if high_diff > low_diff else 'short'
 			return max(high_diff, low_diff)
 
 		return max(predictions, key = get_max_diff)

@@ -1,14 +1,14 @@
 from argparse import ArgumentParser, Namespace
-from commands.utils.config import add_configuration_as_arguments, get_overridden_configuration_from_arguments
 
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
+import commands.utils.config
 
 def config(parser: ArgumentParser):
-	add_configuration_as_arguments(parser, NextPeriodHighLowConfig)
+	commands.utils.config.add_args(parser, NextPeriodHighLowConfig)
 
 def handler(args: Namespace):
-	config = get_overridden_configuration_from_arguments(args, NextPeriodHighLowConfig)
+	config = commands.utils.config.set_fields_from_args(args, NextPeriodHighLowConfig())
 	container = NextPeriodHighLowContainer.get(config = config)
 	tuner = container.tuner()
 	tuner.tune()

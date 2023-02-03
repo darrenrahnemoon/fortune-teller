@@ -14,41 +14,23 @@ logger = logging.getLogger(__name__)
 class NextPeriodHighLowPreprocessor:
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 
-	def process_input(
-		self,
-		input_chart_group: ChartGroup,
-		truncate_from: Literal['head', 'tail'] = 'head',
-		truncate_len: int = 0,
-	):
-		if truncate_len == 0:
-			truncate_len = self.strategy_config.backward_window_length + self.strategy_config.forward_window_length
-
-		for chart in input_chart_group.charts:
-			data: pandas.DataFrame = chart.data
-			data = data.pct_change()
-			chart.data = data
-			chart.refresh_indicators()
-
-		dataframe = input_chart_group.dataframe
-		dataframe = dataframe.fillna(0)
-
-		dataframe = getattr(dataframe, truncate_from)(truncate_len)
-		if len(dataframe) < self.strategy_config.backward_window_length:
-			raise Exception('If this error ever raised then implement padding...')
-
-		input_chart_group.dataframe = dataframe
-
 	def to_model_input(self, input_chart_group: ChartGroup):
-		dataframe = input_chart_group.dataframe
-		# dataframe = mean_normalize(dataframe)
-		return dataframe.to_numpy()
+		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_length)
+		for chart in input_chart_group.charts:
+			chart.data = chart.data.pct_change()
+		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0) + 1
+		# input_chart_group.dataframe = mean_normalize(dataframe)
+		return input_chart_group.dataframe.to_numpy()
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
+		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 		for chart in output_chart_group.charts:
+			high_pct_change = chart.data['high'].max() / chart.data['high'].iloc[0]
+			low_pct_change = chart.data['low'].min() / chart.data['low'].iloc[0]
 			outputs.append([
-				chart.data['high'].max(),
-				chart.data['low'].min()
+				1 if numpy.isnan(high_pct_change) else high_pct_change,
+				1 if numpy.isnan(low_pct_change) else low_pct_change
 			])
 		return numpy.array(outputs)
 

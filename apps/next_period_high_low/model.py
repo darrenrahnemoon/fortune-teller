@@ -137,7 +137,7 @@ class NextPeriodHighLowModelService(ModelService):
 		)
 		return model
 
-	def build_inputs(self):
+	def build_inputs(self) -> Input:
 		input_chart_group = self.strategy_config.input_chart_group
 		features_length = 0
 		for chart in input_chart_group.charts:

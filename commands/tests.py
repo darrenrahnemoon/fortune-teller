@@ -1,4 +1,4 @@
-from argparse import ArgumentParser, Namespace, BooleanOptionalAction
+from argparse import ArgumentParser, Namespace
 from core.utils.test import TestManager
 
 def config(parser: ArgumentParser):

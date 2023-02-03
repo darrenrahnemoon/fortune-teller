@@ -27,19 +27,15 @@ class ChartGroup:
 		self.charts.append(chart)
 
 	def set_fields(self, values: dict[str]):
+		self.common_params.update(values)
 		for chart in self.charts:
 			for key, value in values.items():
 				setattr(chart, key, value)
 
-	def set_field(self, key: str, value):
-		for chart in self.charts:
-			setattr(chart, key, value)
-		self.common_params[key] = value
-
-	def read(self, refresh_indicators = True, **overrides):
+	def read(self, **overrides):
 		self.dataframe = None
 		for chart in self.charts:
-			chart.read(refresh_indicators = refresh_indicators, **overrides)
+			chart.read(**overrides)
 
 		dataframes = []
 		for chart in self.charts:

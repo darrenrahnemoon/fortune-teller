@@ -34,7 +34,7 @@ class TrainerService(ArtifactService):
 		return callbacks + self.tensorboard.callbacks
 
 	@property
-	def train_arguments(self):
+	def train_args(self):
 		training_dataset, validation_dataset = self.dataset.get()
 		return dict(
 			x = training_dataset,
@@ -57,7 +57,7 @@ class TrainerService(ArtifactService):
 		with self.device.selected:
 			model.fit(
 				callbacks = self.callbacks,
-				**self.train_arguments,
+				**self.train_args,
 			)
 
 	def predict(self, model: Model, *args, **kwargs):
