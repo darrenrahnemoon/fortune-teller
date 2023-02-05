@@ -40,12 +40,18 @@ class SimulationBroker(Broker, MongoRepository):
 		self._timesteps: pandas.DatetimeIndex = None
 		self.equity_curve: pandas.Series = None
 
-	def get_last_price(self, symbol: Symbol) -> float:
+	def get_last_price(
+		self,
+		symbol: Symbol,
+		timestamp: pandas.Timestamp = None
+	) -> float:
+		if timestamp == None:
+			timestamp = self.now
 		chart = CandleStickChart(
 			symbol = symbol,
 			interval = Interval.Minute(1),
 			count = 1,
-			to_timestamp = self.now,
+			to_timestamp = timestamp,
 			repository = self.repository
 		).read()
 		return chart.data['close'].iloc[0]

@@ -1,3 +1,4 @@
+import pandas
 from abc import abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass
@@ -32,7 +33,11 @@ class Broker:
 		pass
 
 	@abstractmethod
-	def get_last_price(self, symbol: 'Symbol', timestamp: TimestampLike = None) -> float:
+	def get_last_price(
+		self,
+		symbol: 'Symbol',
+		timestamp: pandas.Timestamp = None
+	) -> float:
 		pass
 
 	@abstractmethod
