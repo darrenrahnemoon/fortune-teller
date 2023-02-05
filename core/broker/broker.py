@@ -32,7 +32,7 @@ class Broker:
 		pass
 
 	@abstractmethod
-	def get_last_price(self, symbol: 'Symbol') -> float:
+	def get_last_price(self, symbol: 'Symbol', timestamp: TimestampLike = None) -> float:
 		pass
 
 	@abstractmethod

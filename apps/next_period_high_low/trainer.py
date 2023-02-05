@@ -21,7 +21,7 @@ class NextPeriodHighLowTrainerService(TrainerService):
 
 		model_input = self.preprocessor_service.to_model_input(input_chart_group)
 		model_input = numpy.array([ model_input ] * self.dataset_service.config.batch_size)
-		with self.device.selected_device:
+		with self.device_service.selected_device:
 			model_output = model.predict(model_input)
 			return self.preprocessor_service.from_model_output(model_output[0])
 

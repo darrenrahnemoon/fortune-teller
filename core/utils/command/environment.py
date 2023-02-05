@@ -1,8 +1,8 @@
 from argparse import ArgumentParser, Namespace
-from core.utils.environment import stage
+import core.utils.environment as environment
 
 def add_to_arguments(parser: ArgumentParser):
-	parser.add_argument('--stage', choices = [ 'training', 'tuning', 'production' ], default = 'training')
+	parser.add_argument('--environment', choices = [ 'development', 'production' ], default = 'development')
 
-def set_stage_from_arguments(args: Namespace):
-	stage.set(args.stage)
+def set_environment_from_arguments(args: Namespace):
+	environment.stage = args.environment or environment.stage

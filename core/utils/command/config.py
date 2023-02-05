@@ -16,9 +16,8 @@ def add_fields_to_arguments(
 T = TypeVar('T')
 def set_fields_from_arguments(
 	args: Namespace,
-	cls: type[T],
+	config: T,
 ) -> T:
-	config = cls()
 	core.utils.command.cls.set_fields_from_arguments(
 		args = args,
 		instance = config,

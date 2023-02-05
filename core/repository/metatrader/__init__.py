@@ -55,6 +55,7 @@ class MetaTraderRepository(Repository):
 				dataframe = dataframe,
 				chart = chart
 			)
+			print(dataframe)
 		elif chart.type == TickChart:
 			dataframe = self.read_raw_tick_chart(chart)
 

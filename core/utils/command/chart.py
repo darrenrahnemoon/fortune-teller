@@ -3,7 +3,7 @@ from core.chart import Chart
 from core.utils.serializer import RepresentationSerializer
 import core.utils.command.cls
 
-def add_to_arguments(
+def add_fields_to_arguments(
 	parser: ArgumentParser,
 	chart_cls: type[Chart] = Chart,
 	nargs = None

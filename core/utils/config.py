@@ -1,25 +1,18 @@
-from numpy import product
-from core.utils.environment import stage
-from dataclasses import dataclass, field
+import core.utils.environment as environment
+from dataclasses import dataclass, field # intentionally imported `field``
 from typing import Any, TypedDict
 
 @dataclass
 class Config:
 	pass
 
-class EnvironmentSpecificValue(TypedDict):
+class StageSpecificValue(TypedDict):
 	production: Any
-	training: Any
-	tuning: Any
+	development: Any
 
-def on_env(**kwargs: EnvironmentSpecificValue):
-	if kwargs.get('training') == None:
-		kwargs['training'] = kwargs.get('production')
-	if kwargs.get('tuning') == None:
-		kwargs['tuning'] = kwargs.get('training')
-
+def on_environment(**kwargs: StageSpecificValue):
 	def wrapper():
-		value = kwargs.get(stage.get())
+		value = kwargs.get(environment.stage)
 		return value()
 
 	return wrapper

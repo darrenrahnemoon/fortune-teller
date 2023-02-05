@@ -9,7 +9,7 @@ import core.utils.command.chart
 logger = logging.getLogger(__name__)
 
 def config(parser: ArgumentParser):
-	core.utils.command.chart.add_to_arguments(parser, nargs = '*')
+	core.utils.command.chart.add_fields_to_arguments(parser, nargs = '*')
 	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
 	parser.add_argument('--from', dest = 'from_timestamp', type = normalize_timestamp)
 	parser.add_argument('--to', dest = 'to_timestamp', type = normalize_timestamp, default = now())

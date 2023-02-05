@@ -18,7 +18,7 @@ class NextPeriodHighLowPreprocessorService:
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_length)
 		for chart in input_chart_group.charts:
 			chart.data = chart.data.pct_change()
-		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0) + 1
+		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
 		# input_chart_group.dataframe = mean_normalize(dataframe)
 		return input_chart_group.dataframe.to_numpy()
 
@@ -26,11 +26,11 @@ class NextPeriodHighLowPreprocessorService:
 		outputs = []
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 		for chart in output_chart_group.charts:
-			high_pct_change = chart.data['high'].max() / chart.data['high'].iloc[0]
-			low_pct_change = chart.data['low'].min() / chart.data['low'].iloc[0]
+			high_pct_change = chart.data['high'].max() / chart.data['high'].iloc[0] - 1
+			low_pct_change = chart.data['low'].min() / chart.data['low'].iloc[0] - 1
 			outputs.append([
-				1 if numpy.isnan(high_pct_change) else high_pct_change,
-				1 if numpy.isnan(low_pct_change) else low_pct_change
+				0 if numpy.isnan(high_pct_change) else high_pct_change,
+				0 if numpy.isnan(low_pct_change) else low_pct_change
 			])
 		return numpy.array(outputs)
 

@@ -11,7 +11,7 @@ def config(parser: ArgumentParser):
 	parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
 	parser.add_argument('--gap-percentage', action = BooleanOptionalAction)
 	parser.add_argument('--histogram', action = BooleanOptionalAction)
-	core.utils.command.chart.add_to_arguments(parser, nargs = '*')
+	core.utils.command.chart.add_fields_to_arguments(parser, nargs = '*')
 
 def print_chart(chart):
 	print(

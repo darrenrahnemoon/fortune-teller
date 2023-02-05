@@ -3,29 +3,18 @@ import os
 import pathlib
 import dotenv
 import tempfile
-from typing import Literal
+from typing import Any, Literal
 
 project_directory = pathlib.Path(__file__).joinpath('../../../').resolve()
-project_directory_str = str(project_directory)
-os.chdir(project_directory_str)
-sys.path.append(project_directory_str)
+os.chdir(str(project_directory))
+sys.path.append(str(project_directory))
 
 sys.pycache_prefix = tempfile.gettempdir()
 
 dotenv.load_dotenv('.env')
 
-class stage:
-	value: Literal['training', 'tuning', 'production'] = None
+stage: Literal['development', 'production'] = 'development'
 
-	@staticmethod
-	def set(value):
-		stage.value = value
-
-	@staticmethod
-	def get():
-		return stage.value
-
-class env:
-	@staticmethod
-	def set(key: str, value):
-		dotenv.set_key('.env', key, value)
+@staticmethod
+def set_variable_in_env_file(key: str, value: Any):
+	dotenv.set_key('.env', key, value)

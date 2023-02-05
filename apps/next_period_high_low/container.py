@@ -65,7 +65,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		tensorboard_service = tensorboard_service,
 		artifacts_directory = config.artifacts_directory,
 	)
-	strategy_service = Singleton(
+	strategy = Singleton(
 		NextPeriodHighLowStrategy,
 		config = config.strategy,
 		trainer_service = trainer_service,
@@ -82,11 +82,11 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		if config == None:
 			config = NextPeriodHighLowConfig()
 		container = cls(*args, **kwargs)
+		container.config.artifacts_directory.from_value(config.artifacts_directory)
 		container.config.dataset.from_value(config.dataset)
 		container.config.device.from_value(config.device)
 		container.config.tensorboard.from_value(config.tensorboard)
 		container.config.trainer.from_value(config.trainer)
 		container.config.tuner.from_value(config.tuner)
 		container.config.strategy.from_value(config.strategy)
-		container.config.artifacts_directory.from_value(config.artifacts_directory)
 		return container
