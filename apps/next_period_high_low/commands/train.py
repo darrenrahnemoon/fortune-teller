@@ -2,6 +2,7 @@ from argparse import ArgumentParser, Namespace
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
 import core.utils.command.config
+from core.utils.cls import pretty_repr
 
 def config(parser: ArgumentParser):
 	core.utils.command.config.add_fields_to_arguments(parser, NextPeriodHighLowConfig)
@@ -13,6 +14,7 @@ def handler(args: Namespace):
 	tuner_service = container.tuner_service()
 	trainer_service = container.trainer_service()
 	model = tuner_service.get_model(trainer_service.config.trial)
-
+	model.summary()
+	print(pretty_repr(tuner_service.get_hyperparameters(trainer_service.config.trial).values))
 	trainer_service.load_weights(model)
 	trainer_service.train(model)

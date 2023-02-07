@@ -1,0 +1,5 @@
+init-hook='import sys; sys.path.append(".")'
+
+indent-string='\t'
+disable=
+	missing-docstring,

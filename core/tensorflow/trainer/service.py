@@ -8,6 +8,9 @@ from core.tensorflow.dataset.service import DatasetService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.artifact.service import ArtifactService
+from core.utils.logging import logging
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class TrainerService(ArtifactService):
@@ -18,23 +21,24 @@ class TrainerService(ArtifactService):
 
 	@property
 	def directory(self):
-		return self.artifacts_directory.joinpath('checkpoints/checkpoints')
+		return self.artifacts_directory.joinpath('trainer')
 
-	@property
-	def callbacks(self):
+	def get_checkpoints_path(self, model: Model):
+		return self.directory.joinpath(model.name, 'checkpoints')
+
+	def get_callbacks(self, model: Model):
 		callbacks = [
 			ModelCheckpoint(
-				filepath = self.directory,
+				filepath = self.get_checkpoints_path(model),
 				save_weights_only = True,
 				monitor = 'val_loss',
-				mode = 'max',
-				save_best_only = True,
+				mode = 'min',
 			)
 		]
-		return callbacks + self.tensorboard_service.callbacks
+		return callbacks + self.tensorboard_service.get_callbacks()
 
 	@property
-	def train_args(self):
+	def train_kwargs(self):
 		training_dataset, validation_dataset = self.dataset_service.get()
 		return dict(
 			x = training_dataset,
@@ -48,16 +52,17 @@ class TrainerService(ArtifactService):
 		)
 
 	def load_weights(self, model: Model):
-		if self.directory.exists():
-			model.load_weights(self.directory)
+		checkpoints_path = self.get_checkpoints_path(model)
+		try:
+			model.load_weights(str(checkpoints_path))
+		except:
+			logger.warn(f"Unable to load weights for model '{model.name}' from path '{checkpoints_path}'")
 
 	def train(self, model: Model):
-		self.tensorboard_service.ensure_running()
-
 		with self.device_service.selected_device:
 			model.fit(
-				callbacks = self.callbacks,
-				**self.train_args,
+				**self.train_kwargs,
+				callbacks = self.get_callbacks(model)
 			)
 
 	def predict(self, model: Model, *args, **kwargs):

@@ -13,8 +13,8 @@ class DeviceService:
 		return tensorflow.device(device.name)
 
 	def get(self):
-		if self.config.use == 'GPU':
-			physical_device = tensorflow.config.list_physical_devices(self.config.use)[0]
-			tensorflow.config.experimental.set_memory_growth(physical_device, True)
+		# if self.config.use == 'GPU':
+		# 	physical_device = tensorflow.config.list_physical_devices(self.config.use)[0]
+		# 	tensorflow.config.experimental.set_memory_growth(physical_device, True)
 		logical_device = tensorflow.config.list_logical_devices(self.config.use)[0]
 		return logical_device

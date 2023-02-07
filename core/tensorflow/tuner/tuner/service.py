@@ -1,4 +1,3 @@
-from functools import cache
 from typing import Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from keras import Model
@@ -24,9 +23,8 @@ class TunerService(ArtifactService):
 	def directory(self):
 		return self.artifacts_directory.joinpath('tuner')
 
-	@property
-	def callbacks(self):
-		return self.tensorboard_service.callbacks
+	def get_callbacks(self, **kwargs):
+		return self.tensorboard_service.get_callbacks()
 
 	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
 		if (trial_id == 'best'):
@@ -38,12 +36,13 @@ class TunerService(ArtifactService):
 
 	def get_model(self, trial_id: str or Literal['best']) -> Model:
 		hyperparameters = self.get_hyperparameters(trial_id)
-		return self.model_service.build(hyperparameters)
+		model = self.model_service.build(hyperparameters)
+		model._name = trial_id
+		return model
 
 	def tune(self):
-		self.tensorboard_service.ensure_running()
 		with self.device_service.selected_device:
 			self.tuner.search(
-				**self.trainer_service.train_args,
-				callbacks = self.callbacks,
+				**self.trainer_service.train_kwargs,
+				callbacks = self.get_callbacks()
 			)
