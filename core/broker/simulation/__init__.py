@@ -1,3 +1,4 @@
+from core.size import Size
 import typing
 import pandas
 import random
@@ -84,30 +85,30 @@ class SimulationBroker(Broker, MongoRepository):
 
 			for order in self.get_orders(status ='open'):
 				price = self.get_last_price(order.symbol)
-				if (order.type == 'long' and order.stop and price >= order.stop) \
-					or (order.type == 'short' and order.stop and price <= order.stop):
+				if (order.type == 'buy' and order.stop and price >= order.stop) \
+					or (order.type == 'sell' and order.stop and price <= order.stop):
 					order.stop = None
 				if order.stop == None \
 					and (order.is_market_order \
-						or (order.type == 'long' and order.limit and order.limit <= price)\
-						or (order.type == 'short' and order.limit and order.limit >= price)
+						or (order.type == 'buy' and order.limit and order.limit <= price)\
+						or (order.type == 'sell' and order.limit and order.limit >= price)
 					):
 					self.fill_order(order)
 
 			for position in self.get_positions(status='open'):
 				price = self.get_last_price(position.symbol)
 				if (
-					position.type == 'long' and (
+					position.type == 'buy' and (
 						(position.sl and price <= position.sl) or 
 						(position.tp and price >= position.tp)
 					)
 					) or (
-					position.type == 'short' and (
+					position.type == 'sell' and (
 						(position.sl and price >= position.sl) or 
 						(position.tp and price <= position.tp)
 					)
 				):
-					self.close_position(position, price=price)
+					self.close_position(position)
 			strategy.handler()
 			self.equity_curve[self.now] = self.equity
 
@@ -172,6 +173,10 @@ class SimulationBroker(Broker, MongoRepository):
 		if order.id != None:
 			logger.warn(f'Order is already placed: {order}')
 			return
+
+		# Calculate size if size is a broker-dependant function
+		if isinstance(order.size, Size):
+			order.size = order.size.to_units(order)
 
 		order.id = random.randint(0, 1000000000)
 		order.status = 'open'

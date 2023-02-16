@@ -69,7 +69,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 	@property
 	def input_chart_group(self):
 		chart_group = self.output_chart_group
-		chart_group.charts[0].attach_indicator(SeasonalityIndicator)
+		chart_group.charts[0].attach_indicator(SeasonalityIndicator, name = 'seasonality')
 		return chart_group
 
 @dataclass

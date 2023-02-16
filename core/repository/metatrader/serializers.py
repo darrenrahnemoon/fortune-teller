@@ -1,4 +1,5 @@
 import pandas
+import MetaTrader5
 
 from core.chart import Chart
 from core.utils.serializer import MappingSerializer
@@ -47,25 +48,25 @@ class MetaTraderRecordsSerializers:
 class MetaTraderSerializers:
 	records = MetaTraderRecordsSerializers()
 	interval = MappingSerializer({
-		Interval.Minute(1) : 1,
-		Interval.Minute(2) : 2,
-		Interval.Minute(3) : 3,
-		Interval.Minute(4) : 4,
-		Interval.Minute(5) : 5,
-		Interval.Minute(6) : 6,
-		Interval.Minute(10) : 10,
-		Interval.Minute(12) : 12,
-		Interval.Minute(15) : 15,
-		Interval.Minute(20) : 20,
-		Interval.Minute(30) : 30,
-		Interval.Hour(1) : 1 | 0x4000,
-		Interval.Hour(2) : 2 | 0x4000,
-		Interval.Hour(4) : 4 | 0x4000,
-		Interval.Hour(3) : 3 | 0x4000,
-		Interval.Hour(6) : 6 | 0x4000,
-		Interval.Hour(8) : 8 | 0x4000,
-		Interval.Hour(12) : 12 | 0x4000,
-		Interval.Day(1) : 24| 0x4000,
-		Interval.Week(1) : 1 | 0x8000,
-		Interval.Month(1) : 1 | 0xC000,
+		Interval.Minute(1) : MetaTrader5.TIMEFRAME_M1,
+		Interval.Minute(2) : MetaTrader5.TIMEFRAME_M2,
+		Interval.Minute(3) : MetaTrader5.TIMEFRAME_M3,
+		Interval.Minute(4) : MetaTrader5.TIMEFRAME_M4,
+		Interval.Minute(5) : MetaTrader5.TIMEFRAME_M5,
+		Interval.Minute(6) : MetaTrader5.TIMEFRAME_M6,
+		Interval.Minute(10) : MetaTrader5.TIMEFRAME_M10,
+		Interval.Minute(12) : MetaTrader5.TIMEFRAME_M12,
+		Interval.Minute(15) : MetaTrader5.TIMEFRAME_M15,
+		Interval.Minute(20) : MetaTrader5.TIMEFRAME_M20,
+		Interval.Minute(30) : MetaTrader5.TIMEFRAME_M30,
+		Interval.Hour(1) : MetaTrader5.TIMEFRAME_H1,
+		Interval.Hour(2) : MetaTrader5.TIMEFRAME_H2,
+		Interval.Hour(4) : MetaTrader5.TIMEFRAME_H4,
+		Interval.Hour(3) : MetaTrader5.TIMEFRAME_H3,
+		Interval.Hour(6) : MetaTrader5.TIMEFRAME_H6,
+		Interval.Hour(8) : MetaTrader5.TIMEFRAME_H8,
+		Interval.Hour(12) : MetaTrader5.TIMEFRAME_H2,
+		Interval.Day(1) : MetaTrader5.TIMEFRAME_D1,
+		Interval.Week(1) : MetaTrader5.TIMEFRAME_W1,
+		Interval.Month(1) : MetaTrader5.TIMEFRAME_MN1,
 	})

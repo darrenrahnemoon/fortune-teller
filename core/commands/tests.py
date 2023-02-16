@@ -2,7 +2,7 @@ from argparse import ArgumentParser, Namespace
 from core.utils.test import TestManager
 
 def config(parser: ArgumentParser):
-	parser.add_argument('--patterns', nargs = '*', default = [ 'tests/**/*.py' ])
+	parser.add_argument('--patterns', nargs = '*', default = [ '**/tests/**/*.py' ])
 	parser.add_argument('--filter', '-f', type = str, default = '')
 
 def handler(args: Namespace):

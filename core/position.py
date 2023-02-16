@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
 	from core.order import Order
 
 PositionStatus = typing.Literal['open', 'closed']
-PositionType = typing.Literal['long', 'short']
+PositionType = typing.Literal['buy', 'sell']
 
 @dataclass
 class Position:

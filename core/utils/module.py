@@ -3,7 +3,7 @@ import glob
 import importlib.util
 import importlib
 
-def import_module(path: str):
+def import_module(path: str, to_path: str = None):
 	"""Imports a module based on a directory/module style path
 
 	Args:
@@ -16,14 +16,15 @@ def import_module(path: str):
 	module_name = '.'.join(path.split(directory_separator))
 	if '.py' in path:
 		module_name = module_name.replace('.py', '')
-		spec = importlib.util.spec_from_file_location(module_name, path)
-	else:
-		spec = importlib.util.find_spec(module_name)
+
 	if module_name in sys.modules:
-		return sys.modules[module_name]
-	imported_module = importlib.util.module_from_spec(spec)
-	sys.modules[module_name] = imported_module
-	return spec.loader.load_module(module_name)
+		imported_module = sys.modules[module_name]
+	else:
+		imported_module = importlib.import_module(module_name)
+
+	sys.modules[to_path or module_name] = imported_module
+
+	return imported_module
 
 def import_modules(patterns: list[str]):
 	"""Imports a group of modules defined by a list of glob patterns

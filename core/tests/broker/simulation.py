@@ -1,8 +1,6 @@
 import numpy
 from dataclasses import dataclass
 
-from pandas.core.tools.datetimes import to_time
-
 from core.order import Order
 from core.broker import SimulationBroker, Broker
 from core.strategy import Strategy
@@ -29,7 +27,7 @@ def _():
 			def handler(self):
 				if self.count == 0:
 					Order(
-						type = 'long',
+						type = 'buy',
 						symbol = 'EURUSD',
 						size = Size.Lot(20),
 						broker = self.broker
@@ -40,7 +38,7 @@ def _():
 					assert len(positions) == 1, 'Should have placed a market order in the next tick.'
 					positions[-1].close()
 					Order(
-						type = 'long',
+						type = 'buy',
 						symbol = 'EURUSD',
 						size = Size.PercentageOfBalance(2),
 						limit = 10,
@@ -58,7 +56,7 @@ def _():
 					assert len(filled_orders) == 1, 'Should only show filled orders'
 
 					Order(
-						type = 'long',
+						type = 'buy',
 						symbol = 'EURUSD',
 						size = Size.Lot(1),
 						broker = self.broker

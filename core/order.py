@@ -11,7 +11,7 @@ from core.chart import Symbol
 from core.size import Size
 
 OrderStatus = typing.Literal['open', 'filled', 'cancelled']
-OrderType = typing.Literal['long', 'short']
+OrderType = typing.Literal['buy', 'sell']
 
 @dataclass
 class Order:
@@ -31,11 +31,6 @@ class Order:
 
 	def place(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker
-
-		# Calculate size if size is a broker-dependant function
-		if isinstance(self.size, Size):
-			self.size = self.size.to_units(self)
-
 		self.broker.place_order(self)
 		return self
 

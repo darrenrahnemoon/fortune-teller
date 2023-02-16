@@ -38,8 +38,8 @@ class NextPeriodHighLowPreprocessorService:
 		return [
 			{
 				'chart': chart,
-				'high': output[0],
-				'low': output[1]
+				'high_pct_change': output[0],
+				'low_pct_change': output[1]
 			}
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

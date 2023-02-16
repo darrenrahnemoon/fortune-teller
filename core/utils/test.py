@@ -67,16 +67,19 @@ class TestManager:
 						print(termcolor.colored(formatted_message, self.settings['error_color'])) 
 						print(traceback.format_exc())
 
-def describe(message: str):
-	old_group = TestManager.current_group
-	old_group[message] = TestManager.current_group = old_group[message] if message in old_group else dict()
+def describe(message: str, skip: bool = False):
+	if not skip:
+		old_group = TestManager.current_group
+		old_group[message] = TestManager.current_group = old_group[message] if message in old_group else dict()
+
 	def decorator(func):
-		func()
-		TestManager.current_group = old_group
+		if not skip:
+			func()
+			TestManager.current_group = old_group
 		return func
 	return decorator
 
-def it(message: str, skip=False, *args, **kwargs):
+def it(message: str, skip: bool = False, *args, **kwargs):
 	def decorator(func):
 		if not skip:
 			TestManager.current_group[message] = func
