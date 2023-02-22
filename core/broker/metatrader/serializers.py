@@ -1,6 +1,7 @@
 import pandas
 import MetaTrader5
 
+from core.size import Size
 from core.order import Order
 from core.position import Position
 from core.utils.serializer import Serializer, MappingSerializer
@@ -27,19 +28,45 @@ class MetaTraderOrderSerializer(Serializer):
 		MetaTrader5.ORDER_TYPE_SELL_STOP_LIMIT : 'sell',
 	})
 
+	def to_metatrader_order_action(self, order: Order):
+		if order.limit or order.stop:
+			return MetaTrader5.TRADE_ACTION_PENDING
+		return MetaTrader5.TRADE_ACTION_DEAL
+
+	def to_metatrader_order_type(self, order: Order):
+		if order.type == 'buy':
+			if order.stop and order.limit:
+				return MetaTrader5.ORDER_TYPE_BUY_STOP_LIMIT
+			elif order.limit:
+				return MetaTrader5.ORDER_TYPE_BUY_LIMIT
+			elif order.stop:
+				return MetaTrader5.ORDER_TYPE_BUY_STOP
+			return MetaTrader5.ORDER_TYPE_BUY
+		elif order.type == 'sell':
+			if order.stop and order.limit:
+				return MetaTrader5.ORDER_TYPE_SELL_STOP_LIMIT
+			elif order.limit:
+				return MetaTrader5.ORDER_TYPE_SELL_LIMIT
+			elif order.stop:
+				return MetaTrader5.ORDER_TYPE_SELL_STOP
+			return MetaTrader5.ORDER_TYPE_SELL
+		else:
+			raise Exception(f'{order} missing `type`.')
+
 	def to_order(self, order):
 		return Order(
 			id = order.ticket,
 			type = self.type.serialize(order.type),
 			symbol = order.symbol,
-			size = order.volume_current,
-			limit = None,
-			stop = order.price_stoplimit,
-			sl = order.sl,
-			tp = order.tp,
-			open_timestamp = pandas.Timestamp(order.time_setup_msc, unit='ms'),
-			close_timestamp = pandas.Timestamp(order.time_done_msc, unit = 'ms'),
-			status = self.status.serialize(order.status),
+			size = Size.Lot(order.volume_current),
+			limit = None if order.price_open == 0 else order.price_open,
+			stop = None if order.price_stoplimit == 0 else order.price_stoplimit,
+			sl = None if order.sl == 0 else order.sl,
+			tp = None if order.tp == 0 else order.tp,
+			open_timestamp = None if order.time_setup_msc == 0 else pandas.Timestamp(order.time_setup_msc, unit='ms', tz = 'UTC'),
+			close_timestamp = None if order.time_done_msc == 0 else pandas.Timestamp(order.time_done_msc, unit = 'ms', tz = 'UTC'),
+			status = self.status.serialize(order.state),
+			position = order.position_id
 		)
 
 class MetaTraderPositionSerializer(Serializer):
@@ -53,12 +80,13 @@ class MetaTraderPositionSerializer(Serializer):
 			id = position.ticket,
 			symbol = position.symbol,
 			type = self.type.serialize(position.type),
-			size = position.volume,
+			size = Size.Lot(position.volume),
 			entry_price = position.price_open,
-			open_timestamp = pandas.Timestamp(position.time_msc, unit = 'ms'),
-			tp = position.tp,
-			sl = position.sl,
-			status = 'open'
+			open_timestamp = pandas.Timestamp(position.time_msc, unit = 'ms', tz = 'UTC'),
+			tp = None if position.tp == 0 else position.tp,
+			sl = None if position.sl == 0 else position.sl,
+			status = 'open',
+			order = position.identifier
 		)
 
 class MetaTraderSerializers:

@@ -21,7 +21,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 
 	metatrader_symbols: list[str] = field(
 		default_factory = lambda: [
-			'GBPUSD', 'AUDUSD', 'GBPJPY', 'EURUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'GBPCHF', 'EURAUD', 'USDNOK', 'NZDJPY', 'AUDCAD', 'CADJPY', 'AUDNZD', 'AUDCHF', 'CADCHF', 'EURCAD', 'EURNZD', 'NZDCAD', 'SGDJPY', 'NZDCHF', 'GBPCAD', 'GBPAUD', 'USDSEK', 'GBPNZD', 'EURTRY', 'USDTRY', 'EURSEK', 'USDPLN', 'EURNOK'
+			'AUDUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPCHF', 'GBPJPY', 'GBPUSD', 'EURAUD', 'AUDCAD', 'AUDCHF', 'AUDNZD', 'CADCHF', 'CADJPY', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'SGDJPY', 'USDNOK', 'GBPNZD', 'USDSEK', 'EURNOK', 'EURSEK', 'EURTRY', 'USDPLN', 'USDTRY', 'US100'
 		]
 	)
 

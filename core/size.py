@@ -40,7 +40,7 @@ class Unit(Size):
 Size.Unit = Unit
 
 class PercentageOfBalance(Size):
-	units = None # Cannot convert to PercentageOfBalance
+	units = None # Cannot convert sizes to PercentageOfBalance
 	def to_units(self, order: 'Order'):
 		cash_amount = order.broker.balance * self.value
 		unit_amount = order.broker.get_last_price(order.symbol)
@@ -49,16 +49,16 @@ class PercentageOfBalance(Size):
 Size.PercentageOfBalance = PercentageOfBalance
 
 class RiskManagedPercentageOfBalance(Size):
-	units = None # Cannot convert to RiskManagedPercentageOfBalance
+	units = None # Cannot convert sizes to RiskManagedPercentageOfBalance
 	def to_units(self, order: 'Order'):
 		cash_amount = order.broker.balance * self.value
 		sl_diff = abs(order.sl - order.broker.get_last_price(order.symbol))
-		return  cash_amount / sl_diff * 10000
+		return cash_amount / sl_diff * 10000
 
 Size.RiskManagedPercentageOfBalance = RiskManagedPercentageOfBalance
 
 class FixedRiskManagement(Size):
-	units = None # Cannot convert to RiskManagedPercentageOfBalance
+	units = None # Cannot convert sizes to FixedRiskManagement
 	def to_units(self, order: 'Order'):
 		sl_diff = abs(order.sl - order.broker.get_last_price(order.symbol))
 		return  self.value / sl_diff * 10000
