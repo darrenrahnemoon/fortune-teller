@@ -1,9 +1,9 @@
 import numpy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from core.broker.broker import Broker
-from core.chart import Chart, ChartGroup
+from core.chart import ChartGroup, Symbol
 from core.utils.logging import logging
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class NextPeriodHighLowPrediction:
-	chart: Chart = None
+	symbol: Symbol = None
 	high_percentage_change: float = None
 	low_percentage_change: float = None
-	broker: Broker = None
+	broker: Broker = field(default = None, repr = False)
 
 	@property
 	def action(self):
-		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
+		if abs(self.high_percentage_change) < abs(self.low_percentage_change):
 			return 'buy'
 		return 'sell'
 
@@ -35,9 +35,21 @@ class NextPeriodHighLowPrediction:
 			return self.high
 		return self.low
 
+	@property
+	def sl_percentage_change(self):
+		if self.action == 'buy':
+			return self.low_percentage_change
+		return self.high_percentage_change
+
+	@property
+	def tp_percentage_change(self):
+		if self.action == 'buy':
+			return self.high_percentage_change
+		return self.low_percentage_change
+
 	@cached_property
 	def last_price(self):
-		return self.broker.get_last_price(self.chart.symbol)
+		return self.broker.get_last_price(self.symbol)
 
 	@property
 	def high(self):
@@ -74,7 +86,7 @@ class NextPeriodHighLowPreprocessorService:
 	def from_model_output(self, outputs: numpy.ndarray):
 		return [
 			NextPeriodHighLowPrediction(
-				chart = chart,
+				symbol = chart.symbol,
 				high_percentage_change = output[0],
 				low_percentage_change = output[1],
 			)

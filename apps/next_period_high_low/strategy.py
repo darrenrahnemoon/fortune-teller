@@ -30,59 +30,48 @@ class NextPeriodHighLowStrategy(Strategy):
 		for prediction in predictions:
 			# Skip low movements
 			if self.config.min_movement_percentage_to_trade:
-				if prediction.action == 'buy' and abs(prediction.high_percentage_change) < self.config.min_movement_percentage_to_trade:
-					logger.debug(f"Skipping 'buy' of '{prediction.chart.symbol}' due to low movement: {prediction.high_percentage_change}%")
-					continue
-				if prediction.action == 'sell' and abs(prediction.low_percentage_change) < self.config.min_movement_percentage_to_trade:
-					logger.debug(f"Skipping 'sell' of '{prediction.chart.symbol}' due to low movement: {prediction.low_percentage_change}%")
+				if abs(prediction.tp_percentage_change) < self.config.min_movement_percentage_to_trade:
+					logger.debug(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.high_percentage_change}%\n{prediction}")
 					continue
 
 			# Skip high spread instruments
 			if self.config.max_spread_to_trade:
-				spread = self.config.metatrader_broker.repository.get_spread(prediction.chart.symbol)
+				spread = self.config.metatrader_broker.repository.get_spread(prediction.symbol)
 				if spread > self.config.max_spread_to_trade:
-					logger.debug(f"Skipping '{prediction.chart.symbol}' due to high spread: {spread}")
+					logger.debug(f"Skipping due to high spread: {spread}\n{prediction}")
 					continue
 
-			# Only one order per symbol
-			orders = self.config.metatrader_broker.get_orders(symbol = prediction.chart.symbol, status = 'open')
-			if is_any_of(orders, lambda order: order.symbol == prediction.chart.symbol):
-				logger.debug(f"Skipping '{prediction.chart.symbol}' due to an existing open order.")
-				continue
+			if self.config.min_risk_over_reward_ratio_to_trade:
+				sl_diff = abs(prediction.sl - prediction.last_price)
+				tp_diff = abs(prediction.tp - prediction.last_price)
 
-			# Only one position per symbol
-			positions = self.config.metatrader_broker.get_positions(symbol = prediction.chart.symbol, status = 'open')
-			if is_any_of(positions, lambda position: position.symbol == prediction.chart.symbol):
-				logger.debug(f"Skipping '{prediction.chart.symbol}' due to an existing open position.")
-				continue
+				if sl_diff / tp_diff < self.config.min_risk_over_reward_ratio_to_trade:
+					logger.debug(f"Skipping due to R/R being less than '{self.config.min_risk_over_reward_ratio_to_trade}': {sl_diff / tp_diff}\n{prediction}")
+					continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
-				logger.debug(f"Skipping 'buy' of '{prediction.chart.symbol}' due to SL > last price: {prediction.sl} > {prediction.last_price}")
+				logger.debug(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")
 				continue
 
 			if prediction.action == 'sell' and prediction.sl < prediction.last_price:
-				logger.debug(f"Skipping 'sell' of '{prediction.chart.symbol}' due to SL < last price: {prediction.sl} < {prediction.last_price}")
+				logger.debug(f"Skipping 'sell' due to SL < last price: {prediction.sl} < {prediction.last_price}\n{prediction}")
 				continue
 
-			sl_diff = abs(prediction.sl - prediction.last_price)
-			tp_diff = abs(prediction.tp - prediction.last_price)
-			if sl_diff > tp_diff:
-				logger.debug(f"Skipping '{prediction.chart.symbol}' due to 'SL difference' > 'TP difference': {sl_diff} > {tp_diff}")
+			# Only one order per symbol
+			orders = self.config.metatrader_broker.get_orders(symbol = prediction.symbol, status = 'open')
+			if is_any_of(orders, lambda order: order.symbol == prediction.symbol):
+				logger.debug(f"Skipping due to an existing open order.\n{prediction}")
 				continue
 
-			# # Add the SL/TP offset percentage
-			# sl_offset = self.config.sl_percentage_offset * prediction.last_price
-			# tp_offset = self.config.tp_percentage_offset * prediction.last_price
-			# if prediction.action == 'buy':
-			# 	sl = prediction.sl - sl_offset
-			# 	tp = prediction.tp - tp_offset
-			# else:
-			# 	sl = prediction.sl + sl_offset
-			# 	tp = prediction.tp + tp_offset
+			# Only one position per symbol
+			positions = self.config.metatrader_broker.get_positions(symbol = prediction.symbol, status = 'open')
+			if is_any_of(positions, lambda position: position.symbol == prediction.symbol):
+				logger.debug(f"Skipping due to an existing open position.\n{prediction}")
+				continue
 
 			Order(
 				type = prediction.action,
-				symbol = prediction.chart.symbol,
+				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
 				size = Size.PercentageOfBalanceRiskManagement(0.01),

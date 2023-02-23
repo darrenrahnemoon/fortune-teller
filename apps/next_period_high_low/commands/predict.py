@@ -17,7 +17,7 @@ def handler(args: Namespace):
 	container = NextPeriodHighLowContainer.get(config = config)
 	strategy = container.strategy()
 	prediction = strategy.get_prediction_with_largest_change(args.timestamp)
-	print('chart:', prediction.chart.name)
+	print('symbol:', prediction.symbol)
 	print('price:', prediction.last_price)
 	print('high:', prediction.high)
 	print('low:', prediction.low)
