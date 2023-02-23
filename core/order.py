@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 	from core.position import Position
 
 from core.chart import Symbol
-from core.size import Size
+from core.size import OrderDependantSize, Size
 
 OrderStatus = typing.Literal['open', 'filled', 'cancelled']
 OrderType = typing.Literal['buy', 'sell']
@@ -19,7 +19,7 @@ class Order:
 	broker: 'Broker' = None
 	type: OrderType = None
 	symbol: Symbol = None
-	size: Size or int = None
+	size: Size = None
 	limit: float = None
 	stop: float = None
 	sl: float = None
@@ -28,6 +28,10 @@ class Order:
 	close_timestamp: pandas.Timestamp = None
 	status: OrderStatus = None
 	position: 'Position' = None
+
+	def __post_init__(self):
+		if isinstance(self.size, OrderDependantSize):
+			self.size.order = self
 
 	def place(self, broker: 'Broker' = None):
 		self.broker = broker or self.broker

@@ -28,12 +28,15 @@ class MetaTraderOrderSerializer(Serializer):
 		MetaTrader5.ORDER_TYPE_SELL_STOP_LIMIT : 'sell',
 	})
 
-	def to_metatrader_order_action(self, order: Order):
+	def to_metatrader_size(self, size: Size):
+		return round(size.to(Size.Lot), 2)
+
+	def to_metatrader_action(self, order: Order):
 		if order.limit or order.stop:
 			return MetaTrader5.TRADE_ACTION_PENDING
 		return MetaTrader5.TRADE_ACTION_DEAL
 
-	def to_metatrader_order_type(self, order: Order):
+	def to_metatrader_type(self, order: Order):
 		if order.type == 'buy':
 			if order.stop and order.limit:
 				return MetaTrader5.ORDER_TYPE_BUY_STOP_LIMIT

@@ -128,3 +128,12 @@ class MetaTraderRepository(Repository):
 		except:
 			pass
 		return dataframe
+
+	def get_spread(self, symbol):
+		return MetaTrader5.symbol_info(symbol).spread
+
+	def get_point_size(self, symbol):
+		return MetaTrader5.symbol_info(symbol).point
+
+	def get_quote_currency(self, symbol):
+		return MetaTrader5.symbol_info(symbol).currency_profit

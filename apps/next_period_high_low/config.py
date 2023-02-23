@@ -25,6 +25,11 @@ class NextPeriodHighLowStrategyConfig(Config):
 		]
 	)
 
+	max_spread_to_trade: int = 50
+	min_movement_percentage_to_trade: float = 0.001
+	sl_percentage_offset = 0.0009
+	tp_percentage_offset = 0.0009
+
 	metatrader_broker: Broker = field(
 		default_factory = on_environment(
 			development = SimulationBroker,

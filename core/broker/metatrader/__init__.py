@@ -1,4 +1,3 @@
-from core.size import Size
 import pandas
 import MetaTrader5
 from dataclasses import dataclass, field
@@ -27,10 +26,10 @@ class MetaTraderBroker(Broker):
 
 	def place_order(self, order: Order) -> Order:
 		request = dict(
-			action = self.serializers.order.to_metatrader_order_action(order),
+			action = self.serializers.order.to_metatrader_action(order),
 			symbol = order.symbol,
-			volume = float(order.size.to(Size.Lot, order = order)),
-			type = self.serializers.order.to_metatrader_order_type(order),
+			volume = self.serializers.order.to_metatrader_size(order.size),
+			type = self.serializers.order.to_metatrader_type(order),
 			magic = self.id,
 			type_filling = MetaTrader5.ORDER_FILLING_IOC,
 		)
@@ -92,7 +91,7 @@ class MetaTraderBroker(Broker):
 			action = MetaTrader5.TRADE_ACTION_DEAL,
 			symbol = position.symbol,
 			type = MetaTrader5.ORDER_TYPE_SELL if position.type == 'buy' else MetaTrader5.ORDER_TYPE_BUY,
-			volume = float(position.size.to(Size.Lot)),
+			volume = self.serializers.order.to_metatrader_size(position.size),
 			position = position.id,
 			magic = self.id,
 			type_filling = MetaTrader5.ORDER_FILLING_IOC,
@@ -191,7 +190,6 @@ class MetaTraderBroker(Broker):
 			position.broker = self
 			yield position
 
-
 	def get_last_price(
 		self,
 		symbol: 'Symbol',
@@ -207,4 +205,19 @@ class MetaTraderBroker(Broker):
 			return (chart.data['bid'].iloc[0] + chart.data['ask'].iloc[0]) / 2
 
 		symbol_info = MetaTrader5.symbol_info(symbol)
+		if not symbol_info:
+			return None
+
 		return (symbol_info.ask + symbol_info.bid) / 2
+
+	@property
+	def balance(self) -> float:
+		return MetaTrader5.account_info().balance
+
+	@property
+	def equity(self) -> float:
+		return MetaTrader5.account_info().equity
+
+	@property
+	def base_currency(self) -> str:
+		return MetaTrader5.account_info().currency

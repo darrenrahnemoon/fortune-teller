@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass
 if TYPE_CHECKING:
-	from core.chart import Chart
+	from core.chart import Chart, Symbol
 
 from core.utils.cls import product_dict
 from core.utils.collection import is_any_of
@@ -57,4 +57,20 @@ class Repository:
 		chart: 'Chart' = None,
 		**overrides
 	) -> None:
+		pass
+
+	@abstractmethod
+	def get_spread(self, symbol: 'Symbol'):
+		pass
+
+	@abstractmethod
+	def get_pip_size(self, symbol: 'Symbol'):
+		return self.get_point_size(symbol) * 10
+
+	@abstractmethod
+	def get_point_size(self, symbol: 'Symbol'):
+		pass
+
+	@abstractmethod
+	def get_quote_currency(self, symbol: 'Symbol'):
 		pass

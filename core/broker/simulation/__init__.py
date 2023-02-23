@@ -29,6 +29,7 @@ class SimulationBroker(Broker, MongoRepository):
 	dataclass_serializer = DataClassMongoDocumentSerializer()
 
 	initial_cash: float = 1000.
+	base_currency: str = 'USD'
 	latency: Interval = Interval.Millisecond(2)
 	positions: list[Position] = field(default_factory = list, repr = False)
 	orders: list[Order] = field(default_factory = list, repr = False)
@@ -173,10 +174,6 @@ class SimulationBroker(Broker, MongoRepository):
 		if order.id != None:
 			logger.warn(f'Order is already placed: {order}')
 			return
-
-		# Calculate size if size is a broker-dependant function
-		if isinstance(order.size, Size):
-			order.size = order.size.to_units(order)
 
 		order.id = random.randint(0, 1000000000)
 		order.status = 'open'

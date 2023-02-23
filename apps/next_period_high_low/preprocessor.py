@@ -1,9 +1,8 @@
-from core.broker.broker import Broker
-from typing import Literal
 import numpy
-import pandas
 from dataclasses import dataclass
+from functools import cached_property
 
+from core.broker.broker import Broker
 from core.chart import Chart, ChartGroup
 from core.utils.logging import logging
 
@@ -14,33 +13,39 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NextPeriodHighLowPrediction:
 	chart: Chart = None
-	high_percent_change: float = None
-	low_percent_change: float = None
+	high_percentage_change: float = None
+	low_percentage_change: float = None
 	broker: Broker = None
 
 	@property
 	def action(self):
-		return 'buy' if abs(self.high_percent_change) > abs(self.low_percent_change) else 'sell'
+		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
+			return 'buy'
+		return 'sell'
 
 	@property
 	def sl(self):
-		return self.low if self.action == 'buy' else self.high
+		if self.action == 'buy':
+			return self.low
+		return self.high
 
 	@property
 	def tp(self):
-		return self.high if self.action == 'buy' else self.low
+		if self.action == 'buy':
+			return self.high
+		return self.low
 
-	@property
+	@cached_property
 	def last_price(self):
 		return self.broker.get_last_price(self.chart.symbol)
 
 	@property
 	def high(self):
-		return self.last_price * (self.high_percent_change + 1)
+		return self.last_price * (self.high_percentage_change + 1)
 
 	@property
 	def low(self):
-		return self.last_price * (self.low_percent_change + 1)
+		return self.last_price * (self.low_percentage_change + 1)
 
 @dataclass
 class NextPeriodHighLowPreprocessorService:
@@ -70,8 +75,8 @@ class NextPeriodHighLowPreprocessorService:
 		return [
 			NextPeriodHighLowPrediction(
 				chart = chart,
-				high_percent_change = output[0],
-				low_percent_change = output[1],
+				high_percentage_change = output[0],
+				low_percentage_change = output[1],
 			)
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

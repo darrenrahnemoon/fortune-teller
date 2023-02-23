@@ -69,3 +69,7 @@ class Broker:
 	@abstractproperty
 	def equity(self) -> float:
 		pass
+
+	@abstractproperty
+	def base_currency(self) -> str:
+		pass
