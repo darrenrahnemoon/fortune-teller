@@ -207,7 +207,8 @@ class MetaTraderBroker(Broker):
 	def get_last_price(
 		self,
 		symbol: 'Symbol',
-		timestamp: pandas.Timestamp = None
+		timestamp: pandas.Timestamp = None,
+		intent: 'OrderType' = None
 	) -> float:
 		if timestamp:
 			chart = TickChart(
@@ -216,13 +217,22 @@ class MetaTraderBroker(Broker):
 				count = 1,
 				repository = self.repository,
 			).read()
-			return (chart.data['bid'].iloc[0] + chart.data['ask'].iloc[0]) / 2
 
-		symbol_info = MetaTrader5.symbol_info(symbol)
-		if not symbol_info:
-			return None
+			bid = chart.data['bid'].iloc[0]
+			ask = chart.data['ask'].iloc[0]
+		else:
+			symbol_info = MetaTrader5.symbol_info(symbol)
+			if not symbol_info:
+				return None
+			bid = symbol_info.bid
+			ask = symbol_info.ask
 
-		return (symbol_info.ask + symbol_info.bid) / 2
+		if intent == 'buy':
+			return ask
+		if intent == 'sell':
+			return bid
+
+		return (bid + ask) / 2
 
 	@property
 	def balance(self) -> float:

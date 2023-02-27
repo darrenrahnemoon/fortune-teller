@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass
 if TYPE_CHECKING:
 	from core.chart import Chart, Symbol
+	from core.order import OrderType
 
 from core.utils.time import now
 from core.utils.cls import product_dict
@@ -60,7 +61,8 @@ class Repository:
 	def get_last_price(
 		self,
 		symbol: 'Symbol',
-		timestamp: pandas.Timestamp = None
+		timestamp: pandas.Timestamp = None,
+		intent: 'OrderType' = None
 	) -> float:
 		pass
 
@@ -72,12 +74,18 @@ class Repository:
 	) -> None:
 		pass
 
-	def convert_currency(amount, from_currency: str, to_currency: str):
+	def convert_currency(
+		self,
+		amount,
+		from_currency: str,
+		to_currency: str,
+		intent: 'OrderType' = None
+	):
 		if from_currency == to_currency:
 			return amount
 
 	@abstractmethod
-	def get_spread(self, symbol: 'Symbol'):
+	def get_spread(self, symbol: 'Symbol') -> int:
 		pass
 
 	@abstractmethod
