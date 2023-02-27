@@ -5,8 +5,9 @@ from typing import Iterable
 from dataclasses import dataclass
 
 from .serializers import SimulationSerializers
-from core.chart import Chart, ChartGroup, OverriddenChart
+from core.chart import Chart, ChartGroup, OverriddenChart, CandleStickChart
 from core.repository.repository import ChartCombinations, Repository
+from core.interval import Interval
 from core.utils.time import TimeWindow, normalize_timestamp, now
 from core.utils.mongo import MongoRepository
 from core.utils.logging import logging
@@ -41,6 +42,22 @@ class SimulationRepository(Repository, MongoRepository):
 
 		logger.debug(f'Read chart:\n{dataframe}')
 		return dataframe
+
+	def get_last_price(
+		self,
+		symbol,
+		timestamp: pandas.Timestamp = None
+	) -> float:
+		if timestamp == None:
+			timestamp = self.now
+		chart = CandleStickChart(
+			symbol = symbol,
+			interval = Interval.Minute(1),
+			count = 1,
+			to_timestamp = timestamp,
+			repository = self.repository
+		).read()
+		return chart.data['close'].iloc[0]
 
 	def write_chart(
 		self,

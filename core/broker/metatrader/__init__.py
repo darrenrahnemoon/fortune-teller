@@ -190,6 +190,20 @@ class MetaTraderBroker(Broker):
 			position.broker = self
 			yield position
 
+	def get_last_bid_price(self, symbol: 'Symbol'):
+		symbol_info = MetaTrader5.symbol_info(symbol)
+		if not symbol_info:
+			return None
+		
+		return symbol_info.bid
+
+	def get_last_ask_price(self, symbol: 'Symbol'):
+		symbol_info = MetaTrader5.symbol_info(symbol)
+		if not symbol_info:
+			return None
+		
+		return symbol_info.ask
+
 	def get_last_price(
 		self,
 		symbol: 'Symbol',
@@ -219,5 +233,5 @@ class MetaTraderBroker(Broker):
 		return MetaTrader5.account_info().equity
 
 	@property
-	def base_currency(self) -> str:
+	def currency(self) -> str:
 		return MetaTrader5.account_info().currency

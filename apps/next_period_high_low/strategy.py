@@ -1,3 +1,4 @@
+import time
 import pandas
 from dataclasses import dataclass
 
@@ -41,13 +42,16 @@ class NextPeriodHighLowStrategy(Strategy):
 					logger.debug(f"Skipping due to high spread: {spread}\n{prediction}")
 					continue
 
-			if self.config.min_risk_over_reward_ratio_to_trade:
-				sl_diff = abs(prediction.sl - prediction.last_price)
-				tp_diff = abs(prediction.tp - prediction.last_price)
-
-				if sl_diff / tp_diff < self.config.min_risk_over_reward_ratio_to_trade:
-					logger.debug(f"Skipping due to R/R being less than '{self.config.min_risk_over_reward_ratio_to_trade}': {sl_diff / tp_diff}\n{prediction}")
-					continue
+			# if self.config.min_risk_over_reward_ratio_to_trade:
+			# 	high_percent_change_magnitude = abs(prediction.high_percentage_change)
+			# 	low_percent_change_magnitude = abs(prediction.low_percentage_change)
+			# 	if prediction.action == 'buy':
+			# 		risk_over_reward = high_percent_change_magnitude / low_percent_change_magnitude
+			# 	else:
+			# 		risk_over_reward = low_percent_change_magnitude / high_percent_change_magnitude
+			# 	if risk_over_reward < self.config.min_risk_over_reward_ratio_to_trade:
+			# 		logger.debug(f"Skipping due to R/R being less than '{self.config.min_risk_over_reward_ratio_to_trade}': {risk_over_reward}\n{prediction}")
+			# 		continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
 				logger.debug(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")
@@ -74,9 +78,10 @@ class NextPeriodHighLowStrategy(Strategy):
 				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
-				size = Size.PercentageOfBalanceRiskManagement(0.01),
+				size = Size.FixedAmountRiskManagement(100),
 				broker = self.config.metatrader_broker,
 			).place()
+		time.sleep(60 * 15)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
 		predictions = self.trainer_service.predict(self.model, timestamp)

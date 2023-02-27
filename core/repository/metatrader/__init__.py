@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from .serializers import MetaTraderSerializers
 from core.repository.repository import Repository
+from core.utils.time import TimestampLike, normalize_timestamp
 from core.chart import CandleStickChart, TickChart, Chart, OverriddenChart
 from core.utils.logging import logging
 
@@ -15,11 +16,18 @@ class MetaTraderRepository(Repository):
 	timezone = 'UTC'
 	serializers = MetaTraderSerializers()
 
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
-
+	def __post_init__(self):
+		self._now = None
 		if not MetaTrader5.initialize():
 			raise MetaTrader5.last_error()
+
+	@property
+	def now(self) -> pandas.Timestamp:
+		return self._now or super().now
+
+	@now.setter
+	def now(self, value: TimestampLike):
+		self._now = normalize_timestamp(value)
 
 	def get_available_symbols(self):
 		return [ symbol.name for symbol in MetaTrader5.symbols_get() ]
@@ -134,6 +142,9 @@ class MetaTraderRepository(Repository):
 
 	def get_point_size(self, symbol):
 		return MetaTrader5.symbol_info(symbol).point
+
+	def get_base_currency(self, symbol):
+		return MetaTrader5.symbol_info(symbol).currency_base
 
 	def get_quote_currency(self, symbol):
 		return MetaTrader5.symbol_info(symbol).currency_profit

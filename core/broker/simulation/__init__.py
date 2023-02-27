@@ -29,7 +29,7 @@ class SimulationBroker(Broker, MongoRepository):
 	dataclass_serializer = DataClassMongoDocumentSerializer()
 
 	initial_cash: float = 1000.
-	base_currency: str = 'USD'
+	currency: str = 'USD'
 	latency: Interval = Interval.Millisecond(2)
 	positions: list[Position] = field(default_factory = list, repr = False)
 	orders: list[Order] = field(default_factory = list, repr = False)
@@ -41,22 +41,6 @@ class SimulationBroker(Broker, MongoRepository):
 		self._now = None
 		self._timesteps: pandas.DatetimeIndex = None
 		self.equity_curve: pandas.Series = None
-
-	def get_last_price(
-		self,
-		symbol: Symbol,
-		timestamp: pandas.Timestamp = None
-	) -> float:
-		if timestamp == None:
-			timestamp = self.now
-		chart = CandleStickChart(
-			symbol = symbol,
-			interval = Interval.Minute(1),
-			count = 1,
-			to_timestamp = timestamp,
-			repository = self.repository
-		).read()
-		return chart.data['close'].iloc[0]
 
 	@property
 	def timesteps(self):
@@ -80,12 +64,15 @@ class SimulationBroker(Broker, MongoRepository):
 	def now(self, value: TimestampLike):
 		self._now = normalize_timestamp(value)
 
+		if isinstance(self.repository, SimulationRepository):
+			self.repository.now = self._now
+
 	def backtest(self, strategy: 'Strategy'):
 		for self.now in self.timesteps:
 			self.scheduler.run_as_of(self.now)
 
 			for order in self.get_orders(status ='open'):
-				price = self.get_last_price(order.symbol)
+				price = self.repository.get_last_price(order.symbol)
 				if (order.type == 'buy' and order.stop and price >= order.stop) \
 					or (order.type == 'sell' and order.stop and price <= order.stop):
 					order.stop = None
@@ -97,7 +84,7 @@ class SimulationBroker(Broker, MongoRepository):
 					self.fill_order(order)
 
 			for position in self.get_positions(status='open'):
-				price = self.get_last_price(position.symbol)
+				price = self.repository.get_last_price(position.symbol)
 				if (
 					position.type == 'buy' and (
 						(position.sl and price <= position.sl) or 
@@ -204,7 +191,7 @@ class SimulationBroker(Broker, MongoRepository):
 			symbol = order.symbol,
 			type = order.type,
 			size = order.size,
-			entry_price = self.get_last_price(order.symbol),
+			entry_price = self.repository.get_last_price(order.symbol),
 			open_timestamp = self.now,
 			tp = order.tp,
 			sl = order.sl,
@@ -227,7 +214,7 @@ class SimulationBroker(Broker, MongoRepository):
 
 		position.status = 'closed'
 		position.close_timestamp = self.now
-		position.exit_price = self.get_last_price(position.symbol)
+		position.exit_price = self.repository.get_last_price(position.symbol)
 
 	def schedule_action(
 		self,

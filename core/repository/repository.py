@@ -5,6 +5,7 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
 	from core.chart import Chart, Symbol
 
+from core.utils.time import now
 from core.utils.cls import product_dict
 from core.utils.collection import is_any_of
 
@@ -15,6 +16,10 @@ ChartCombinations = dict[
 @dataclass
 class Repository:
 	timezone: ClassVar[str] = 'UTC'
+
+	@property
+	def now(self):
+		return now(self.timezone)
 
 	@abstractmethod
 	def get_available_chart_combinations(self) -> ChartCombinations:
@@ -52,12 +57,24 @@ class Repository:
 		pass
 
 	@abstractmethod
+	def get_last_price(
+		self,
+		symbol: 'Symbol',
+		timestamp: pandas.Timestamp = None
+	) -> float:
+		pass
+
+	@abstractmethod
 	def write_chart(
 		self,
 		chart: 'Chart' = None,
 		**overrides
 	) -> None:
 		pass
+
+	def convert_currency(amount, from_currency: str, to_currency: str):
+		if from_currency == to_currency:
+			return amount
 
 	@abstractmethod
 	def get_spread(self, symbol: 'Symbol'):
@@ -69,6 +86,10 @@ class Repository:
 
 	@abstractmethod
 	def get_point_size(self, symbol: 'Symbol'):
+		pass
+
+	@abstractmethod
+	def get_base_currency(self, symbol: 'Symbol'):
 		pass
 
 	@abstractmethod

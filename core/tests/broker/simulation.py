@@ -80,7 +80,7 @@ def _():
 	def _():
 		broker = SimulationBroker()
 		broker.now = '2022-11-05'
-		price = broker.get_last_price('EURUSD')
+		price = broker.repository.get_last_price('EURUSD')
 
 		assert price != None
 		assert type(price) == numpy.float64

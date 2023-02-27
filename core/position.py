@@ -33,7 +33,7 @@ class Position:
 
 	@property
 	def profit(self) -> float:
-		exit_price = self.exit_price or self.broker.get_last_price(self.symbol)
+		exit_price = self.exit_price or self.broker.repository.get_last_price(self.symbol)
 		return self.size * (exit_price - self.entry_price)
 
 	@property
@@ -42,7 +42,7 @@ class Position:
 
 	@property
 	def profit_percentage(self) -> float:
-		exit_price = self.exit_price or self.broker.get_last_price(self.symbol)
+		exit_price = self.exit_price or self.broker.repository.get_last_price(self.symbol)
 		return (exit_price / self.entry_price - 1) * 100
 
 	@property
