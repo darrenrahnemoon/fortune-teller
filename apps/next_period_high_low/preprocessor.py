@@ -19,37 +19,34 @@ class NextPeriodHighLowPrediction:
 
 	@property
 	def action(self):
-		if abs(self.high_percentage_change) < abs(self.low_percentage_change):
+		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
 			return 'buy'
 		return 'sell'
 
 	@property
 	def sl(self):
-		if self.action == 'buy':
-			return self.low
-		return self.high
+		return self.last_price * (self.sl_percentage_change + 1)
 
 	@property
 	def tp(self):
-		if self.action == 'buy':
-			return self.high
-		return self.low
+		return self.last_price * (self.tp_percentage_change + 1)
 
 	@property
 	def sl_percentage_change(self):
-		if self.action == 'buy':
-			return self.low_percentage_change
-		return self.high_percentage_change
+		return self.tp_percentage_change * -1
 
 	@property
 	def tp_percentage_change(self):
-		if self.action == 'buy':
+		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
 			return self.high_percentage_change
 		return self.low_percentage_change
 
 	@cached_property
 	def last_price(self):
-		return self.broker.get_last_price(self.symbol)
+		return self.broker.repository.get_last_price(
+			symbol = self.symbol,
+			intent = self.action,
+		)
 
 	@property
 	def high(self):

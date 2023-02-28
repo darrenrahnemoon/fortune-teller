@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
+from core.size import Size
 if TYPE_CHECKING:
 	from core.chart import Symbol
 	from core.repository import Repository
@@ -80,4 +81,8 @@ class Broker:
 
 	@abstractproperty
 	def currency(self) -> str:
+		pass
+
+	@abstractproperty
+	def standard_size(self) -> type[Size]:
 		pass

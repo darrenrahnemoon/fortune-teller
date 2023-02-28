@@ -1,12 +1,16 @@
 import numpy
 import pandas
 import MetaTrader5
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 from .serializers import MetaTraderSerializers
 from core.repository.repository import Repository
 from core.utils.time import TimestampLike, normalize_timestamp
-from core.chart import CandleStickChart, TickChart, Chart, OverriddenChart
+from core.chart import CandleStickChart, TickChart, Chart, OverriddenChart, Symbol
+
+if TYPE_CHECKING:
+	from core.order import OrderType
 from core.utils.logging import logging
 
 logger = logging.getLogger(__name__)
@@ -136,6 +140,36 @@ class MetaTraderRepository(Repository):
 		except:
 			pass
 		return dataframe
+
+	def get_last_price(
+		self,
+		symbol: Symbol,
+		timestamp: pandas.Timestamp = None,
+		intent: 'OrderType' = None
+	) -> float:
+		if timestamp:
+			chart = TickChart(
+				symbol = symbol,
+				to_timestamp = timestamp,
+				count = 1,
+				repository = self.repository,
+			).read()
+
+			bid = chart.data['bid'].iloc[0]
+			ask = chart.data['ask'].iloc[0]
+		else:
+			symbol_info = MetaTrader5.symbol_info(symbol)
+			if not symbol_info:
+				return None
+			bid = symbol_info.bid
+			ask = symbol_info.ask
+
+		if intent == 'buy':
+			return ask
+		if intent == 'sell':
+			return bid
+
+		return (bid + ask) / 2
 
 	def get_spread(self, symbol):
 		return MetaTrader5.symbol_info(symbol).spread

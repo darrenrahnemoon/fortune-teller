@@ -45,28 +45,33 @@ Size.Unit = Unit
 class OrderDependantSize(Size):
 	order: 'Order' = None
 
-	@cached_property
-	def broker_base_currency_exchange_rate(self) -> float:
-		"""In broker's base currency / instrument's quote currency"""
-		instrument_quote_currency = self.order.broker.repository.get_quote_currency(self.order.symbol)
-		if instrument_quote_currency == self.order.broker.base_currency:
-			return 1
+	@property
+	def broker(self):
+		return self.order.broker
 
-		exchange_rate = self.order.broker.get_last_price(f'{instrument_quote_currency}{self.order.broker.base_currency}')
-		if exchange_rate:
-			return exchange_rate
-
-		# Try the inverse pair if we couldn't get a quote
-		exchange_rate = self.order.broker.get_last_price(f'{self.order.broker.base_currency}{instrument_quote_currency}')
-		if exchange_rate:
-			return 1 / exchange_rate
-
-		raise Exception(f"Cannot calculate the exchange rate for '{instrument_quote_currency}{self.order.broker.base_currency}'")
+	@property
+	def repository(self):
+		return self.broker.repository
 
 	@cached_property
-	def risk_per_unit(self):
-		"""In instrument's quote currency"""
-		return abs(self.order.sl - self.order.broker.get_last_price(self.order.symbol))
+	def pips_at_risk(self):
+		symbol = self.order.symbol
+		sl = self.order.sl
+		last_price = self.repository.get_last_price(
+			symbol = symbol,
+			intent = self.order.type
+		)
+		pip_size = self.repository.get_pip_size(symbol)
+		return abs(sl - last_price) / pip_size
+
+	@cached_property
+	def pip_value(self):
+		symbol = self.order.symbol
+		return self.repository.convert_currency(
+			amount = self.repository.get_pip_size(symbol) * self.broker.standard_size.units,
+			from_currency = self.repository.get_quote_currency(symbol),
+			to_currency = self.broker.currency
+		)
 
 @dataclass
 class PercentageOfBalance(OrderDependantSize):
@@ -74,9 +79,18 @@ class PercentageOfBalance(OrderDependantSize):
 
 	@cached_property
 	def to_units(self):
-		amount = self.order.broker.balance * self.value # In broker's base currency
-		amount = amount / self.broker_base_currency_exchange_rate # In instrument's quote currency
-		return amount / self.order.broker.get_last_price(self.order.symbol) # In units
+		risk_amount = self.order.broker.balance * self.value # In broker's base currency
+		risk_amount = self.repository.convert_currency(
+			amount = risk_amount,
+			from_currency = self.order.broker.currency,
+			to_currency = self.repository.get_quote_currency(self.order.symbol),
+			intent = 'buy'
+		)
+
+		return risk_amount / self.repository.get_last_price(
+			symbol = self.order.symbol,
+			intent = self.order.type
+		)
 
 Size.PercentageOfBalance = PercentageOfBalance
 
@@ -87,9 +101,16 @@ class PercentageOfBalanceRiskManagement(OrderDependantSize):
 
 	@cached_property
 	def to_units(self):
-		amount = self.order.broker.balance * self.value # In broker's base currency
-		risk_per_unit = self.risk_per_unit * self.broker_base_currency_exchange_rate # In broker's base currency
-		return amount / risk_per_unit # In units
+		risk_amount = self.order.broker.balance * self.value # In broker's base currency
+		risk_amount = self.repository.convert_currency(
+			amount = risk_amount,
+			from_currency = self.order.broker.currency,
+			to_currency = self.repository.get_quote_currency(self.order.symbol),
+			intent = 'buy'
+		)
+		risk_amount_per_pip = risk_amount / self.pips_at_risk
+
+		return risk_amount_per_pip * self.pip_value
 
 Size.PercentageOfBalanceRiskManagement = PercentageOfBalanceRiskManagement
 
@@ -100,7 +121,16 @@ class FixedAmountRiskManagement(OrderDependantSize):
 
 	@cached_property
 	def to_units(self):
-		risk_per_unit = self.risk_per_unit * self.broker_base_currency_exchange_rate # In broker's base currency
-		return self.value / risk_per_unit
+		risk_amount = self.repository.convert_currency(
+			amount = self.value,
+			from_currency = self.order.broker.currency,
+			to_currency = self.repository.get_quote_currency(self.order.symbol),
+			intent = 'buy'
+		)
+
+		return risk_amount / self.repository.get_last_price(
+			symbol = self.order.symbol,
+			intent = self.order.type
+		)
 
 Size.FixedAmountRiskManagement = FixedAmountRiskManagement

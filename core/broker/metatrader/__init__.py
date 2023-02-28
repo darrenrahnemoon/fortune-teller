@@ -12,6 +12,7 @@ from core.broker.metatrader.serializers import MetaTraderSerializers
 
 if TYPE_CHECKING:
 	from core.chart import Symbol
+from core.size import Size
 from core.utils.time import TimestampLike
 from core.utils.logging import logging
 from core.utils.cls import pretty_repr
@@ -204,36 +205,6 @@ class MetaTraderBroker(Broker):
 		
 		return symbol_info.ask
 
-	def get_last_price(
-		self,
-		symbol: 'Symbol',
-		timestamp: pandas.Timestamp = None,
-		intent: 'OrderType' = None
-	) -> float:
-		if timestamp:
-			chart = TickChart(
-				symbol = symbol,
-				to_timestamp = timestamp,
-				count = 1,
-				repository = self.repository,
-			).read()
-
-			bid = chart.data['bid'].iloc[0]
-			ask = chart.data['ask'].iloc[0]
-		else:
-			symbol_info = MetaTrader5.symbol_info(symbol)
-			if not symbol_info:
-				return None
-			bid = symbol_info.bid
-			ask = symbol_info.ask
-
-		if intent == 'buy':
-			return ask
-		if intent == 'sell':
-			return bid
-
-		return (bid + ask) / 2
-
 	@property
 	def balance(self) -> float:
 		return MetaTrader5.account_info().balance
@@ -245,3 +216,7 @@ class MetaTraderBroker(Broker):
 	@property
 	def currency(self) -> str:
 		return MetaTrader5.account_info().currency
+
+	@property
+	def standard_size(self):
+		return Size.Lot

@@ -84,6 +84,23 @@ class Repository:
 		if from_currency == to_currency:
 			return amount
 
+		exchange_rate = self.get_last_price(
+			symbol = f'{from_currency}{to_currency}',
+			intent = intent
+		)
+		if exchange_rate:
+			return amount * exchange_rate
+
+		exchange_rate = self.get_last_price(
+			symbol = f'{to_currency}{from_currency}',
+			intent = intent
+		)
+		if exchange_rate:
+			return amount / exchange_rate
+
+		raise Exception(f"Cannot calculate the exchange rate from {from_currency} to {to_currency}'")
+
+
 	@abstractmethod
 	def get_spread(self, symbol: 'Symbol') -> int:
 		pass

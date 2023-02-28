@@ -1,4 +1,3 @@
-from core.size import Size
 import typing
 import pandas
 import random
@@ -14,6 +13,7 @@ from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
 from core.chart import Chart, CandleStickChart, Symbol
 from core.repository import SimulationRepository
+from core.size import Size
 from .serializers import DataClassMongoDocumentSerializer
 
 from core.interval import Interval
@@ -30,6 +30,7 @@ class SimulationBroker(Broker, MongoRepository):
 
 	initial_cash: float = 1000.
 	currency: str = 'USD'
+	standard_size: type[Size] = Size.Unit
 	latency: Interval = Interval.Millisecond(2)
 	positions: list[Position] = field(default_factory = list, repr = False)
 	orders: list[Order] = field(default_factory = list, repr = False)
