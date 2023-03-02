@@ -13,15 +13,27 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NextPeriodHighLowPrediction:
 	symbol: Symbol = None
-	high_percentage_change: float = None
-	low_percentage_change: float = None
+	model_prediction_error: float = 0.0005
+	max_high_percentage_change: float = None
+	min_high_percentage_change: float = None
+	max_low_percentage_change: float = None
+	min_low_percentage_change: float = None
+
 	broker: Broker = field(default = None, repr = False)
 
 	@property
 	def action(self):
-		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
-			return 'buy'
-		return 'sell'
+		if self.max_low_percentage_change > 0 \
+			and self.min_high_percentage_change > 0 \
+			and self.max_high_percentage_change > 0:
+				return 'buy'
+
+		if self.min_high_percentage_change < 0 \
+			and self.max_low_percentage_change < 0 \
+			and self.min_low_percentage_change < 0:
+				return 'sell'
+
+		return None
 
 	@property
 	def sl(self):
@@ -33,13 +45,19 @@ class NextPeriodHighLowPrediction:
 
 	@property
 	def sl_percentage_change(self):
-		return self.tp_percentage_change * -1
+		if self.action == 'buy':
+			return self.min_low_percentage_change - self.model_prediction_error
+		if self.action == 'sell':
+			return self.max_high_percentage_change + self.model_prediction_error
+		return None
 
 	@property
 	def tp_percentage_change(self):
-		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
-			return self.high_percentage_change
-		return self.low_percentage_change
+		if self.action == 'buy':
+			return self.max_high_percentage_change
+		if self.action == 'sell':
+			return self.min_low_percentage_change
+		return None
 
 	@cached_property
 	def last_price(self):
@@ -47,14 +65,6 @@ class NextPeriodHighLowPrediction:
 			symbol = self.symbol,
 			intent = self.action,
 		)
-
-	@property
-	def high(self):
-		return self.last_price * (self.high_percentage_change + 1)
-
-	@property
-	def low(self):
-		return self.last_price * (self.low_percentage_change + 1)
 
 @dataclass
 class NextPeriodHighLowPreprocessorService:
@@ -65,18 +75,22 @@ class NextPeriodHighLowPreprocessorService:
 		for chart in input_chart_group.charts:
 			chart.data = chart.data.pct_change()
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
-		# input_chart_group.dataframe = mean_normalize(dataframe)
 		return input_chart_group.dataframe.to_numpy()
 
 	def to_model_output(self, output_chart_group: ChartGroup):
+		def ensure_not_nan(value):
+			return 0 if numpy.isnan(value) else value
+
 		outputs = []
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 		for chart in output_chart_group.charts:
-			high_pct_change = chart.data['high'].max() / chart.data['high'].iloc[0] - 1
-			low_pct_change = chart.data['low'].min() / chart.data['low'].iloc[0] - 1
+			min_high_percentage_change = chart.data['high'].min() / chart.data['high'].iloc[0] - 1
+			max_high_percentage_change = chart.data['high'].max() / chart.data['high'].iloc[0] - 1
+			min_low_percentage_change = chart.data['low'].min() / chart.data['low'].iloc[0] - 1
+			max_low_percentage_change = chart.data['low'].max() / chart.data['low'].iloc[0] - 1
 			outputs.append([
-				0 if numpy.isnan(high_pct_change) else high_pct_change,
-				0 if numpy.isnan(low_pct_change) else low_pct_change
+				[ ensure_not_nan(max_high_percentage_change), ensure_not_nan(min_high_percentage_change) ],
+				[ ensure_not_nan(max_low_percentage_change), ensure_not_nan(min_low_percentage_change) ]
 			])
 		return numpy.array(outputs)
 
@@ -84,8 +98,10 @@ class NextPeriodHighLowPreprocessorService:
 		return [
 			NextPeriodHighLowPrediction(
 				symbol = chart.symbol,
-				high_percentage_change = output[0],
-				low_percentage_change = output[1],
+				max_high_percentage_change = output[0][0],
+				min_high_percentage_change = output[0][1],
+				max_low_percentage_change = output[1][0],
+				min_low_percentage_change = output[1][1],
 			)
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

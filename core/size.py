@@ -97,7 +97,6 @@ Size.PercentageOfBalance = PercentageOfBalance
 @dataclass
 class PercentageOfBalanceRiskManagement(OrderDependantSize):
 	units = 1
-	result: float = None
 
 	@cached_property
 	def to_units(self):
@@ -117,7 +116,6 @@ Size.PercentageOfBalanceRiskManagement = PercentageOfBalanceRiskManagement
 @dataclass
 class FixedAmountRiskManagement(OrderDependantSize):
 	units = 1
-	result: float = 0
 
 	@cached_property
 	def to_units(self):

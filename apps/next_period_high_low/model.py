@@ -151,7 +151,7 @@ class NextPeriodHighLowModelService(ModelService):
 
 	def build_outputs(self, x):
 		output_chart_group = self.strategy_config.output_chart_group
-		output_shape = (len(output_chart_group.charts), 2)
+		output_shape = (len(output_chart_group.charts), 2, 2) # (chart, high/low, max/min)
 		x = Dense(math.prod(iter(output_shape)))(x)
 		x = Reshape(output_shape)(x)
 		return x
