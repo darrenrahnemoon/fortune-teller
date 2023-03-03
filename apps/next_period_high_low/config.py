@@ -27,6 +27,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 
 	max_spread_to_trade: int = 50
 	min_movement_percentage_to_trade: float = 0.0002
+	min_risk_over_reward_ratio_to_trade: float = 1.5
 
 	metatrader_broker: Broker = field(
 		default_factory = on_environment(

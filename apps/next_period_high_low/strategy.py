@@ -29,14 +29,10 @@ class NextPeriodHighLowStrategy(Strategy):
 	def handler(self):
 		predictions = self.get_predictions(self.config.metatrader_broker.now)
 		for prediction in predictions:
-			if prediction.action == None:
-				logger.debug(f"Skipping due to action being 'None'\n{prediction}")
-				continue
-
 			# Skip low movements
 			if self.config.min_movement_percentage_to_trade:
 				if abs(prediction.tp_percentage_change) < self.config.min_movement_percentage_to_trade:
-					logger.debug(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.tp_percentage_change}%\n{prediction}")
+					logger.debug(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.high_percentage_change}%\n{prediction}")
 					continue
 
 			# Skip high spread instruments
@@ -45,6 +41,17 @@ class NextPeriodHighLowStrategy(Strategy):
 				if spread > self.config.max_spread_to_trade:
 					logger.debug(f"Skipping due to high spread: {spread}\n{prediction}")
 					continue
+
+			# if self.config.min_risk_over_reward_ratio_to_trade:
+			# 	high_percent_change_magnitude = abs(prediction.high_percentage_change)
+			# 	low_percent_change_magnitude = abs(prediction.low_percentage_change)
+			# 	if prediction.action == 'buy':
+			# 		risk_over_reward = high_percent_change_magnitude / low_percent_change_magnitude
+			# 	else:
+			# 		risk_over_reward = low_percent_change_magnitude / high_percent_change_magnitude
+			# 	if risk_over_reward < self.config.min_risk_over_reward_ratio_to_trade:
+			# 		logger.debug(f"Skipping due to R/R being less than '{self.config.min_risk_over_reward_ratio_to_trade}': {risk_over_reward}\n{prediction}")
+			# 		continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
 				logger.debug(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")
@@ -71,10 +78,10 @@ class NextPeriodHighLowStrategy(Strategy):
 				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
-				size = Size.PercentageOfBalanceRiskManagement(0.01),
+				size = Size.FixedAmountRiskManagement(100),
 				broker = self.config.metatrader_broker,
 			).place()
-		# time.sleep(60 * 5)
+		time.sleep(60 * 15)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
 		predictions = self.trainer_service.predict(self.model, timestamp)
