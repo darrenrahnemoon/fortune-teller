@@ -65,18 +65,41 @@ class NextPeriodHighLowPreprocessorService:
 		for chart in input_chart_group.charts:
 			chart.data = chart.data.pct_change()
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
-		# input_chart_group.dataframe = mean_normalize(dataframe)
 		return input_chart_group.dataframe.to_numpy()
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 		for chart in output_chart_group.charts:
-			high_pct_change = chart.data['high'].max() / chart.data['high'].iloc[0] - 1
-			low_pct_change = chart.data['low'].min() / chart.data['low'].iloc[0] - 1
+			# High
+			max_high_index = chart.data['high'].idxmax()
+			max_high = chart.data['high'].loc[max_high_index]
+			current_high = chart.data['high'].iloc[0]
+			if current_high == 0:
+				high_pct_change = 0
+			else:
+				high_pct_change = max_high / current_high - 1
+				if numpy.isnan(high_pct_change):
+					high_pct_change = 0
+
+			# Low
+			min_low_index = chart.data['low'].idxmin()
+			min_low = chart.data['low'].loc[min_low_index]
+			current_low = chart.data['low'].iloc[0]
+			if current_low == 0:
+				low_pct_change = 0
+			else:
+				low_pct_change = min_low / current_low - 1
+				if numpy.isnan(low_pct_change):
+					low_pct_change = 0
+
+			# Find out which end gets hit first
+			action = 'sell' if min_low_index < max_high_index else 'buy'
+			action = self.action_serializer.serialize(action)
+			
 			outputs.append([
-				0 if numpy.isnan(high_pct_change) else high_pct_change,
-				0 if numpy.isnan(low_pct_change) else low_pct_change
+				high_pct_change,
+				low_pct_change
 			])
 		return numpy.array(outputs)
 
