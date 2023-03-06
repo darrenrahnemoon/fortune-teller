@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from keras import Model
+from keras.utils import plot_model
 from keras.callbacks import ModelCheckpoint
 
 from core.tensorflow.trainer.config import TrainerConfig
@@ -25,6 +26,9 @@ class TrainerService(ArtifactService):
 
 	def get_checkpoints_path(self, model: Model):
 		return self.directory.joinpath(model.name, 'checkpoints')
+
+	def get_plot_path(self, model: Model):
+		return self.directory.joinpath(model.name, 'plot.png')
 
 	def get_callbacks(self, model: Model):
 		callbacks = [
@@ -64,6 +68,17 @@ class TrainerService(ArtifactService):
 				**self.train_kwargs,
 				callbacks = self.get_callbacks(model)
 			)
+
+	def plot(self, model: Model):
+		path = self.get_plot_path(model)
+		path.parent.mkdir(exist_ok = True)
+		plot_model(
+			model,
+			to_file = path,
+			show_shapes = True,
+			show_dtype = True,
+			show_layer_activations = True,
+		)
 
 	def predict(self, model: Model, *args, **kwargs):
 		pass
