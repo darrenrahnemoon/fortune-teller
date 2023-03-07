@@ -1,4 +1,5 @@
 import numpy
+import pandas
 from dataclasses import dataclass, field
 from functools import cached_property
 
@@ -13,13 +14,17 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NextPeriodHighLowPrediction:
 	symbol: Symbol = None
-	high_percentage_change: float = None
-	low_percentage_change: float = None
 	broker: Broker = field(default = None, repr = False)
+
+	high_percentage_change: float = None
+	high_index: float = None
+
+	low_percentage_change: float = None
+	low_index: float = None
 
 	@property
 	def action(self):
-		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
+		if self.high_index < self.low_index:
 			return 'buy'
 		return 'sell'
 
@@ -33,11 +38,13 @@ class NextPeriodHighLowPrediction:
 
 	@property
 	def sl_percentage_change(self):
-		return self.tp_percentage_change * -1
+		if self.action == 'buy':
+			return self.low_percentage_change
+		return self.high_percentage_change
 
 	@property
 	def tp_percentage_change(self):
-		if abs(self.high_percentage_change) > abs(self.low_percentage_change):
+		if self.action == 'buy':
 			return self.high_percentage_change
 		return self.low_percentage_change
 
@@ -47,14 +54,6 @@ class NextPeriodHighLowPrediction:
 			symbol = self.symbol,
 			intent = self.action,
 		)
-
-	@property
-	def high(self):
-		return self.last_price * (self.high_percentage_change + 1)
-
-	@property
-	def low(self):
-		return self.last_price * (self.low_percentage_change + 1)
 
 @dataclass
 class NextPeriodHighLowPreprocessorService:
@@ -67,39 +66,47 @@ class NextPeriodHighLowPreprocessorService:
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
 		return input_chart_group.dataframe.to_numpy()
 
+	def get_inflection_point(
+		self,
+		series: pandas.Series,
+		direction: 'max' or 'min',
+	):
+		inflection_index = getattr(series, f'idx{direction}')()
+		inflection_value = series.loc[inflection_index]
+		current_inflection_value = series.iloc[0]
+		if current_inflection_value == 0:
+			inflection_pct_change = 0
+		else:
+			inflection_pct_change = inflection_value / current_inflection_value - 1
+			if numpy.isnan(inflection_pct_change):
+				inflection_pct_change = 0
+		return inflection_pct_change, inflection_index
+
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
+		output_chart_group.dataframe = output_chart_group.dataframe.fillna(0)
+
 		for chart in output_chart_group.charts:
-			# High
-			max_high_index = chart.data['high'].idxmax()
-			max_high = chart.data['high'].loc[max_high_index]
-			current_high = chart.data['high'].iloc[0]
-			if current_high == 0:
-				high_pct_change = 0
-			else:
-				high_pct_change = max_high / current_high - 1
-				if numpy.isnan(high_pct_change):
-					high_pct_change = 0
+			high_pct_change, high_index = self.get_inflection_point(chart.data['high'], 'max')
+			low_pct_change, low_index = self.get_inflection_point(chart.data['low'], 'min')
 
-			# Low
-			min_low_index = chart.data['low'].idxmin()
-			min_low = chart.data['low'].loc[min_low_index]
-			current_low = chart.data['low'].iloc[0]
-			if current_low == 0:
-				low_pct_change = 0
-			else:
-				low_pct_change = min_low / current_low - 1
-				if numpy.isnan(low_pct_change):
-					low_pct_change = 0
+			# Normalize indices
+			current_index = chart.data.index[0]
+			high_index = high_index.value - current_index.value
+			low_index = low_index.value - current_index.value
+			sum_index = high_index + low_index
 
-			# Find out which end gets hit first
-			action = 'sell' if min_low_index < max_high_index else 'buy'
-			action = self.action_serializer.serialize(action)
-			
+			if sum_index == 0:
+				high_index = 0
+				low_index = 0
+			else:
+				high_index = high_index / sum_index
+				low_index = low_index / sum_index
+
 			outputs.append([
-				high_pct_change,
-				low_pct_change
+				[ high_pct_change, high_index ],
+				[ low_pct_change, low_index ]
 			])
 		return numpy.array(outputs)
 
@@ -107,8 +114,10 @@ class NextPeriodHighLowPreprocessorService:
 		return [
 			NextPeriodHighLowPrediction(
 				symbol = chart.symbol,
-				high_percentage_change = output[0],
-				low_percentage_change = output[1],
+				high_percentage_change = output[0][0],
+				high_index = output[0][1],
+				low_percentage_change = output[1][0],
+				low_index = output[1][1],
 			)
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]
