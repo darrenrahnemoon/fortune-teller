@@ -123,6 +123,11 @@ class NextPeriodHighLowModelService(ModelService):
 			inputs = inputs,
 			outputs = outputs
 		)
+
+		return model
+
+	def compile(self, parameters: HyperParameters):
+		model = self.build(parameters)
 		model.compile(
 			optimizer = Adam(
 				learning_rate = parameters.Float(

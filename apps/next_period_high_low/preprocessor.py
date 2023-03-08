@@ -1,4 +1,5 @@
 import numpy
+import pandas
 from dataclasses import dataclass, field
 from functools import cached_property
 
@@ -59,6 +60,22 @@ class NextPeriodHighLowPrediction:
 @dataclass
 class NextPeriodHighLowPreprocessorService:
 	strategy_config: NextPeriodHighLowStrategyConfig = None
+
+	def get_inflection_point(
+		self,
+		series: pandas.Series,
+		direction: 'max' or 'min',
+	):
+		inflection_index = getattr(series, f'idx{direction}')()
+		inflection_value = series.loc[inflection_index]
+		current_inflection_value = series.iloc[0]
+		if current_inflection_value == 0:
+			inflection_pct_change = 0
+		else:
+			inflection_pct_change = inflection_value / current_inflection_value - 1
+			if numpy.isnan(inflection_pct_change):
+				inflection_pct_change = 0
+		return inflection_pct_change, inflection_index
 
 	def to_model_input(self, input_chart_group: ChartGroup):
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_length)

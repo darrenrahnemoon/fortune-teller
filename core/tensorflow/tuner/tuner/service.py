@@ -38,7 +38,7 @@ class TunerService(ArtifactService):
 
 	def get_model(self, trial_id: str or Literal['best']) -> Model:
 		hyperparameters = self.get_hyperparameters(trial_id)
-		model = self.model_service.build(hyperparameters)
+		model = self.model_service.compile(hyperparameters)
 		model._name = trial_id
 		return model
 
