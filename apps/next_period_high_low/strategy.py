@@ -78,7 +78,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
-				size = Size.Lot(0.01),
+				size = Size.FixedAmountRiskManagement(100),
 				broker = self.config.metatrader_broker,
 			).place()
 		time.sleep(60 * 15)
