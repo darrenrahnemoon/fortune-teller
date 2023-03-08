@@ -24,7 +24,9 @@ class TunerService(ArtifactService):
 		return self.artifacts_directory.joinpath('tuner')
 
 	def get_callbacks(self, **kwargs):
-		return self.tensorboard_service.get_callbacks()
+		return self.tensorboard_service.get_callbacks(
+			scope = type(self).__name__
+		)
 
 	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
 		if (trial_id == 'best'):

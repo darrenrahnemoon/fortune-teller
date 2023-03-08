@@ -1,13 +1,11 @@
-from dataclasses import asdict
-
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Singleton
 
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.dataset.service import DatasetService
-from core.tensorflow.tuner.hyperband.service import HyperbandTunerService
 
+from .tuner import NextPeriodHighLowTunerService
 from .trainer import NextPeriodHighLowTrainerService
 from .config import NextPeriodHighLowConfig
 from .preprocessor import NextPeriodHighLowPreprocessorService
@@ -57,7 +55,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		strategy_config = config.strategy
 	)
 	tuner_service = Singleton(
-		HyperbandTunerService,
+		NextPeriodHighLowTunerService,
 		config = config.tuner,
 		model_service = model_service,
 		device_service = device_service,

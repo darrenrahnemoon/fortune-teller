@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from functools import cache
 from keras_tuner import Hyperband
 
 from core.tensorflow.tuner.hyperband.config import HyperbandTunerConfig
@@ -17,5 +16,5 @@ class HyperbandTunerService(TunerService):
 			hyperband_iterations = self.config.iterations,
 			factor = self.config.reduction_factor,
 			directory = self.directory,
-			project_name = 'trials',
+			project_name = type(self).__name__,
 		)

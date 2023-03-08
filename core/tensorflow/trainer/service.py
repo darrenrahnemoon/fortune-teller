@@ -22,7 +22,7 @@ class TrainerService(ArtifactService):
 
 	@property
 	def directory(self):
-		return self.artifacts_directory.joinpath('trainer')
+		return self.artifacts_directory.joinpath('trainer', type(self).__name__)
 
 	def get_checkpoints_path(self, model: Model):
 		return self.directory.joinpath(model.name, 'checkpoints')
@@ -39,7 +39,9 @@ class TrainerService(ArtifactService):
 				mode = 'min',
 			)
 		]
-		return callbacks + self.tensorboard_service.get_callbacks()
+		return callbacks + self.tensorboard_service.get_callbacks(
+			scope = type(self).__name__
+		)
 
 	@property
 	def train_kwargs(self):
