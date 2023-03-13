@@ -64,6 +64,9 @@ class TrainerService(ArtifactService):
 		except:
 			logger.warn(f"Unable to load weights for model '{model.name}' from path '{checkpoints_path}'")
 
+	def compile(self, model: Model):
+		pass
+
 	def train(self, model: Model):
 		with self.device_service.selected_device:
 			model.fit(

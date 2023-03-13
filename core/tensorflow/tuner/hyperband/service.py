@@ -9,8 +9,13 @@ class HyperbandTunerService(TunerService):
 	config: HyperbandTunerConfig = None
 
 	def __post_init__(self):
+		def build(parameters):
+			model = self.model_service.build(parameters)
+			self.trainer_service.compile(model, parameters)
+			return model
+
 		self.tuner = Hyperband(
-			hypermodel = self.model_service.compile,
+			hypermodel = build,
 			objective = 'val_loss',
 			max_epochs = self.config.max_epochs,
 			hyperband_iterations = self.config.iterations,

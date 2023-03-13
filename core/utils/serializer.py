@@ -51,7 +51,7 @@ class RepresentationSerializer(Serializer):
 		if type(self.from_type) == str:
 			return value
 
-		if self.from_type in [ str, bool, int ]:
+		if self.from_type in [ str, bool, int, float ]:
 			return self.from_type(value)
 
 		value = value.strip()

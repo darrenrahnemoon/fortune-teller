@@ -10,6 +10,7 @@ def config(parser: ArgumentParser):
 
 def handler(args: Namespace):
 	config = core.utils.command.config.set_fields_from_arguments(args, NextPeriodHighLowConfig())
+	config.dataset.batch_size = 1
 	container = NextPeriodHighLowContainer(config = config)
 	strategy = container.strategy()
 	strategy.run()
