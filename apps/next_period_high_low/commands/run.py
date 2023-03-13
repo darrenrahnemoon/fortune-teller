@@ -10,6 +10,6 @@ def config(parser: ArgumentParser):
 
 def handler(args: Namespace):
 	config = core.utils.command.config.set_fields_from_arguments(args, NextPeriodHighLowConfig())
-	container = NextPeriodHighLowContainer.get(config = config)
+	container = NextPeriodHighLowContainer(config = config)
 	strategy = container.strategy()
 	strategy.run()

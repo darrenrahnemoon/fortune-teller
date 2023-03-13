@@ -4,9 +4,9 @@ from core.utils.test import describe, it
 
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
-from apps.next_period_high_low.sequence import NextPeriodHighLowSequence
+from apps.next_period_high_low.dataset import NextPeriodHighLowDataset
 
-@describe('NextPeriodHighLowSequence')
+@describe('NextPeriodHighLowDataset')
 def _():
 	@it('should generate (x, y) pairs given an index')
 	def _():
@@ -16,8 +16,8 @@ def _():
 		config.strategy.metatrader_symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
 		config.strategy.interval = Interval.Minute(1)
 
-		container = NextPeriodHighLowContainer.get(config = config)
-		sequence: NextPeriodHighLowSequence = container.sequence()
+		container = NextPeriodHighLowContainer(config = config).price()
+		sequence: NextPeriodHighLowDataset = container.sequence()
 
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
 		assert len(sequence) != 0

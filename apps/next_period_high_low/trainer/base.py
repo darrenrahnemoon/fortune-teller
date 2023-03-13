@@ -2,8 +2,8 @@ import numpy
 from keras import Model
 from dataclasses import dataclass
 
-from .preprocessor.base import NextPeriodHighLowPreprocessorService
-from .config import NextPeriodHighLowStrategyConfig
+from apps.next_period_high_low.preprocessor.base import NextPeriodHighLowPreprocessorService
+from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.trainer.service import TrainerService
 from core.utils.time import TimestampLike, normalize_timestamp
 

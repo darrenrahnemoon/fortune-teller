@@ -126,22 +126,6 @@ class NextPeriodHighLowModelService(ModelService):
 
 		return model
 
-	def compile(self, parameters: HyperParameters):
-		model = self.build(parameters)
-		model.compile(
-			optimizer = Adam(
-				learning_rate = parameters.Float(
-					name = 'adam_optimizer_learning_rate',
-					min_value = 10 ** -4,
-					max_value = 10 ** -3,
-					step = 10 ** -4
-				)
-			),
-			loss = 'mae',
-			metrics = [ 'mae' ]
-		)
-		return model
-
 	def build_inputs(self) -> Input:
 		input_chart_group = self.strategy_config.input_chart_group
 		features_length = 0

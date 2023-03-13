@@ -8,7 +8,7 @@ from keras.utils.data_utils import Sequence
 from core.repository import SimulationRepository
 from core.utils.logging import logging
 
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
+from apps.next_period_high_low.preprocessor.base import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
 

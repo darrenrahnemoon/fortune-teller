@@ -14,7 +14,7 @@ def handler(args: Namespace):
 	print('As of:', args.timestamp)
 
 	config = core.utils.command.config.set_fields_from_arguments(args, NextPeriodHighLowConfig())
-	container = NextPeriodHighLowContainer.get(config = config)
+	container = NextPeriodHighLowContainer(config = config)
 	strategy = container.strategy()
 	prediction = strategy.get_prediction_with_largest_change(args.timestamp)
 	print('symbol:', prediction.symbol)

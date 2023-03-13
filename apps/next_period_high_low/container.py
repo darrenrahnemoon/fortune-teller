@@ -1,26 +1,30 @@
-from dependency_injector.containers import DeclarativeContainer
-from dependency_injector.providers import Configuration, Singleton
+from dataclasses import fields
+from dependency_injector.containers import DeclarativeContainer, copy
+from dependency_injector.providers import Configuration, Singleton, Container
 
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.dataset.service import DatasetService
 
-from .tuner import NextPeriodHighLowTunerService
-from .trainer import NextPeriodHighLowTrainerService
-from .config import NextPeriodHighLowConfig
-from .preprocessor import NextPeriodHighLowPreprocessorService
-from .sequence import NextPeriodHighLowSequence
-from .model import NextPeriodHighLowModelService
-from .strategy import NextPeriodHighLowStrategy
+from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
+from apps.next_period_high_low.config import NextPeriodHighLowConfig
+from apps.next_period_high_low.preprocessor.price import NextPeriodHighLowPricePreprocessorService
+from apps.next_period_high_low.preprocessor.time import NextPeriodHighLowTimePreprocessorService
+from apps.next_period_high_low.trainer.price import NextPeriodHighLowPriceTrainerService
+from apps.next_period_high_low.trainer.time import NextPeriodHighLowTimeTrainerService
+from apps.next_period_high_low.dataset import NextPeriodHighLowSequence
+from apps.next_period_high_low.model.price import NextPeriodHighLowPriceModelService
+from apps.next_period_high_low.model.time import NextPeriodHighLowTimeModelService
+from apps.next_period_high_low.strategy import NextPeriodHighLowStrategy
 
-class NextPeriodHighLowContainer(DeclarativeContainer):
+class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 	config = Configuration()
 
 	preprocessor_service = Singleton(
-		NextPeriodHighLowPreprocessorService,
+		NextPeriodHighLowPricePreprocessorService,
 		strategy_config = config.strategy,
 	)
-	sequence = Singleton(
+	dataset = Singleton(
 		NextPeriodHighLowSequence,
 		strategy_config = config.strategy,
 		preprocessor_service = preprocessor_service,
@@ -28,7 +32,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 	dataset_service = Singleton(
 		DatasetService,
 		config = config.dataset,
-		dataset = sequence,
+		dataset = dataset,
 	)
 	tensorboard_service = Singleton(
 		TensorboardService,
@@ -40,7 +44,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		config = config.device,
 	)
 	trainer_service = Singleton(
-		NextPeriodHighLowTrainerService,
+		NextPeriodHighLowPriceTrainerService,
 		config = config.trainer,
 		strategy_config = config.strategy,
 		tensorboard_service = tensorboard_service,
@@ -50,7 +54,7 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		preprocessor_service = preprocessor_service
 	)
 	model_service = Singleton(
-		NextPeriodHighLowModelService,
+		NextPeriodHighLowPriceModelService,
 		dataset_service = dataset_service,
 		strategy_config = config.strategy
 	)
@@ -63,15 +67,58 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 		tensorboard_service = tensorboard_service,
 		artifacts_directory = config.artifacts_directory,
 	)
+
+@copy(NextPeriodHighLowPriceContainer)
+class NextPeriodHighLowTimeContainer(NextPeriodHighLowPriceContainer):
+	def __new__(cls, *args, **kwargs):
+		container = super().__new__(cls, *args, **kwargs)
+		container.preprocessor_service.override(
+			Singleton(
+				NextPeriodHighLowTimePreprocessorService,
+				strategy_config = container.config.strategy
+			)
+		)
+		container.model_service.override(
+			Singleton(
+				NextPeriodHighLowTimeModelService,
+				strategy_config = container.config.strategy,
+				dataset_service = container.dataset_service
+			)
+		)
+		container.trainer_service.override(
+			Singleton(
+				NextPeriodHighLowTimeTrainerService,
+				config = container.config.trainer,
+				strategy_config = container.config.strategy,
+				tensorboard_service = container.tensorboard_service,
+				device_service = container.device_service,
+				dataset_service = container.dataset_service,
+				artifacts_directory = container.config.artifacts_directory,
+				preprocessor_service = container.preprocessor_service
+			)
+		)
+		return container
+
+class NextPeriodHighLowContainer(DeclarativeContainer):
+	config = Configuration()
+	price = Container(
+		NextPeriodHighLowPriceContainer,
+		config = config
+	)
+	time = Container(
+		NextPeriodHighLowTimeContainer,
+		config = config,
+	)
 	strategy = Singleton(
 		NextPeriodHighLowStrategy,
 		config = config.strategy,
-		trainer_service = trainer_service,
-		tuner_service = tuner_service,
+		price_trainer_service = price.trainer_service,
+		price_tuner_service = price.tuner_service,
+		time_trainer_service = time.trainer_service,
+		time_tuner_service = time.tuner_service,
 	)
 
-	@classmethod
-	def get(
+	def __new__(
 		cls,
 		*args,
 		config: NextPeriodHighLowConfig = None,
@@ -79,12 +126,9 @@ class NextPeriodHighLowContainer(DeclarativeContainer):
 	):
 		if config == None:
 			config = NextPeriodHighLowConfig()
-		container = cls(*args, **kwargs)
-		container.config.artifacts_directory.from_value(config.artifacts_directory)
-		container.config.dataset.from_value(config.dataset)
-		container.config.device.from_value(config.device)
-		container.config.tensorboard.from_value(config.tensorboard)
-		container.config.trainer.from_value(config.trainer)
-		container.config.tuner.from_value(config.tuner)
-		container.config.strategy.from_value(config.strategy)
+		container = super().__new__(cls, *args, **kwargs)
+
+		for field in fields(config):
+			getattr(container.config, field.name).from_value(getattr(config, field.name))
+
 		return container

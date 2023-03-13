@@ -1,0 +1,7 @@
+from dataclasses import dataclass
+
+from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
+
+@dataclass
+class NextPeriodHighLowTimeTrainerService(NextPeriodHighLowTrainerService):
+	pass

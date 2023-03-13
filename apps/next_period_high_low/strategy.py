@@ -1,7 +1,10 @@
 import time
 import pandas
-from dataclasses import dataclass
+from functools import cached_property
+from dataclasses import dataclass, field
 
+from core.chart import Symbol
+from core.broker import Broker
 from core.strategy import Strategy
 from core.order import Order
 from core.size import Size
@@ -9,11 +12,60 @@ from core.tensorflow.tuner.tuner.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import logging
 
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPrediction
-from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class NextPeriodHighLowPrediction:
+	symbol: Symbol = None
+	broker: Broker = field(default = None, repr = False)
+
+	max_high: float = None
+	max_high_time_offset: float = None
+
+	min_low: float = None
+	min_low_time_offset: float = None
+
+	@property
+	def action(self):
+		if abs(self.max_high) > abs(self.min_low):
+			return 'buy'
+		return 'sell'
+
+	@property
+	def sl(self):
+		return self.last_price * (self.sl_percentage_change + 1)
+
+	@property
+	def tp(self):
+		return self.last_price * (self.tp_percentage_change + 1)
+
+	@property
+	def sl_percentage_change(self):
+		return self.tp_percentage_change * -1
+
+	@property
+	def tp_percentage_change(self):
+		if abs(self.max_high) > abs(self.min_low):
+			return self.max_high
+		return self.min_low
+
+	@cached_property
+	def last_price(self):
+		return self.broker.repository.get_last_price(
+			symbol = self.symbol,
+			intent = self.action,
+		)
+
+	@property
+	def high(self):
+		return self.last_price * (self.max_high + 1)
+
+	@property
+	def low(self):
+		return self.last_price * (self.min_low + 1)
 
 @dataclass
 class NextPeriodHighLowStrategy(Strategy):
