@@ -6,3 +6,4 @@ class TrainerConfig(Config):
 	steps_per_epoch: int = 20
 	trial: str = 'best'
 	learning_rate: float = None
+	overwrite: bool = False

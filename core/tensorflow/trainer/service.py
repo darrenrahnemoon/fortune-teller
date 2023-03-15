@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from shutil import rmtree
 
 from keras import Model
 from keras.utils import plot_model
@@ -68,6 +69,9 @@ class TrainerService(ArtifactService):
 		pass
 
 	def train(self, model: Model):
+		if self.config.overwrite:
+			rmtree(self.get_checkpoints_path(model).parent, ignore_errors = True)
+
 		with self.device_service.selected_device:
 			model.fit(
 				**self.train_kwargs,
