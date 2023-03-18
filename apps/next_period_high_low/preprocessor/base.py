@@ -5,11 +5,11 @@ from functools import cached_property
 
 from core.broker.broker import Broker
 from core.chart import ChartGroup, Symbol
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class NextPeriodHighLowPreprocessorService:

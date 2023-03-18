@@ -5,6 +5,7 @@ from core.tensorflow.dataset.sequence.shared_memory import SharedMemorySequence
 from core.tensorflow.dataset.sequence.batched import BatchedSequence
 from core.tensorflow.dataset.sequence.partial import PartialSequence
 from core.tensorflow.dataset.sequence.shuffled import ShuffledSequence
+from core.tensorflow.dataset.sequence.skippable import SkippableSequence
 from core.tensorflow.dataset.config import DatasetConfig
 
 @dataclass
@@ -14,7 +15,8 @@ class DatasetService:
 
 	def get(self) -> tuple[Sequence, Sequence]:
 		# Dataset
-		dataset = ShuffledSequence(self.dataset)
+		dataset = SkippableSequence(self.dataset)
+		dataset = ShuffledSequence(dataset)
 
 		# Trainer Dataset
 		training_dataset = PartialSequence(

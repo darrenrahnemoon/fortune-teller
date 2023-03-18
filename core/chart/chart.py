@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 from core.utils.shared_dataframe_container import SharedDataFrameContainer
 from core.utils.time import TimeWindow, now
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 Symbol = str
 

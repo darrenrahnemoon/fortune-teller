@@ -11,9 +11,9 @@ from core.chart import CandleStickChart, TickChart, Chart, OverriddenChart, Symb
 
 if TYPE_CHECKING:
 	from core.order import OrderType
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class MetaTraderRepository(Repository):

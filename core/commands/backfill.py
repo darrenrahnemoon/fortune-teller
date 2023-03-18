@@ -2,11 +2,11 @@ from argparse import ArgumentParser, Namespace, BooleanOptionalAction
 
 from core.repository import SimulationRepository, Repository
 from core.utils.time import normalize_timestamp, now
-from core.utils.logging import logging
+from core.utils.logging import Logger
 from core.utils.serializer import RepresentationSerializer
 import core.utils.command.chart
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 def config(parser: ArgumentParser):
 	core.utils.command.chart.add_fields_to_arguments(parser, nargs = '*')

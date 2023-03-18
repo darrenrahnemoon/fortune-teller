@@ -9,9 +9,9 @@ from core.repository.repository import Repository, ChartCombinations
 from core.chart import LineChart, OverriddenChart
 from core.interval import Interval
 from .serializers import AlphaVantageSerializers
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class AlphaVantageRepository(Repository):

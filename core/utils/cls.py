@@ -49,6 +49,7 @@ def pretty_repr(
 	indent = 0,
 	indent_character = '  ',
 	colored: PrettyReprColorConfig = False,
+	fields = [],
 	cache = [],
 ):
 	# Args need one extra indentation
@@ -109,15 +110,17 @@ def pretty_repr(
 		result += repr_closing('}')
 		return result
 
-	if is_dataclass(target):
+	if is_dataclass(target) and len(fields) == 0:
 		result = repr_opening(f'{type(target).__name__}(')
-		fields = getattr(target, '__dataclass_fields__')
-		for field in fields.values():
-			if not field.repr:
-				continue
-			if get_origin(field.type) is ClassVar:
-				continue
-			result += repr_argument(field.name, getattr(target, field.name))
+		fields = [ 
+			field.name
+			for field in getattr(target, '__dataclass_fields__')
+			if field.repr and not get_origin(field.type) == ClassVar
+		]
+
+	if len(fields):
+		for field in fields:
+			result += repr_argument(field, getattr(target, field))
 		result += repr_closing(')')
 		return result
 

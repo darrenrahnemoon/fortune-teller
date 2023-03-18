@@ -10,9 +10,9 @@ from core.tensorflow.dataset.service import DatasetService
 from core.tensorflow.device.service import DeviceService
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.artifact.service import ArtifactService
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class TrainerService(ArtifactService):

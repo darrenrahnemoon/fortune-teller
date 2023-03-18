@@ -1,4 +1,5 @@
 from pathlib import Path
+import pandas
 
 from core.tensorflow.device.config import DeviceConfig
 from core.tensorflow.dataset.config import DatasetConfig
@@ -21,7 +22,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 
 	metatrader_symbols: list[str] = field(
 		default_factory = lambda: [
-			'AUDUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPCHF', 'GBPJPY', 'GBPUSD', 'EURAUD', 'AUDCAD', 'AUDCHF', 'AUDNZD', 'CADCHF', 'CADJPY', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'SGDJPY', 'USDNOK', 'GBPNZD', 'USDSEK', 'EURNOK', 'EURSEK', 'EURTRY', 'USDPLN', 'USDTRY', 'US100'
+			'AUDUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPCHF', 'GBPJPY', 'GBPUSD', 'EURAUD', 'AUDCAD', 'AUDCHF', 'AUDNZD', 'CADCHF', 'CADJPY', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'SGDJPY', 'GBPNZD', 'US100'
 		]
 	)
 
@@ -52,6 +53,15 @@ class NextPeriodHighLowStrategyConfig(Config):
 					field_name,
 					int(field.to_pandas_timedelta() // self.interval.to_pandas_timedelta())
 				)
+
+	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
+		if timestamp.day_of_week == 4 and timestamp.hour > 22: # Friday at 10PM UTC market closes
+			return False
+		if timestamp.day_of_week == 5: # Saturday
+			return False
+		if timestamp.day_of_week == 6 and timestamp.hour < 22: # Monday at 10PM UTC market opens
+			return False
+		return True
 
 	@property
 	def output_chart_group(self):

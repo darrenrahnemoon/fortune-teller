@@ -4,9 +4,9 @@ from typing import Iterable
 from core.utils.collection import is_any_of
 from core.chart import Chart
 from core.utils.serializer import Serializer
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 MULTI_INDEX_COLUMN_SEPARATOR = '/'
 

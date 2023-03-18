@@ -10,10 +10,10 @@ from core.repository.repository import ChartCombinations, Repository
 from core.interval import Interval
 from core.utils.time import TimeWindow, normalize_timestamp, now
 from core.utils.mongo import MongoRepository
-from core.utils.logging import logging
+from core.utils.logging import Logger
 from core.utils.cls import pretty_repr
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class SimulationRepository(Repository, MongoRepository):

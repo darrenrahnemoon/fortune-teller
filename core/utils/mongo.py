@@ -9,9 +9,9 @@ from pymongo.collection import Collection
 from dataclasses import dataclass
 
 from core.chart import Chart
-from core.utils.logging import logging
+from core.utils.logging import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 @dataclass
 class MongoRepository:
