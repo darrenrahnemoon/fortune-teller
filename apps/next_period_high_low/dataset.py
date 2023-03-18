@@ -9,7 +9,7 @@ from core.utils.logging import Logger
 
 from apps.next_period_high_low.preprocessor.base import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from core.tensorflow.dataset.sequence import SkipItemException, sequence_dataclass_kwargs
+from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
 
 logger = Logger(__name__)
 
@@ -31,28 +31,37 @@ class NextPeriodHighLowSequence(Sequence):
 			repository = self.repository,
 			from_timestamp = timestamp,
 			to_timestamp = None,
-			count = self.strategy_config.backward_window_length + self.strategy_config.forward_window_length
+			count = self.strategy_config.backward_window_bars + self.strategy_config.forward_window_bars
 		)
-		dataframe = input_chart_group.dataframe.head(self.strategy_config.backward_window_length + self.strategy_config.forward_window_length)
-		input_chart_group.dataframe = dataframe[:self.strategy_config.backward_window_length]
-		output_chart_group.dataframe = dataframe[self.strategy_config.backward_window_length:]
-		try:
-			x = self.preprocessor_service.to_model_input(input_chart_group)
-			y = self.preprocessor_service.to_model_output(output_chart_group)
-			logger.debug(f'NextPeriodHighLowSequence[{index}] | {timestamp} -> x:{x.shape}, y:{y.shape}')
-			return x, y
-		except Exception:
-			raise SkipItemException()
+		dataframe = input_chart_group.dataframe.head(self.strategy_config.backward_window_bars + self.strategy_config.forward_window_bars)
+		input_chart_group.dataframe = dataframe[:self.strategy_config.backward_window_bars]
+		output_chart_group.dataframe = dataframe[self.strategy_config.backward_window_bars:]
+
+		x = self.preprocessor_service.to_model_input(input_chart_group)
+		if type(x) == type(None):
+			return
+
+		y = self.preprocessor_service.to_model_output(output_chart_group)
+		if type(y) == type(None):
+			return
+
+		logger.debug(f'NextPeriodHighLowSequence[{index}] | {timestamp} -> x:{x.shape}, y:{y.shape}')
+		return x, y
 
 	@property
 	@functools.cache
 	def timestamps(self):
 		timestamps = pandas.date_range(
 			self.common_time_window.from_timestamp,
-			self.common_time_window.to_timestamp - pandas.Timedelta(self.strategy_config.backward_window_length + self.strategy_config.forward_window_length, 'minute'),
+			self.common_time_window.to_timestamp - pandas.Timedelta(self.strategy_config.backward_window_bars + self.strategy_config.forward_window_bars, 'minute'),
 			freq='min'
 		)
-		return [ timestamp for timestamp in timestamps if self.strategy_config.is_trading_hours(timestamp) ]
+		timestamps = [
+			timestamp
+			for timestamp in timestamps
+			if self.strategy_config.is_trading_hours(timestamp)
+		]
+		return timestamps
 
 	@property
 	@functools.cache

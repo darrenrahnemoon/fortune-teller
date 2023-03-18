@@ -56,7 +56,7 @@ class NextPeriodHighLowModelService(ModelService):
 					kernel_size = parameters.Int(
 						name = parameter.name('kernel_size'),
 						min_value = 2,
-						max_value = self.strategy_config.backward_window_length
+						max_value = self.strategy_config.backward_window_bars
 					),
 					padding = 'same',
 					activation = 'relu'
@@ -135,7 +135,7 @@ class NextPeriodHighLowModelService(ModelService):
 				features_length += len(indicator.value_fields)
 		return Input(
 			batch_size = self.dataset_service.config.batch_size,
-			shape = (self.strategy_config.backward_window_length, features_length)
+			shape = (self.strategy_config.backward_window_bars, features_length)
 		)
 
 	def build_outputs(self, x):

@@ -1,4 +1,3 @@
-import time
 import pandas
 from dataclasses import dataclass
 
@@ -9,6 +8,7 @@ from core.size import Size
 from core.tensorflow.tuner.tuner.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
+from core.utils.cls import pretty_repr
 
 from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -73,7 +73,9 @@ class NextPeriodHighLowStrategy(Strategy):
 				sl = prediction.sl,
 				size = Size.Lot(0.01),
 				broker = self.config.metatrader_broker,
-			).place()
+			).place(
+				comment = pretty_repr(prediction)
+			)
 		# time.sleep(60 * 15)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
@@ -82,7 +84,8 @@ class NextPeriodHighLowStrategy(Strategy):
 			yield NextPeriodHighLowPrediction(
 				symbol = prediction['symbol'],
 				broker = self.config.metatrader_broker,
-				high_change = prediction['high_change'],
-				low_change = prediction['low_change'],
-				close_change = prediction['close_change']
+				max_high_change = prediction['max_high_change'],
+				average_high_change = prediction['average_high_change'],
+				min_low_change = prediction['min_low_change'],
+				average_low_change = prediction['average_low_change']
 			)

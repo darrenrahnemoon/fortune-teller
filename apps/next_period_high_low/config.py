@@ -17,8 +17,12 @@ from core.utils.config import Config, dataclass, field, on_environment
 @dataclass
 class NextPeriodHighLowStrategyConfig(Config):
 	interval: Interval = Interval.Minute(1)
+
 	forward_window_length: Interval = Interval.Hour(3)
+	forward_window_bars: int = field(init = False)
+
 	backward_window_length: Interval = Interval.Day(2)
+	backward_window_bars: int = field(init = False)
 
 	metatrader_symbols: list[str] = field(
 		default_factory = lambda: [
@@ -45,16 +49,16 @@ class NextPeriodHighLowStrategyConfig(Config):
 	)
 
 	def __post_init__(self) -> None:
-		for field_name in [ 'forward_window_length', 'backward_window_length' ]:
-			field = getattr(self, field_name)
-			if isinstance(field, Interval):
-				setattr(
-					self,
-					field_name,
-					int(field.to_pandas_timedelta() // self.interval.to_pandas_timedelta())
-				)
+		interval = self.interval.to_pandas_timedelta()
+		self.forward_window_bars = int(self.forward_window_length.to_pandas_timedelta() // interval)
+		self.backward_window_bars = int(self.backward_window_length.to_pandas_timedelta() // interval)
 
 	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
+		if timestamp.month == 1 and timestamp.day == 1:
+			return False
+		if timestamp.month == 12 and timestamp.day == 25:
+			return False
+
 		if timestamp.day_of_week == 4 and timestamp.hour > 22: # Friday at 10PM UTC market closes
 			return False
 		if timestamp.day_of_week == 5: # Saturday
@@ -72,7 +76,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 					symbol = symbol,
 					interval = self.interval,
 					select = CandleStickChart.data_fields,
-					count = self.backward_window_length,
+					count = self.backward_window_bars,
 					repository = self.metatrader_broker.repository,
 				)
 				for symbol in self.metatrader_symbols

@@ -13,15 +13,15 @@ class NextPeriodHighLowTimePreprocessorService(NextPeriodHighLowPreprocessorServ
 
 		for chart in output_chart_group.charts:
 			current_timestamp = chart.data.index[0]
-			max_high_time_offset = chart.data['high'].idxmax() - current_timestamp
-			min_low_time_offset = chart.data['low'].idxmin() - current_timestamp
+			max_high_change_time_offset = chart.data['high'].idxmax() - current_timestamp
+			min_low_change_time_offset = chart.data['low'].idxmin() - current_timestamp
 
-			max_high_time_offset = max_high_time_offset / self.strategy_config.interval.to_pandas_timedelta()
-			min_low_time_offset = min_low_time_offset / self.strategy_config.interval.to_pandas_timedelta()
+			max_high_change_time_offset = max_high_change_time_offset / self.strategy_config.interval.to_pandas_timedelta()
+			min_low_change_time_offset = min_low_change_time_offset / self.strategy_config.interval.to_pandas_timedelta()
 
 			outputs.append([
-				max_high_time_offset,
-				min_low_time_offset
+				max_high_change_time_offset,
+				min_low_change_time_offset
 			])
 		return numpy.array(outputs)
 
@@ -29,8 +29,8 @@ class NextPeriodHighLowTimePreprocessorService(NextPeriodHighLowPreprocessorServ
 		return [
 			{
 				'symbol': chart.symbol,
-				'max_high_time_offset': output[0],
-				'min_low_time_offset': output[1]
+				'max_high_change_time_offset': output[0],
+				'min_low_change_time_offset': output[1]
 			}
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

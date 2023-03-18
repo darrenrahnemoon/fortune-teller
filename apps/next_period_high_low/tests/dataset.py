@@ -11,8 +11,8 @@ def _():
 	@it('should generate (x, y) pairs given an index')
 	def _():
 		config = NextPeriodHighLowConfig()
-		config.strategy.backward_window_length = 100
-		config.strategy.forward_window_length = 10
+		config.strategy.backward_window_bars = 100
+		config.strategy.forward_window_bars = 10
 		config.strategy.metatrader_symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
 		config.strategy.interval = Interval.Minute(1)
 

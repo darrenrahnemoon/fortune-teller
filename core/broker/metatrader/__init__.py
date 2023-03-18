@@ -25,7 +25,7 @@ class MetaTraderBroker(Broker):
 	serializers = MetaTraderSerializers()
 	repository: MetaTraderRepository = field(default_factory = MetaTraderRepository)
 
-	def place_order(self, order: Order) -> Order:
+	def place_order(self, order: Order, comment = '', **kwargs) -> Order:
 		request = dict(
 			action = self.serializers.order.to_metatrader_action(order),
 			symbol = order.symbol,
@@ -33,6 +33,7 @@ class MetaTraderBroker(Broker):
 			type = self.serializers.order.to_metatrader_type(order),
 			magic = self.id,
 			type_filling = MetaTrader5.ORDER_FILLING_IOC,
+			comment = comment
 		)
 
 		if order.stop:

@@ -33,9 +33,9 @@ class Order:
 		if isinstance(self.size, OrderDependantSize):
 			self.size.order = self
 
-	def place(self, broker: 'Broker' = None):
+	def place(self, broker: 'Broker' = None, **kwargs):
 		self.broker = broker or self.broker
-		self.broker.place_order(self)
+		self.broker.place_order(self, **kwargs)
 		return self
 
 	def cancel(self):

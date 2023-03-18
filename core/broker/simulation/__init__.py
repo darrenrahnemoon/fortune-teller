@@ -154,7 +154,7 @@ class SimulationBroker(Broker, MongoRepository):
 				and ((not type) or position.type == type)
 		]
 
-	def place_order(self, order: Order, schedule = True) -> Order:
+	def place_order(self, order: Order, schedule = True, **kwargs) -> Order:
 		if schedule:
 			self.schedule_action(self.place_order, order, schedule = False)
 			return

@@ -15,8 +15,9 @@ class DatasetService:
 
 	def get(self) -> tuple[Sequence, Sequence]:
 		# Dataset
-		dataset = SkippableSequence(self.dataset)
+		dataset = self.dataset
 		dataset = ShuffledSequence(dataset)
+		dataset = SkippableSequence(dataset)
 
 		# Trainer Dataset
 		training_dataset = PartialSequence(

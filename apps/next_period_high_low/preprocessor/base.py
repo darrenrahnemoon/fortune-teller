@@ -16,7 +16,7 @@ class NextPeriodHighLowPreprocessorService:
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 
 	def to_model_input(self, input_chart_group: ChartGroup):
-		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_length)
+		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_bars)
 		for chart in input_chart_group.charts:
 			chart.data = chart.data.pct_change()
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)

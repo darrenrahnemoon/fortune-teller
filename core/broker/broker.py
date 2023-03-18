@@ -22,7 +22,7 @@ class Broker:
 		return now(self.timezone)
 
 	@abstractmethod
-	def place_order(self, order: Order) -> Order:
+	def place_order(self, order: Order, **kwargs) -> Order:
 		pass
 
 	@abstractmethod
