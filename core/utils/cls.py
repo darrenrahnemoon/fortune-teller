@@ -1,6 +1,6 @@
 import pandas
 import termcolor
-from dataclasses import is_dataclass
+from dataclasses import is_dataclass, fields as get_fields
 from itertools import product
 from types import NoneType
 from typing import Any, Iterable, ClassVar, TypedDict, get_origin
@@ -114,7 +114,7 @@ def pretty_repr(
 		result = repr_opening(f'{type(target).__name__}(')
 		fields = [ 
 			field.name
-			for field in getattr(target, '__dataclass_fields__')
+			for field in get_fields(target)
 			if field.repr and not get_origin(field.type) == ClassVar
 		]
 

@@ -40,16 +40,24 @@ class NextPeriodHighLowPrediction:
 		return
 
 	@property
-	def tp(self):
+	def tp_change(self):
 		if self.action == 'buy':
-			return self.average_high
-		return self.average_low
+			return self.average_high_change
+		return self.average_low_change
+
+	@property
+	def tp(self):
+		return self.last_price * (self.tp_change + 1)
+
+	@property
+	def sl_change(self):
+		if self.action == 'buy':
+			return self.min_low_change - 0.00005
+		return self.max_high_change + 0.00005
 
 	@property
 	def sl(self):
-		if self.action == 'buy':
-			return self.min_low * (1 - 0.00005)
-		return self.max_high * (1 + 0.00005)
+		return self.last_price * (self.sl_change + 1)
 
 	@cached_property
 	def last_price(self):

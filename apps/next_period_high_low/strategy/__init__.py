@@ -33,10 +33,13 @@ class NextPeriodHighLowStrategy(Strategy):
 	def handler(self):
 		predictions = self.get_predictions(self.config.metatrader_broker.now)
 		for prediction in predictions:
+			if prediction.action == None:
+				logger.info(f'Skipping due to lack of certain action:\n{prediction}')
+				continue
 			# Skip low movements
 			if self.config.min_movement_percentage_to_trade:
 				if abs(prediction.tp_change) < self.config.min_movement_percentage_to_trade:
-					logger.info(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.high_change}%\n{prediction}")
+					logger.info(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.tp_change}%\n{prediction}")
 					continue
 
 			# Skip high spread instruments
@@ -73,9 +76,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				sl = prediction.sl,
 				size = Size.Lot(0.01),
 				broker = self.config.metatrader_broker,
-			).place(
-				comment = pretty_repr(prediction)
-			)
+			).place()
 		# time.sleep(60 * 15)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
