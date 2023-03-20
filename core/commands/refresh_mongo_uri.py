@@ -1,12 +1,15 @@
 from netifaces import ifaddresses, AF_INET
 
-import core.utils.environment as environment
+from core.utils.environment import set_variable_in_env_file
+from core.utils.command import CommandSession
 
-def handler(args):
-	ip = ifaddresses('en0')[AF_INET][0]['addr']
+class RefreshMongoURICommandSession(CommandSession):
+	def run(self):
+		super().run()
+		ip = ifaddresses('en0')[AF_INET][0]['addr']
 
-	uri_key = 'DB_URI'
-	uri_value = f'mongodb://root:secret@{ip}:27017'
-	print(f'Setting {uri_key} to `{uri_value}`')
+		uri_key = 'DB_URI'
+		uri_value = f'mongodb://root:secret@{ip}:27017'
+		print(f'Setting {uri_key} to `{uri_value}`')
 
-	environment.set_variable_in_env_file(uri_key, uri_value)
+		set_variable_in_env_file(uri_key, uri_value)

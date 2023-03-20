@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 from core.size import Size
 from core.utils.time import TimestampLike
 from core.utils.logging import Logger
-from core.utils.cls import pretty_repr
+from core.utils.cls.repr import pretty_repr
 
 logger = Logger(__name__)
 

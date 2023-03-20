@@ -5,6 +5,7 @@ from core.utils.cls import *
 from core.utils.collection import *
 from core.utils.math import *
 from core.utils.config import *
+from core.utils.command import CommandSession
 
 from core.chart import *
 from core.indicator import *
@@ -21,5 +22,7 @@ if is_windows:
 simulation_broker = SimulationBroker()
 simulation_repository = simulation_broker.repository
 
-def handler(args):
-	print('Use `./repl.sh` to run this command.')
+class REPLCommandSession(CommandSession):
+	def run(self):
+		super().run()
+		print('Use `./repl.sh` to run this command.')

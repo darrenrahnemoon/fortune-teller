@@ -11,7 +11,7 @@ from core.interval import Interval
 from core.utils.time import TimeWindow, normalize_timestamp, now
 from core.utils.mongo import MongoRepository
 from core.utils.logging import Logger
-from core.utils.cls import pretty_repr
+from core.utils.cls.repr import pretty_repr
 
 logger = Logger(__name__)
 

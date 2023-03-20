@@ -24,7 +24,7 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 		NextPeriodHighLowPricePreprocessorService,
 		strategy_config = config.strategy,
 	)
-	dataset = Singleton(
+	sequence = Singleton(
 		NextPeriodHighLowSequence,
 		strategy_config = config.strategy,
 		preprocessor_service = preprocessor_service,
@@ -32,7 +32,7 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 	dataset_service = Singleton(
 		NextPeriodHighLowDatasetService,
 		config = config.dataset,
-		dataset = dataset,
+		sequence = sequence,
 	)
 	tensorboard_service = Singleton(
 		TensorboardService,

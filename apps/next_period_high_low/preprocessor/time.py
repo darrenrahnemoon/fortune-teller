@@ -20,8 +20,8 @@ class NextPeriodHighLowTimePreprocessorService(NextPeriodHighLowPreprocessorServ
 			min_low_change_time_offset = min_low_change_time_offset / self.strategy_config.interval.to_pandas_timedelta()
 
 			outputs.append([
-				max_high_change_time_offset,
-				min_low_change_time_offset
+				max_high_change_time_offset / self.strategy_config.forward_window_bars,
+				min_low_change_time_offset / self.strategy_config.forward_window_bars
 			])
 		return numpy.array(outputs)
 

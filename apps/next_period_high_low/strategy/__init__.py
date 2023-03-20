@@ -1,6 +1,6 @@
 import pandas
 from dataclasses import dataclass
-
+import time
 
 from core.strategy import Strategy
 from core.order import Order
@@ -8,7 +8,6 @@ from core.size import Size
 from core.tensorflow.tuner.tuner.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
-from core.utils.cls import pretty_repr
 
 from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -69,15 +68,17 @@ class NextPeriodHighLowStrategy(Strategy):
 				logger.info(f"Skipping due to an existing open position.\n{prediction}")
 				continue
 
-			Order(
+			order = Order(
 				type = prediction.action,
 				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
-				size = Size.Lot(0.01),
+				size = Size.PercentageOfBalanceRiskManagement(0.005),
 				broker = self.config.metatrader_broker,
-			).place()
-		# time.sleep(60 * 15)
+			)
+			order.place()
+			logger.info(f'Sent Order:\n{order}\n{prediction}')
+		time.sleep(60 * 5)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
 		predictions = self.price_trainer_service.predict(self.model, timestamp)

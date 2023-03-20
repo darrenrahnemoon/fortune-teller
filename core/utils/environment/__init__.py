@@ -6,12 +6,15 @@ from pathlib import Path
 from typing import Any, Literal
 from core.utils.module import import_module
 
+# Setup project directory
 project_directory = Path(__file__).joinpath('../../../../').resolve()
 os.chdir(str(project_directory))
 sys.path.append(str(project_directory))
 
+# Move pycache files to temp
 sys.pycache_prefix = tempfile.gettempdir()
 
+# Load environment variables
 dotenv.load_dotenv('.env')
 
 stage: Literal['development', 'production'] = 'development'

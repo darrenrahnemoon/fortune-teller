@@ -1,22 +1,17 @@
 if __name__ == '__main__':
+	import inspect
 	import sys
-	from argparse import ArgumentParser
+	import core.utils.environment # To setup pycache, .env, etc.
 
-	import core.utils.environment
-	import core.utils.logging
+	from core.utils.command import CommandSession
 	from core.utils.module import import_module
-	import core.utils.command.environment as environment_cli
-	import core.utils.command.logging as logging_cli
 
-	parser = ArgumentParser()
-	environment_cli.add_to_arguments(parser)
-	logging_cli.add_to_arguments(parser)
-	command = import_module(sys.argv[1])
+	command_module = import_module(sys.argv[1])
 
-	if hasattr(command, 'config'):
-		command.config(parser)
+	for command in command_module.__dict__.values():
+		if inspect.isclass(command) \
+			and issubclass(command, CommandSession) \
+			and command != CommandSession:
 
-	args = parser.parse_args(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
-	logging_cli.set_log_level_from_arguments(args)
-	environment_cli.set_environment_from_arguments(args)
-	command.handler(args)
+			command.build(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
+			break

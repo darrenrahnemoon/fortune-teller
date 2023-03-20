@@ -1,5 +1,3 @@
-from argparse import ArgumentParser, Namespace
-
 from dataclasses import dataclass, field
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
@@ -8,7 +6,7 @@ from core.utils.command import CommandSession
 from core.utils.container.command import ContainerCommandSession
 
 @dataclass
-class RunStrategyCommandSession(
+class TuneModelCommandSession(
 	ContainerCommandSession,
 	CommandSession
 ):
@@ -21,5 +19,6 @@ class RunStrategyCommandSession(
 
 	def run(self):
 		super().run()
-		strategy = self.container.strategy()
-		strategy.run()
+		container = getattr(container, self.container)()
+		tuner_service = container.tuner_service()
+		tuner_service.tune()

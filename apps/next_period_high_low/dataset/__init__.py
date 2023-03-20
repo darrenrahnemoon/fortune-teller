@@ -10,9 +10,11 @@ from core.tensorflow.dataset.sequence.skippable import SkippableSequence
 
 @dataclass
 class NextPeriodHighLowDatasetService(DatasetService):
+	sequence: Sequence = None
+
 	def build(self) -> tuple[Sequence, Sequence]:
 		# Dataset
-		dataset = self.dataset
+		dataset = self.sequence
 		dataset = ShuffledSequence(dataset)
 		dataset = SkippableSequence(dataset)
 

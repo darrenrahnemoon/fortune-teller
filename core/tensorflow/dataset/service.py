@@ -6,7 +6,6 @@ from core.tensorflow.dataset.config import DatasetConfig
 @dataclass
 class DatasetService:
 	config: DatasetConfig = None
-	dataset: Sequence = None
 
 	def build(self) -> tuple[Sequence, Sequence]:
 		pass
