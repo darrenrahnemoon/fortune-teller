@@ -19,9 +19,11 @@ class ConfigCommandSession(ClassCommandSession):
 		self,
 		cls: type[Config],
 	):
+		group = self.parser.add_argument_group('config')
 		self.add_class_fields_to_arguments(
 			cls = cls,
-			recursive = [ Config ]
+			recursive = [ Config ],
+			group = group
 		)
 
 	def set_config_fields_from_arguments(

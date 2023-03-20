@@ -20,8 +20,7 @@ class TrainModelCommandSession(
 
 	def run(self):
 		super().run()
-		container = getattr(container, self.container)()
-
+		container = getattr(self.container, self.args.model)()
 		tuner_service = container.tuner_service()
 		trainer_service = container.trainer_service()
 		model = tuner_service.get_model(trainer_service.config.trial)

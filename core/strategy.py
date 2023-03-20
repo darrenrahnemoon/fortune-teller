@@ -1,8 +1,6 @@
 import abc
 from dataclasses import dataclass
 
-from core.broker import Broker, SimulationBroker
-
 @dataclass
 class Strategy:
 	def __post_init__(self):

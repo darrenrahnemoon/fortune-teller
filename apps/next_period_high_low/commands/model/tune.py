@@ -19,6 +19,6 @@ class TuneModelCommandSession(
 
 	def run(self):
 		super().run()
-		container = getattr(container, self.container)()
+		container = getattr(self.container, self.args.model)()
 		tuner_service = container.tuner_service()
 		tuner_service.tune()

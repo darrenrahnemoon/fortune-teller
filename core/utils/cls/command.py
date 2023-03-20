@@ -23,7 +23,9 @@ class ClassCommandSession:
 		for field in fields(cls):
 			if field.name in omit:
 				continue
-			elif len(select) and field.name not in select:
+			if len(select) and field.name not in select:
+				continue
+			if not field.init:
 				continue
 
 			if is_any_of(recursive, lambda x: issubclass(field.type, x)):
