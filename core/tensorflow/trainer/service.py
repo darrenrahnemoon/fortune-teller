@@ -46,7 +46,7 @@ class TrainerService(ArtifactService):
 
 	@property
 	def train_kwargs(self):
-		training_dataset, validation_dataset = self.dataset_service.get()
+		training_dataset, validation_dataset = self.dataset_service.build()
 		return dict(
 			x = training_dataset,
 			validation_data = validation_dataset,

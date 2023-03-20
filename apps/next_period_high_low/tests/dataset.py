@@ -4,9 +4,9 @@ from core.utils.test import describe, it
 
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
-from apps.next_period_high_low.dataset import NextPeriodHighLowDataset
+from apps.next_period_high_low.dataset.sequence import NextPeriodHighLowSequence
 
-@describe('NextPeriodHighLowDataset')
+@describe('NextPeriodHighLowSequence')
 def _():
 	@it('should generate (x, y) pairs given an index')
 	def _():
@@ -17,7 +17,7 @@ def _():
 		config.strategy.interval = Interval.Minute(1)
 
 		container = NextPeriodHighLowContainer(config = config).price()
-		sequence: NextPeriodHighLowDataset = container.sequence()
+		sequence: NextPeriodHighLowSequence = container.sequence()
 
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
 		assert len(sequence) != 0

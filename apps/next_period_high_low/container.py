@@ -4,7 +4,6 @@ from dependency_injector.providers import Configuration, Singleton, Container
 
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
-from core.tensorflow.dataset.service import DatasetService
 
 from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
@@ -12,7 +11,8 @@ from apps.next_period_high_low.preprocessor.price import NextPeriodHighLowPriceP
 from apps.next_period_high_low.preprocessor.time import NextPeriodHighLowTimePreprocessorService
 from apps.next_period_high_low.trainer.price import NextPeriodHighLowPriceTrainerService
 from apps.next_period_high_low.trainer.time import NextPeriodHighLowTimeTrainerService
-from apps.next_period_high_low.dataset import NextPeriodHighLowSequence
+from apps.next_period_high_low.dataset.sequence import NextPeriodHighLowSequence
+from apps.next_period_high_low.dataset import NextPeriodHighLowDatasetService
 from apps.next_period_high_low.model.price import NextPeriodHighLowPriceModelService
 from apps.next_period_high_low.model.time import NextPeriodHighLowTimeModelService
 from apps.next_period_high_low.strategy import NextPeriodHighLowStrategy
@@ -30,7 +30,7 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 		preprocessor_service = preprocessor_service,
 	)
 	dataset_service = Singleton(
-		DatasetService,
+		NextPeriodHighLowDatasetService,
 		config = config.dataset,
 		dataset = dataset,
 	)
