@@ -1,7 +1,7 @@
 __pycache__
 .env
 .DS_Store
-
+core/artifacts/**/*
 apps/**/artifacts/tuner/**/*
 apps/**/artifacts/tensorboard/**/*
 apps/**/artifacts/trainer/**/*

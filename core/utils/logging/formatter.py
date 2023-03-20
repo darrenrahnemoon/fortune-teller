@@ -5,8 +5,8 @@ import termcolor
 class ColoredFormatter(logging.Formatter):
 	def __init__(
 		self,
-		colored_format = "[%(process)d][%(asctime)s][%(levelname)s][%(name)s]:\n",
-		uncolored_format = "%(message)s\n"
+		colored_format = '',
+		uncolored_format = '',
 	) -> None:
 		self.colored_format = colored_format
 		self.uncolored_format = uncolored_format
