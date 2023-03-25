@@ -18,6 +18,5 @@ class NextPeriodHighLowPriceTrainerService(NextPeriodHighLowTrainerService):
 				)
 			),
 			loss = 'mae',
-			metrics = [ 'mae' ]
 		)
 		return model

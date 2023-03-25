@@ -5,8 +5,9 @@ from dependency_injector.providers import Configuration, Singleton, Container
 from core.tensorflow.tensorboard.service import TensorboardService
 from core.tensorflow.device.service import DeviceService
 
-from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
+from apps.next_period_high_low.tuner.price import NextPeriodHighLowPriceTunerService
+from apps.next_period_high_low.tuner.time import NextPeriodHighLowTimeTunerService
 from apps.next_period_high_low.preprocessor.price import NextPeriodHighLowPricePreprocessorService
 from apps.next_period_high_low.preprocessor.time import NextPeriodHighLowTimePreprocessorService
 from apps.next_period_high_low.trainer.price import NextPeriodHighLowPriceTrainerService
@@ -59,7 +60,7 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 		strategy_config = config.strategy
 	)
 	tuner_service = Singleton(
-		NextPeriodHighLowTunerService,
+		NextPeriodHighLowPriceTunerService,
 		config = config.tuner,
 		model_service = model_service,
 		device_service = device_service,
@@ -95,6 +96,17 @@ class NextPeriodHighLowTimeContainer(NextPeriodHighLowPriceContainer):
 				dataset_service = container.dataset_service,
 				artifacts_directory = container.config.artifacts_directory,
 				preprocessor_service = container.preprocessor_service
+			)
+		)
+		container.tuner_service.override(
+			Singleton(
+				NextPeriodHighLowTimeTunerService,
+				config = container.config.tuner,
+				model_service = container.model_service,
+				device_service = container.device_service,
+				trainer_service = container.trainer_service,
+				tensorboard_service = container.tensorboard_service,
+				artifacts_directory = container.config.artifacts_directory,
 			)
 		)
 		return container

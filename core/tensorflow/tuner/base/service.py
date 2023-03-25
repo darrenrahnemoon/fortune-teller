@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 	from core.tensorflow.device.service import DeviceService
 	from core.tensorflow.model.service import ModelService
 from core.tensorflow.artifact.service import ArtifactService
+from core.tensorflow.tuner.base.config import TunerConfig
+from core.tensorflow.keras.callbacks import EarlyStoppingByModelSize
 
 @dataclass
 class TunerService(ArtifactService):
@@ -18,15 +20,30 @@ class TunerService(ArtifactService):
 	trainer_service: 'TrainerService' = None
 	tensorboard_service: 'TensorboardService' = None
 	tuner: Tuner = None
+	config: TunerConfig = None
 
 	@property
 	def directory(self):
 		return self.artifacts_directory.joinpath('tuner')
 
-	def get_callbacks(self, **kwargs):
-		return self.tensorboard_service.get_callbacks(
-			scope = type(self).__name__
+	@property
+	def tuner_kwargs(self):
+		def build(parameters):
+			model = self.model_service.build(parameters = parameters)
+			self.trainer_service.compile(model, parameters)
+			model.summary()
+			return model
+
+		return dict(
+			hypermodel = build,
+			objective = self.config.objective,
+			directory = self.directory,
+			project_name = type(self).__name__,
+			max_model_size = self.config.model_size.max,
 		)
+
+	def get_callbacks(self, **kwargs):
+		return self.tensorboard_service.get_callbacks(scope = type(self).__name__)
 
 	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
 		if (trial_id == 'best'):
@@ -38,7 +55,7 @@ class TunerService(ArtifactService):
 
 	def get_model(self, trial_id: str or Literal['best']) -> Model:
 		hyperparameters = self.get_hyperparameters(trial_id)
-		model = self.model_service.build(hyperparameters)
+		model = self.model_service.build(parameters = hyperparameters)
 		model._name = trial_id
 		return model
 

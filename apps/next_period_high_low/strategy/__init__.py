@@ -5,7 +5,7 @@ import time
 from core.strategy import Strategy
 from core.order import Order
 from core.size import Size
-from core.tensorflow.tuner.tuner.service import TunerService
+from core.tensorflow.tuner.base.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
 

@@ -45,7 +45,6 @@ class NextPeriodHighLowSequence(Sequence):
 		if type(y) == type(None):
 			return
 
-		logger.debug(f'NextPeriodHighLowSequence[{index}] | {timestamp} -> x:{x.shape}, y:{y.shape}')
 		return x, y
 
 	@property

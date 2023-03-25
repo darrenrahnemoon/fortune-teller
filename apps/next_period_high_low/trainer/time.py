@@ -4,7 +4,6 @@ from keras.optimizers import Adam
 from keras_tuner import HyperParameters
 
 from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
-
 @dataclass
 class NextPeriodHighLowTimeTrainerService(NextPeriodHighLowTrainerService):
 	def compile(self, model: Model, parameters: HyperParameters):
@@ -17,7 +16,6 @@ class NextPeriodHighLowTimeTrainerService(NextPeriodHighLowTrainerService):
 					step = 10 ** -4
 				)
 			),
-			loss = 'mae',
-			metrics = [ 'mae' ]
+			loss = [ 'mae' ],
 		)
 		return model

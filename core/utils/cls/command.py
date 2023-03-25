@@ -31,8 +31,11 @@ class ClassCommandSession:
 			if is_any_of(recursive, lambda x: issubclass(field.type, x)):
 				self.add_class_fields_to_arguments(
 					cls = field.type,
-					prefix = field.name,
+					prefix = f'{prefix}-{field.name}' if prefix else field.name,
 					group = group,
+					args = args,
+					kwargs = kwargs,
+					recursive = recursive
 				)
 				continue
 
@@ -67,14 +70,15 @@ class ClassCommandSession:
 		prefix = '',
 	):
 		for field in fields(type(instance)):
+			name = f'{prefix}_{field.name}' if prefix else field.name
 			if is_any_of(recursive, lambda x: issubclass(field.type, x)):
 				self.set_instance_fields_from_arguments(
 					instance = getattr(instance, field.name),
-					prefix = field.name,
+					recursive = recursive,
+					prefix = name,
 				)
 				continue
 
-			name = f'{prefix}_{field.name}' if prefix else field.name
 			value = getattr(self.args, name, None)
 			if value == None:
 				continue

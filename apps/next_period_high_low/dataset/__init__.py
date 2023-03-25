@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from keras.utils.data_utils import Sequence
 
 from core.tensorflow.dataset.service import DatasetService
@@ -18,7 +18,7 @@ class NextPeriodHighLowDatasetService(DatasetService):
 		dataset = ShuffledSequence(dataset)
 		dataset = SkippableSequence(dataset)
 
-		# Trainer Dataset
+		# Training Dataset
 		training_dataset = PartialSequence(
 			sequence = dataset,
 			portion = 1 - self.config.validation_split

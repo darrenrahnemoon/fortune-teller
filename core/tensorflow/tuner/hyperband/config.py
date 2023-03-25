@@ -1,7 +1,8 @@
-from core.utils.config import Config, dataclass
+from dataclasses import dataclass
+from core.tensorflow.tuner.base.config import TunerConfig
 
 @dataclass
-class HyperbandTunerConfig(Config):
-	max_epochs: int = 10
+class HyperbandTunerConfig(TunerConfig):
 	reduction_factor: int = 3
 	iterations: int = 100
+	max_epochs: int = 10

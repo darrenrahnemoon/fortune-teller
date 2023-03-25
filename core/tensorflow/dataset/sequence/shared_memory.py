@@ -6,20 +6,20 @@ from multiprocess import Process, Queue, shared_memory, managers
 
 from .kwargs import sequence_dataclass_kwargs
 
-class ErasingSharedMemory(shared_memory.SharedMemory):
+class GarbageCollectedSharedMemory(shared_memory.SharedMemory):
 	def __del__(self):
-		super(ErasingSharedMemory, self).__del__()
+		super(GarbageCollectedSharedMemory, self).__del__()
 		self.unlink()
 
-class ShareableNumpyArray(numpy.ndarray):
-	def __new__(cls, *args, shm = None, **kwargs):
-		obj = super(ShareableNumpyArray, cls).__new__(cls, *args, **kwargs)
-		obj.shm = shm
+class SharedMemoryNumpyArray(numpy.ndarray):
+	def __new__(cls, *args, shared_memory = None, **kwargs):
+		obj = super(SharedMemoryNumpyArray, cls).__new__(cls, *args, **kwargs)
+		obj.shared_memory = shared_memory
 		return obj
 
 	def __array_finalize__(self, obj):
 		if obj is None: return
-		self.shm = getattr(obj, 'shm', None)
+		self.shared_memory = getattr(obj, 'shared_memory', None)
 
 @dataclass(**sequence_dataclass_kwargs)
 class SharedMemorySequence(Sequence):
@@ -37,21 +37,21 @@ class SharedMemorySequence(Sequence):
 	def __getitem__(self, index):
 		self.ensure_workers_initialized()
 		queue_item = self.queue.get(block = True)
-		existing_shm = ErasingSharedMemory(name = queue_item['name'])
+		existing_shared_memory = GarbageCollectedSharedMemory(name = queue_item['name'])
 
-		x = ShareableNumpyArray(
+		x = SharedMemoryNumpyArray(
 			shape = queue_item['x']['shape'],
 			dtype = queue_item['x']['dtype'],
-			buffer = existing_shm.buf,
+			buffer = existing_shared_memory.buf,
 			offset = 0,
-			shm = existing_shm
+			shared_memory = existing_shared_memory
 		)
-		y = ShareableNumpyArray(
+		y = SharedMemoryNumpyArray(
 			shape = queue_item['y']['shape'],
 			dtype = queue_item['y']['dtype'],
-			buffer = existing_shm.buf,
+			buffer = existing_shared_memory.buf,
 			offset = x.nbytes,
-			shm = existing_shm
+			shared_memory = existing_shared_memory
 		)
 		return x, y
 
@@ -67,14 +67,14 @@ class SharedMemorySequence(Sequence):
 	):
 		for index in indices:
 			x, y = sequence[index]
-			shm = manager.SharedMemory(size = x.nbytes + y.nbytes)
-			shared_x = numpy.ndarray(x.shape, dtype = x.dtype, buffer = shm.buf, offset = 0)
-			shared_y = numpy.ndarray(y.shape, dtype = y.dtype, buffer = shm.buf, offset = x.nbytes)
+			shared_memory = manager.SharedMemory(size = x.nbytes + y.nbytes)
+			shared_x = numpy.ndarray(x.shape, dtype = x.dtype, buffer = shared_memory.buf, offset = 0)
+			shared_y = numpy.ndarray(y.shape, dtype = y.dtype, buffer = shared_memory.buf, offset = x.nbytes)
 			shared_x[:] = x[:]
 			shared_y[:] = y[:]
 
 			queue.put({
-				'name': shm.name,
+				'name': shared_memory.name,
 				'x': {
 					'shape': shared_x.shape,
 					'dtype': shared_x.dtype,
@@ -84,8 +84,8 @@ class SharedMemorySequence(Sequence):
 					'dtype': shared_y.dtype
 				}
 			})
-			shm.close()
-			del shm
+			shared_memory.close()
+			del shared_memory
 
 	def ensure_workers_initialized(self):
 		if self.manager != None:
