@@ -3,9 +3,13 @@ from keras import Model
 from keras.optimizers import Adam
 from keras_tuner import HyperParameters
 
-from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
+from core.tensorflow.trainer.service import TrainerService
+
 @dataclass
-class NextPeriodHighLowTimeTrainerService(NextPeriodHighLowTrainerService):
+class NextPeriodHighLowTimeTrainerService(TrainerService):
+	strategy_config: NextPeriodHighLowStrategyConfig = None
+
 	def compile(
 		self,
 		model: Model,
@@ -22,4 +26,3 @@ class NextPeriodHighLowTimeTrainerService(NextPeriodHighLowTrainerService):
 			),
 			loss = [ 'mae' ],
 		)
-		return model

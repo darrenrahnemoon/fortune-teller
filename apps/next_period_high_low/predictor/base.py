@@ -1,15 +1,11 @@
 import numpy
 from keras import Model
-from dataclasses import dataclass
 
-from .preprocessor.base import NextPeriodHighLowPreprocessorService
-from .config import NextPeriodHighLowStrategyConfig
-from core.tensorflow.trainer.service import TrainerService
+from apps.next_period_high_low.preprocessor.base import NextPeriodHighLowPreprocessorService
+from core.tensorflow.predictor.service import PredictorService
 from core.utils.time import TimestampLike, normalize_timestamp
 
-@dataclass
-class NextPeriodHighLowTrainerService(TrainerService):
-	strategy_config: NextPeriodHighLowStrategyConfig = None
+class NextPeriodHighLowPredictorService(PredictorService):
 	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 
 	def predict(self, model: Model, timestamp: TimestampLike):
@@ -24,4 +20,3 @@ class NextPeriodHighLowTrainerService(TrainerService):
 		with self.device_service.selected_device:
 			model_output = model.predict(model_input)
 			return self.preprocessor_service.from_model_output(model_output[0])
-

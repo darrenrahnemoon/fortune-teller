@@ -29,21 +29,12 @@ class TrainerService(ArtifactService):
 	def get_checkpoints_path(self, model: Model):
 		return self.directory.joinpath(model.name, 'checkpoints')
 
-	def get_plot_path(self, model: Model):
-		return self.directory.joinpath(model.name, 'plot.png')
-
-	def get_callbacks(self, model: Model):
-		callbacks = [
-			ModelCheckpoint(
-				filepath = self.get_checkpoints_path(model),
-				save_weights_only = True,
-				monitor = 'val_loss',
-				mode = 'min',
-			)
-		]
-		return callbacks + self.tensorboard_service.get_callbacks(
-			scope = type(self).__name__
-		)
+	def load_weights(self, model: Model):
+		checkpoints_path = self.get_checkpoints_path(model)
+		try:
+			model.load_weights(str(checkpoints_path))
+		except:
+			logger.warn(f"Unable to load weights for model '{model.name}' from path '{checkpoints_path}'")
 
 	@property
 	def train_kwargs(self):
@@ -59,12 +50,18 @@ class TrainerService(ArtifactService):
 			verbose = True
 		)
 
-	def load_weights(self, model: Model):
-		checkpoints_path = self.get_checkpoints_path(model)
-		try:
-			model.load_weights(str(checkpoints_path))
-		except:
-			logger.warn(f"Unable to load weights for model '{model.name}' from path '{checkpoints_path}'")
+	def get_callbacks(self, model: Model):
+		callbacks = [
+			ModelCheckpoint(
+				filepath = self.get_checkpoints_path(model),
+				save_weights_only = True,
+				monitor = 'val_loss',
+				mode = 'min',
+			)
+		]
+		return callbacks + self.tensorboard_service.get_callbacks(
+			scope = type(self).__name__
+		)
 
 	def compile(
 		self,
@@ -82,6 +79,9 @@ class TrainerService(ArtifactService):
 				**self.train_kwargs,
 				callbacks = self.get_callbacks(model)
 			)
+
+	def get_plot_path(self, model: Model):
+		return self.directory.joinpath(model.name, 'plot.png')
 
 	def plot(self, model: Model):
 		path = self.get_plot_path(model)

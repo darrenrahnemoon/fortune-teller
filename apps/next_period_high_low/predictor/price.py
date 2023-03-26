@@ -1,0 +1,5 @@
+from .base import NextPeriodHighLowPredictorService
+from apps.next_period_high_low.preprocessor.price import NextPeriodHighLowPricePreprocessorService
+
+class NextPeriodHighLowPricePredictorService(NextPeriodHighLowPredictorService):
+	preprocessor_service: NextPeriodHighLowPricePreprocessorService = None

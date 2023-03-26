@@ -9,7 +9,10 @@ from core.tensorflow.tuner.base.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
 
-from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.trainer.price import NextPeriodHighLowPriceTrainerService
+from apps.next_period_high_low.trainer.time import NextPeriodHighLowTimeTrainerService
+from apps.next_period_high_low.predictor.price import NextPeriodHighLowPricePredictorService
+from apps.next_period_high_low.predictor.time import NextPeriodHighLowTimePredictorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from .prediction import NextPeriodHighLowPrediction
 
@@ -18,11 +21,14 @@ logger = Logger(__name__)
 @dataclass
 class NextPeriodHighLowStrategy(Strategy):
 	config: NextPeriodHighLowStrategyConfig = None
-	price_trainer_service: NextPeriodHighLowTrainerService = None
-	price_tuner_service: TunerService = None
 
-	time_trainer_service: NextPeriodHighLowTrainerService = None
+	price_trainer_service: NextPeriodHighLowPriceTrainerService = None
+	price_tuner_service: TunerService = None
+	price_predictor_service: NextPeriodHighLowPricePredictorService = None
+
+	time_trainer_service: NextPeriodHighLowTimeTrainerService = None
 	time_tuner_service: TunerService = None
+	time_predictor_service: NextPeriodHighLowTimePredictorService = None
 
 	def __post_init__(self):
 		self.model = self.price_tuner_service.get_model(self.price_trainer_service.config.trial)
@@ -83,7 +89,7 @@ class NextPeriodHighLowStrategy(Strategy):
 		time.sleep(60 * 5)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
-		predictions = self.price_trainer_service.predict(self.model, timestamp)
+		predictions = self.price_predictor_service.predict(self.model, timestamp)
 		for prediction in predictions:
 			yield NextPeriodHighLowPrediction(
 				symbol = prediction['symbol'],
