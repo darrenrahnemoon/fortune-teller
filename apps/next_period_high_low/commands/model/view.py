@@ -28,7 +28,6 @@ class ViewModelCommandSession(
 		tuner_service = container.tuner_service()
 		trainer_service = container.trainer_service()
 		model = tuner_service.get_model(self.args.trial)
-		trainer_service.load_weights(model)
 		model.summary()
 
 		if self.args.plot:

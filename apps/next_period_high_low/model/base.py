@@ -21,7 +21,8 @@ class NextPeriodHighLowModelService(ModelService):
 	):
 		inputs = self.build_inputs()
 		features_length = inputs.shape[-1]
-		parameter = HyperParameterName()
+		hyperparameter_name = HyperParameterName()
+
 		def dropout_parameter(name: str):
 			return hyperparameters.Float(
 				name = name,
@@ -39,63 +40,59 @@ class NextPeriodHighLowModelService(ModelService):
 			)
 		):
 			flow = inputs
-			parameter.add_prefix('flow', parallel_flow_index)
+			with hyperparameter_name.prefixed('flow', parallel_flow_index):
+				for cnn_index in range(
+					hyperparameters.Int(
+						name = 'cnn_layers_count',
+						min_value = 1,
+						max_value = 4
+					)
+				):
+					with hyperparameter_name.prefixed(f'cnn_{cnn_index}'):
+						flow = Conv1D(
+							name = hyperparameter_name.build('conv1d'),
+							filters = hyperparameters.Int(
+								name = hyperparameter_name.build('filters_count'),
+								min_value = 1,
+								max_value = features_length
+							),
+							kernel_size = hyperparameters.Int(
+								name = hyperparameter_name.build('kernel_size'),
+								min_value = 2,
+								max_value = self.strategy_config.backward_window_bars
+							),
+							padding = 'same',
+							activation = 'relu'
+						)(flow)
+						flow = Dropout(
+							name = hyperparameter_name.build('dropout'),
+							rate = dropout_parameter(hyperparameter_name.build('dropout'))
+						)(flow)
 
-			for cnn_index in range(
-				hyperparameters.Int(
-					name = 'cnn_layers_count',
+				lstm_layers_count = hyperparameters.Int(
+					name = 'lstm_layers_count',
 					min_value = 1,
 					max_value = 4
 				)
-			):
-				parameter.add_prefix(f'cnn_{cnn_index}')
-				flow = Conv1D(
-					name = parameter.name('conv1d'),
-					filters = hyperparameters.Int(
-						name = parameter.name('filters_count'),
-						min_value = 1,
-						max_value = features_length
-					),
-					kernel_size = hyperparameters.Int(
-						name = parameter.name('kernel_size'),
-						min_value = 2,
-						max_value = self.strategy_config.backward_window_bars
-					),
-					padding = 'same',
-					activation = 'relu'
-				)(flow)
-				flow = Dropout(
-					name = parameter.name('dropout'),
-					rate = dropout_parameter(parameter.name('dropout'))
-				)(flow)
-				parameter.remove_prefix()
+				for lstm_index in range(lstm_layers_count):
+					is_last_lstm = lstm_index == lstm_layers_count - 1
 
-			lstm_layers_count = hyperparameters.Int(
-				name = 'lstm_layers_count',
-				min_value = 1,
-				max_value = 4
-			)
-			for lstm_index in range(lstm_layers_count):
-				is_last_lstm = lstm_index == lstm_layers_count - 1
+					with hyperparameter_name.prefixed(f'lstm_{lstm_index}'):
+						flow = LSTM(
+							name = hyperparameter_name.build('lstm'),
+							units = hyperparameters.Int(
+								name = 'last_lstm_units' if is_last_lstm else hyperparameter_name.build('units'),
+								min_value = 1,
+								max_value = features_length,
+							),
+							return_sequences = not is_last_lstm
+						)(flow)
+						flow = Dropout(
+							name = hyperparameter_name.build('dropout'),
+							rate = dropout_parameter(hyperparameter_name.build('dropout'))
+						)(flow)
 
-				parameter.add_prefix(f'lstm_{lstm_index}')
-				flow = LSTM(
-					name = parameter.name('lstm'),
-					units = hyperparameters.Int(
-						name = 'last_lstm_units' if is_last_lstm else parameter.name('units'),
-						min_value = 1,
-						max_value = features_length,
-					),
-					return_sequences = not is_last_lstm
-				)(flow)
-				flow = Dropout(
-					name = parameter.name('dropout'),
-					rate = dropout_parameter(parameter.name('dropout'))
-				)(flow)
-				parameter.remove_prefix()
-
-			flows.append(flow)
-			parameter.remove_prefix()
+				flows.append(flow)
 		y = Add()(flows)
 		y = Flatten()(y)
 
@@ -106,19 +103,18 @@ class NextPeriodHighLowModelService(ModelService):
 				max_value = 4,
 			)
 		):
-			parameter.add_prefix(f'dense_{index}')
-			y = Dense(
-				units = hyperparameters.Int(
-					name = parameter.name('units'),
-					min_value = 64,
-					max_value = 4096
-				),
-				activation = 'relu',
-			)(y)
-			y = Dropout(
-				rate = dropout_parameter(parameter.name('dropout'))
-			)(y)
-			parameter.remove_prefix()
+			with hyperparameter_name.prefixed(f'dense_{index}'):
+				y = Dense(
+					units = hyperparameters.Int(
+						name = hyperparameter_name.build('units'),
+						min_value = 64,
+						max_value = 4096
+					),
+					activation = 'relu',
+				)(y)
+				y = Dropout(
+					rate = dropout_parameter(hyperparameter_name.build('dropout'))
+				)(y)
 
 		outputs = self.build_outputs(y)
 

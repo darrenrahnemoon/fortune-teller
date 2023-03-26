@@ -61,7 +61,6 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 		device_service = device_service,
 		dataset_service = dataset_service,
 		artifacts_directory = config.artifacts_directory,
-		preprocessor_service = preprocessor_service
 	)
 	model_service = Singleton(
 		NextPeriodHighLowPriceModelService,
@@ -108,7 +107,6 @@ class NextPeriodHighLowTimeContainer(NextPeriodHighLowPriceContainer):
 				device_service = container.device_service,
 				dataset_service = container.dataset_service,
 				artifacts_directory = container.config.artifacts_directory,
-				preprocessor_service = container.preprocessor_service
 			)
 		)
 		container.tuner_service.override(
