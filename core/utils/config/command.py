@@ -1,18 +1,23 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
 from . import Config
 
 from core.utils.cls.command import ClassCommandSession
 
 @dataclass
 class ConfigCommandSession(ClassCommandSession):
-	config: Config = field(default_factory = Config)
+	config: Config = None
+
+	@property
+	def config_cls(self):
+		return next(field.type for field in fields(type(self)) if field.name == 'config')
 
 	def setup(self):
 		super().setup()
-		self.add_config_fields_to_arguments(type(self.config))
+		self.add_config_fields_to_arguments(self.config_cls)
 
 	def run(self):
 		super().run()
+		self.config = self.config_cls()
 		self.set_config_fields_from_arguments(self.config)
 
 	def add_config_fields_to_arguments(

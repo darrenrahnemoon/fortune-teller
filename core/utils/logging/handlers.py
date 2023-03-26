@@ -9,7 +9,8 @@ from core.utils.environment import project_directory
 
 class JSONFileHandler(FileHandler):
 	def __init__(self) -> None:
-		super().__init__(project_directory.joinpath(f"core/artifacts/logs/{now(os.getenv('TIMEZONE', 'UTC'))}.json"))
+		path = project_directory.joinpath(f"core/artifacts/logs/{now(os.getenv('TIMEZONE', 'UTC'))}.json")
+		super().__init__(path)
 		self.formatter = JSONFormatter(
 			fields = {
 				'level' : 'levelname',

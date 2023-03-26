@@ -12,12 +12,8 @@ class RunStrategyCommandSession(
 	ContainerCommandSession,
 	CommandSession
 ):
-	config: NextPeriodHighLowConfig = field(default_factory = NextPeriodHighLowConfig)
+	config: NextPeriodHighLowConfig = None
 	container: NextPeriodHighLowContainer = None
-
-	def setup(self):
-		super().setup()
-		self.parser.add_argument('model')
 
 	def run(self):
 		super().run()

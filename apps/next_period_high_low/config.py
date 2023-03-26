@@ -12,7 +12,7 @@ from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
 from core.repository import Repository, SimulationRepository, AlphaVantageRepository
 from core.broker import Broker, SimulationBroker, MetaTraderBroker
-from core.utils.config import Config, dataclass, field, on_environment
+from core.utils.config import Config, dataclass, field, on_stage
 
 @dataclass
 class NextPeriodHighLowStrategyConfig(Config):
@@ -35,14 +35,14 @@ class NextPeriodHighLowStrategyConfig(Config):
 	min_risk_over_reward_ratio_to_trade: float = 1.5
 
 	metatrader_broker: Broker = field(
-		default_factory = on_environment(
+		default_factory = on_stage(
 			development = SimulationBroker,
 			production = MetaTraderBroker,
 		)
 	)
 
 	alphavantage_repository: Repository = field(
-		default_factory = on_environment(
+		default_factory = on_stage(
 			development = SimulationRepository,
 			production = AlphaVantageRepository,
 		)

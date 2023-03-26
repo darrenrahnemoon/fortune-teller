@@ -10,7 +10,7 @@ class StageSpecificValue(TypedDict):
 	production: Any
 	development: Any
 
-def on_environment(**kwargs: StageSpecificValue):
+def on_stage(**kwargs: StageSpecificValue):
 	def wrapper():
 		value = kwargs.get(environment.stage)
 		return value()

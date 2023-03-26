@@ -16,7 +16,6 @@ class NextPeriodHighLowPrediction:
 	min_low: float = field(default = None, init = False)
 
 	tp_change: float = None
-	last_price: float = field(default = None, init = False)
 
 	def __post_init__(self):
 		self.max_high = self.last_price * (self.max_high_change + 1)

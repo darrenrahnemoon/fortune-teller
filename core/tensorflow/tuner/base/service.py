@@ -38,7 +38,6 @@ class TunerService(ArtifactService):
 				model = model,
 				hyperparameters = hyperparameters
 			)
-			model.summary()
 			return model
 
 		return dict(

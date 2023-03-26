@@ -78,6 +78,9 @@ class NextPeriodHighLowPriceContainer(DeclarativeContainer):
 	)
 	predictor_service = Singleton(
 		NextPeriodHighLowPricePredictorService,
+		dataset_config = config.dataset,
+		strategy_config = config.strategy,
+		device_service = device_service,
 		preprocessor_service = preprocessor_service,
 	)
 
@@ -122,7 +125,10 @@ class NextPeriodHighLowTimeContainer(NextPeriodHighLowPriceContainer):
 		)
 		container.predictor_service.override(
 			Singleton(
-				NextPeriodHighLowPricePredictorService,
+				NextPeriodHighLowTimePredictorService,
+				dataset_config = container.config.dataset,
+				strategy_config = container.config.strategy,
+				device_service = container.device_service,
 				preprocessor_service = container.preprocessor_service,
 			)
 		)

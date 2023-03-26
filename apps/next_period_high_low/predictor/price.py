@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from .base import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.preprocessor.price import NextPeriodHighLowPricePreprocessorService
 
+@dataclass
 class NextPeriodHighLowPricePredictorService(NextPeriodHighLowPredictorService):
 	preprocessor_service: NextPeriodHighLowPricePreprocessorService = None
