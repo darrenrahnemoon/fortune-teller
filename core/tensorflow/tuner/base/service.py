@@ -28,9 +28,16 @@ class TunerService(ArtifactService):
 
 	@property
 	def tuner_kwargs(self):
-		def build(parameters):
-			model = self.model_service.build(parameters = parameters)
-			self.trainer_service.compile(model, parameters)
+		def build(
+			hyperparameters: HyperParameters
+		):
+			model = self.model_service.build(
+				hyperparameters = hyperparameters
+			)
+			self.trainer_service.compile(
+				model = model,
+				hyperparameters = hyperparameters
+			)
 			model.summary()
 			return model
 
@@ -54,9 +61,12 @@ class TunerService(ArtifactService):
 		return self.get_trial(trial_id).hyperparameters
 
 	def get_model(self, trial_id: str or Literal['best']) -> Model:
-		hyperparameters = self.get_hyperparameters(trial_id)
-		model = self.model_service.build(parameters = hyperparameters)
-		model._name = trial_id
+		trial = self.get_trial(trial_id)
+		hyperparameters = trial.hyperparameters
+		model = self.model_service.build(
+			hyperparameters = hyperparameters
+		)
+		model._name = trial.trial_id
 		return model
 
 	def tune(self):

@@ -7,8 +7,15 @@ from core.tensorflow.dataset.service import DatasetService
 class ModelService:
 	dataset_service: DatasetService = None
 
-	def build(self, parameters: HyperParameters) -> Model:
+	def build(
+		self,
+		hyperparameters: HyperParameters = None
+	) -> Model:
 		pass
 
-	def compile(self, parameters: HyperParameters) -> Model:
+	def compile(
+		self,
+		model: Model,
+		hyperparameters: HyperParameters = None
+	) -> Model:
 		pass

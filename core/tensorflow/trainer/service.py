@@ -4,6 +4,7 @@ from shutil import rmtree
 from keras import Model
 from keras.utils import plot_model
 from keras.callbacks import ModelCheckpoint
+from keras_tuner import HyperParameters
 
 from core.tensorflow.trainer.config import TrainerConfig
 from core.tensorflow.dataset.service import DatasetService
@@ -65,7 +66,11 @@ class TrainerService(ArtifactService):
 		except:
 			logger.warn(f"Unable to load weights for model '{model.name}' from path '{checkpoints_path}'")
 
-	def compile(self, model: Model):
+	def compile(
+		self,
+		model: Model,
+		hyperparameters: HyperParameters = None
+	):
 		pass
 
 	def train(self, model: Model):

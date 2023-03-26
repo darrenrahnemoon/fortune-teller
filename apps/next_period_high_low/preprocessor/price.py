@@ -17,21 +17,20 @@ class NextPeriodHighLowPricePreprocessorService(NextPeriodHighLowPreprocessorSer
 		if len(nan_columns):
 			logger.debug(f'Full NaN columns at {output_chart_group.dataframe.index[0]}:\n{nan_columns}')
 			return
-
+		output_chart_group.dataframe = output_chart_group.dataframe.reset_index(drop = True)
 		for chart in output_chart_group.charts:
 			high = chart.data['high']
+			max_high_index = high.idxmax()
 			max_high_change = high.max() / high.iloc[0] - 1
-			average_high_change = high.sum() / len(high) / high.iloc[0] - 1
 
 			low = chart.data['low']
+			min_low_index = low.idxmin()
 			min_low_change = low.min() / low.iloc[0] - 1
-			average_low_change = low.sum() / len(low) / low.iloc[0] - 1
 
 			outputs.append([
 				max_high_change,
-				average_high_change,
 				min_low_change,
-				average_low_change,
+				min_low_change if min_low_index < max_high_index else max_high_change
 			])
 		return numpy.array(outputs)
 
@@ -40,9 +39,8 @@ class NextPeriodHighLowPricePreprocessorService(NextPeriodHighLowPreprocessorSer
 			{
 				'symbol': chart.symbol,
 				'max_high_change': output[0],
-				'average_high_change': output[1],
-				'min_low_change': output[2],
-				'average_low_change': output[3],
+				'min_low_change': output[1],
+				'tp_change' : output[2],
 			}
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

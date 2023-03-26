@@ -8,19 +8,22 @@ from keras.optimizers import Adam
 from keras_tuner import HyperParameters
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from core.tensorflow.tuner.parameters import ParameterName
+from core.tensorflow.tuner.hyperparameters import HyperParameterName
 from core.tensorflow.model.service import ModelService
 
 @dataclass
 class NextPeriodHighLowModelService(ModelService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 
-	def build(self, parameters: HyperParameters):
+	def build(
+		self,
+		hyperparameters: HyperParameters = None
+	):
 		inputs = self.build_inputs()
 		features_length = inputs.shape[-1]
-		parameter = ParameterName()
+		parameter = HyperParameterName()
 		def dropout_parameter(name: str):
-			return parameters.Float(
+			return hyperparameters.Float(
 				name = name,
 				min_value = 0.01,
 				max_value = 0.99,
@@ -29,7 +32,7 @@ class NextPeriodHighLowModelService(ModelService):
 
 		flows = []
 		for parallel_flow_index in range(
-			parameters.Int(
+			hyperparameters.Int(
 				name = 'parallel_flows_count',
 				min_value = 1,
 				max_value = 5
@@ -39,7 +42,7 @@ class NextPeriodHighLowModelService(ModelService):
 			parameter.add_prefix('flow', parallel_flow_index)
 
 			for cnn_index in range(
-				parameters.Int(
+				hyperparameters.Int(
 					name = 'cnn_layers_count',
 					min_value = 1,
 					max_value = 4
@@ -48,12 +51,12 @@ class NextPeriodHighLowModelService(ModelService):
 				parameter.add_prefix(f'cnn_{cnn_index}')
 				flow = Conv1D(
 					name = parameter.name('conv1d'),
-					filters = parameters.Int(
+					filters = hyperparameters.Int(
 						name = parameter.name('filters_count'),
 						min_value = 1,
 						max_value = features_length
 					),
-					kernel_size = parameters.Int(
+					kernel_size = hyperparameters.Int(
 						name = parameter.name('kernel_size'),
 						min_value = 2,
 						max_value = self.strategy_config.backward_window_bars
@@ -67,7 +70,7 @@ class NextPeriodHighLowModelService(ModelService):
 				)(flow)
 				parameter.remove_prefix()
 
-			lstm_layers_count = parameters.Int(
+			lstm_layers_count = hyperparameters.Int(
 				name = 'lstm_layers_count',
 				min_value = 1,
 				max_value = 4
@@ -78,7 +81,7 @@ class NextPeriodHighLowModelService(ModelService):
 				parameter.add_prefix(f'lstm_{lstm_index}')
 				flow = LSTM(
 					name = parameter.name('lstm'),
-					units = parameters.Int(
+					units = hyperparameters.Int(
 						name = 'last_lstm_units' if is_last_lstm else parameter.name('units'),
 						min_value = 1,
 						max_value = features_length,
@@ -97,7 +100,7 @@ class NextPeriodHighLowModelService(ModelService):
 		y = Flatten()(y)
 
 		for index in range(
-			parameters.Int(
+			hyperparameters.Int(
 				name = 'dense_layers_count',
 				min_value = 1,
 				max_value = 4,
@@ -105,7 +108,7 @@ class NextPeriodHighLowModelService(ModelService):
 		):
 			parameter.add_prefix(f'dense_{index}')
 			y = Dense(
-				units = parameters.Int(
+				units = hyperparameters.Int(
 					name = parameter.name('units'),
 					min_value = 64,
 					max_value = 4096

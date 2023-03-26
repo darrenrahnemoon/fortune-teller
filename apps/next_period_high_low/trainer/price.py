@@ -7,10 +7,14 @@ from apps.next_period_high_low.trainer.base import NextPeriodHighLowTrainerServi
 
 @dataclass
 class NextPeriodHighLowPriceTrainerService(NextPeriodHighLowTrainerService):
-	def compile(self, model: Model, parameters: HyperParameters):
+	def compile(
+		self,
+		model: Model,
+		hyperparameters: HyperParameters = None,
+	):
 		model.compile(
 			optimizer = Adam(
-				learning_rate = self.config.learning_rate or parameters.Float(
+				learning_rate = self.config.learning_rate or hyperparameters.Float(
 					name = 'learning_rate',
 					min_value = 10 ** -4,
 					max_value = 10 ** -3,

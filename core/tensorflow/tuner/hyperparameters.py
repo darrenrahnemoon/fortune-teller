@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class ParameterName:
+class HyperParameterName:
 	prefix_delimiter: str = '/'
 	name_delimiter: str = '_'
 	prefix = []
