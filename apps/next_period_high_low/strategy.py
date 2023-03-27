@@ -9,12 +9,10 @@ from core.tensorflow.tuner.base.service import TunerService
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
 
-from apps.next_period_high_low.trainer.price import NextPeriodHighLowPriceTrainerService
-from apps.next_period_high_low.trainer.time import NextPeriodHighLowTimeTrainerService
-from apps.next_period_high_low.predictor.price import NextPeriodHighLowPricePredictorService
-from apps.next_period_high_low.predictor.time import NextPeriodHighLowTimePredictorService
+from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from .prediction import NextPeriodHighLowPrediction
+from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
 
 logger = Logger(__name__)
 
@@ -22,17 +20,13 @@ logger = Logger(__name__)
 class NextPeriodHighLowStrategy(Strategy):
 	config: NextPeriodHighLowStrategyConfig = None
 
-	price_trainer_service: NextPeriodHighLowPriceTrainerService = None
-	price_tuner_service: TunerService = None
-	price_predictor_service: NextPeriodHighLowPricePredictorService = None
-
-	time_trainer_service: NextPeriodHighLowTimeTrainerService = None
-	time_tuner_service: TunerService = None
-	time_predictor_service: NextPeriodHighLowTimePredictorService = None
+	trainer_service: NextPeriodHighLowTrainerService = None
+	tuner_service: TunerService = None
+	predictor_service: NextPeriodHighLowPredictorService = None
 
 	def __post_init__(self):
-		self.model = self.price_tuner_service.get_model(self.price_trainer_service.config.trial)
-		self.price_trainer_service.load_weights(self.model)
+		self.model = self.tuner_service.get_model(self.trainer_service.config.trial)
+		self.trainer_service.load_weights(self.model)
 		return super().__post_init__()
 
 	def handler(self):
@@ -55,6 +49,10 @@ class NextPeriodHighLowStrategy(Strategy):
 				if spread > self.config.max_spread_to_trade:
 					logger.info(f"Skipping due to high spread: {spread}\n{prediction}")
 					continue
+
+			# if abs(prediction.tp_change) < abs(prediction.sl_change):
+			# 	logger.info(f'Skipping due to |TP| < |SL|:\n{prediction}')
+			# 	continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
 				logger.info(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")
@@ -89,7 +87,7 @@ class NextPeriodHighLowStrategy(Strategy):
 		time.sleep(60 * 5)
 
 	def get_predictions(self, timestamp: pandas.Timestamp):
-		predictions = self.price_predictor_service.predict(self.model, timestamp)
+		predictions = self.predictor_service.predict(self.model, timestamp)
 		for prediction in predictions:
 			yield NextPeriodHighLowPrediction(
 				symbol = prediction['symbol'],

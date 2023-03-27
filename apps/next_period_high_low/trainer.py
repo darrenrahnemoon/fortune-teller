@@ -7,7 +7,7 @@ from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 from core.tensorflow.trainer.service import TrainerService
 
 @dataclass
-class NextPeriodHighLowPriceTrainerService(TrainerService):
+class NextPeriodHighLowTrainerService(TrainerService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 
 	def compile(

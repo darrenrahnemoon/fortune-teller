@@ -1,7 +1,0 @@
-from dataclasses import dataclass
-from .base import NextPeriodHighLowPredictorService
-from apps.next_period_high_low.preprocessor.time import NextPeriodHighLowTimePreprocessorService
-
-@dataclass
-class NextPeriodHighLowTimePredictorService(NextPeriodHighLowPredictorService):
-	preprocessor_service: NextPeriodHighLowTimePreprocessorService = None
