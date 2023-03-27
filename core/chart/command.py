@@ -11,13 +11,15 @@ class ChartCommandSession(ClassCommandSession):
 	def add_chart_fields_to_arguments(
 		self,
 		chart_cls: type[Chart] = Chart,
-		nargs = None
+		nargs = None,
 	):
+		is_multiple_arguments = nargs in [ '*', '+' ]
 		group = self.parser.add_argument_group('chart')
 		group.add_argument(
 			'--chart',
-			nargs = '*',
-			type = RepresentationSerializer(chart_cls).deserialize
+			nargs = nargs,
+			type = RepresentationSerializer(chart_cls).deserialize,
+			default = [] if is_multiple_arguments else None
 		)
 		self.chart_fields.add('chart') # chart is a valid filter
 
@@ -31,7 +33,8 @@ class ChartCommandSession(ClassCommandSession):
 				cls = chart_class,
 				select = fields,
 				kwargs = {
-					'nargs' : nargs
+					'nargs' : nargs,
+					'default': [] if is_multiple_arguments else None,
 				},
 				group = group
 			)
@@ -40,5 +43,7 @@ class ChartCommandSession(ClassCommandSession):
 		return {
 			key: value
 			for key, value in self.args.__dict__.items()
-			if key in self.chart_fields and value != None
+			if key in self.chart_fields \
+			and value != None \
+			and (type(value) == list and not len(value) == 0) # for nargs = '*'
 		}

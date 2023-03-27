@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from core.utils.logging import logging, loggers
+from core.utils.logging import logging, loggers, Logger
 from core.utils.logging.handlers import JSONFileHandler, STDOUTHandler
 from core.utils.logging.filter import MessageFilter
 from core.utils.serializer import MappingSerializer
+from core.utils.cls.repr import pretty_repr
 
 @dataclass
 class LoggingCommandSession:
@@ -17,7 +18,8 @@ class LoggingCommandSession:
 		logging_argument_group = self.parser.add_argument_group('logging')
 		logging_argument_group.add_argument(
 			'--log-level',
-			choices = [ 'CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'DEBUG' ]
+			choices = [ 'CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'DEBUG' ],
+			default = 'INFO',
 		)
 		logging_argument_group.add_argument(
 			'--log-filter',
@@ -49,3 +51,5 @@ class LoggingCommandSession:
 			logging.root.addFilter(log_filter)
 			for logger in loggers:
 				logger.addFilter(log_filter)
+
+		Logger(__name__).debug(f'Command Arguments:\n{pretty_repr(self.args.__dict__)}')

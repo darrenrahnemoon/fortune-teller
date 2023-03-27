@@ -51,12 +51,12 @@ class NextPeriodHighLowStrategy(Strategy):
 					continue
 
 			# Risk/Reward ratio
-			sl_over_tp = abs(prediction.sl_change) / abs(prediction.tp_change)
-			if self.config.sl_over_tp.min and sl_over_tp < self.config.sl_over_tp.min:
-				logger.info(f'Skipping due to |SL| / |TP| < {self.config.sl_over_tp.min}:\n{prediction}')
+			risk_over_reward = abs(prediction.sl_change) / abs(prediction.tp_change)
+			if self.config.risk_over_reward.min and risk_over_reward < self.config.risk_over_reward.min:
+				logger.info(f'Skipping due to |SL| / |TP| < {self.config.risk_over_reward.min}:\n{prediction}')
 				continue
-			if self.config.sl_over_tp.max and sl_over_tp > self.config.sl_over_tp.max:
-				logger.info(f'Skipping due to |SL| / |TP| > {self.config.sl_over_tp.max}:\n{prediction}')
+			if self.config.risk_over_reward.max and risk_over_reward > self.config.risk_over_reward.max:
+				logger.info(f'Skipping due to |SL| / |TP| > {self.config.risk_over_reward.max}:\n{prediction}')
 				continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:

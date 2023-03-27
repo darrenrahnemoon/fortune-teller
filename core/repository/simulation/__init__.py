@@ -218,41 +218,38 @@ class SimulationRepository(Repository, MongoRepository):
 		to_timestamp: pandas.Timestamp = now(),
 		clean: bool = False,
 		workers: int = 1,
+		batch_size: Interval = None,
 	):
 		if clean:
 			self.remove_historical_data(chart)
 
 		with Pool(workers) as pool:
-			if from_timestamp and to_timestamp:
-				increments = list(pandas.date_range(
-					start = from_timestamp,
-					end = to_timestamp,
-					freq = 'MS' # "Month Start"
-				))
-				# date_range where start - end < freq returns empty
-				if len(increments) == 0:
-					increments = [ from_timestamp, to_timestamp ]
-				else:
-					increments.append(to_timestamp)
+			increments = list(pandas.date_range(
+				start = from_timestamp,
+				end = to_timestamp,
+				freq = batch_size.to_pandas_frequency() # "Month Start"
+			))
 
-					pool.starmap(
-						self.backfill_worker,
-						(
-							(
-								chart,
-								{
-									'from_timestamp' : increments[index - 1],
-									'to_timestamp' : increments[index]
-								},
-								repository
-							)
-							for index in range(1, len(increments))
-						)
-					)
-
+			# date_range where start - end < freq returns empty
+			if len(increments) == 0:
+				increments = [ from_timestamp, to_timestamp ]
 			else:
-				chart.read()
-				self.write_chart(chart)
+				increments.append(to_timestamp)
+
+				pool.starmap(
+					self.backfill_worker,
+					(
+						(
+							chart,
+							{
+								'from_timestamp' : increments[index - 1],
+								'to_timestamp' : increments[index]
+							},
+							repository
+						)
+						for index in range(1, len(increments))
+					)
+				)
 
 	@property
 	def historical_data(self):

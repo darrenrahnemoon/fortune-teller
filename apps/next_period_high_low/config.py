@@ -30,10 +30,13 @@ class NextPeriodHighLowStrategyConfig(Config):
 		]
 	)
 
-	max_spread_to_trade: int = 50
+	max_spread_to_trade: int = None
 	min_movement_percentage_to_trade: float = 0.0002 # 0.02%
-	sl_over_tp: FloatRangeConfig = field(
-		default_factory = FloatRangeConfig
+	risk_over_reward: FloatRangeConfig = field(
+		default_factory = lambda: FloatRangeConfig(
+			min = None,
+			max = None,
+		)
 	)
 
 	metatrader_broker: Broker = field(
@@ -56,7 +59,6 @@ class NextPeriodHighLowStrategyConfig(Config):
 		self.backward_window_bars = int(self.backward_window_length.to_pandas_timedelta() // interval)
 
 	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
-		return True
 		if timestamp.month == 1 and timestamp.day == 1:
 			return False
 		if timestamp.month == 12 and timestamp.day == 25:
