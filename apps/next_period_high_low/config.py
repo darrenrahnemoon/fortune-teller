@@ -12,7 +12,7 @@ from core.chart import ChartGroup, CandleStickChart
 from core.indicator import SeasonalityIndicator
 from core.repository import Repository, SimulationRepository, AlphaVantageRepository
 from core.broker import Broker, SimulationBroker, MetaTraderBroker
-from core.utils.config import Config, dataclass, field, on_stage
+from core.utils.config import Config, FloatRangeConfig, dataclass, field, on_stage
 
 @dataclass
 class NextPeriodHighLowStrategyConfig(Config):
@@ -31,8 +31,10 @@ class NextPeriodHighLowStrategyConfig(Config):
 	)
 
 	max_spread_to_trade: int = 50
-	min_movement_percentage_to_trade: float = 0.0002
-	min_risk_over_reward_ratio_to_trade: float = 1.5
+	min_movement_percentage_to_trade: float = 0.0002 # 0.02%
+	sl_over_tp: FloatRangeConfig = field(
+		default_factory = FloatRangeConfig
+	)
 
 	metatrader_broker: Broker = field(
 		default_factory = on_stage(
@@ -54,6 +56,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 		self.backward_window_bars = int(self.backward_window_length.to_pandas_timedelta() // interval)
 
 	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
+		return True
 		if timestamp.month == 1 and timestamp.day == 1:
 			return False
 		if timestamp.month == 12 and timestamp.day == 25:

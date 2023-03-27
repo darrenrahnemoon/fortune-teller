@@ -50,9 +50,14 @@ class NextPeriodHighLowStrategy(Strategy):
 					logger.info(f"Skipping due to high spread: {spread}\n{prediction}")
 					continue
 
-			# if abs(prediction.tp_change) < abs(prediction.sl_change):
-			# 	logger.info(f'Skipping due to |TP| < |SL|:\n{prediction}')
-			# 	continue
+			# Risk/Reward ratio
+			sl_over_tp = abs(prediction.sl_change) / abs(prediction.tp_change)
+			if self.config.sl_over_tp.min and sl_over_tp < self.config.sl_over_tp.min:
+				logger.info(f'Skipping due to |SL| / |TP| < {self.config.sl_over_tp.min}:\n{prediction}')
+				continue
+			if self.config.sl_over_tp.max and sl_over_tp > self.config.sl_over_tp.max:
+				logger.info(f'Skipping due to |SL| / |TP| > {self.config.sl_over_tp.max}:\n{prediction}')
+				continue
 
 			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
 				logger.info(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")

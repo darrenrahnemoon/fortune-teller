@@ -1,15 +1,15 @@
 import os
 import sys
+from pathlib import Path
 from logging import FileHandler, StreamHandler
 from .formatter import ColoredFormatter
 from logging_json import JSONFormatter
 
 from core.utils.time import now
-from core.utils.environment import project_directory
 
 class JSONFileHandler(FileHandler):
 	def __init__(self) -> None:
-		path = project_directory.joinpath(f"core/artifacts/logs/{now(os.getenv('TIMEZONE', 'UTC'))}.json")
+		path = Path(f"core/artifacts/logs/{now(os.getenv('TIMEZONE', 'UTC'))}.json")
 		super().__init__(path)
 		self.formatter = JSONFormatter(
 			fields = {

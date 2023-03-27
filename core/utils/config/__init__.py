@@ -6,6 +6,16 @@ from typing import Any, TypedDict
 class Config:
 	pass
 
+@dataclass
+class FloatRangeConfig(Config):
+	min: float = None
+	max: float = None
+
+@dataclass
+class IntRangeConfig(Config):
+	min: int = None
+	max: int = None
+
 class StageSpecificValue(TypedDict):
 	production: Any
 	development: Any
