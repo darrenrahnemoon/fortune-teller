@@ -18,30 +18,37 @@ class NextPeriodHighLowPrediction:
 	tp_change: float = None
 
 	def __post_init__(self):
-		self.max_high = self.last_price * (self.max_high_change + 1)
-		self.min_low = self.last_price * (self.min_low_change + 1)
+		self.sell_price = self.broker.repository.get_last_price(
+			symbol = self.symbol,
+			intent = 'sell',
+		)
+		self.buy_price = self.broker.repository.get_last_price(
+			symbol = self.symbol,
+			intent = 'buy',
+		)
+		self.max_high = self.buy_price * (self.max_high_change + 1)
+		self.min_low = self.sell_price * (self.min_low_change + 1)
 
 	@property
 	def action(self):
-		return 'buy' if self.tp_change > 0 else 'sell'
+		if self.tp_change > 0:
+			return 'buy'
+		return 'sell'
 
 	@property
 	def tp(self):
-		return self.last_price * (self.tp_change + 1)
+		if self.action == 'buy':
+			return self.sell_price * (self.max_high_change + 1)
+		return self.buy_price * (self.min_low_change + 1)
 
 	@property
 	def sl_change(self):
 		if self.action == 'buy':
-			return self.min_low_change - 0.0001
-		return self.max_high_change + 0.0001
+			return self.min_low_change
+		return self.max_high_change
 
 	@property
 	def sl(self):
-		return self.last_price * (self.sl_change + 1)
-
-	@cached_property
-	def last_price(self):
-		return self.broker.repository.get_last_price(
-			symbol = self.symbol,
-			intent = self.action,
-		)
+		if self.action == 'buy':
+			return self.sell_price * (self.sl_change + 1)
+		return self.buy_price * (self.sl_change + 1)

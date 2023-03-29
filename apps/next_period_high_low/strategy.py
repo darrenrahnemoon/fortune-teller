@@ -53,18 +53,10 @@ class NextPeriodHighLowStrategy(Strategy):
 			# Risk/Reward ratio
 			risk_over_reward = abs(prediction.sl_change) / abs(prediction.tp_change)
 			if self.config.risk_over_reward.min and risk_over_reward < self.config.risk_over_reward.min:
-				logger.info(f'Skipping due to |SL| / |TP| < {self.config.risk_over_reward.min}:\n{prediction}')
+				logger.info(f'Skipping due to |SL| / |TP| < {self.config.risk_over_reward.min}: {risk_over_reward}\n{prediction}')
 				continue
 			if self.config.risk_over_reward.max and risk_over_reward > self.config.risk_over_reward.max:
-				logger.info(f'Skipping due to |SL| / |TP| > {self.config.risk_over_reward.max}:\n{prediction}')
-				continue
-
-			if prediction.action == 'buy' and prediction.sl > prediction.last_price:
-				logger.info(f"Skipping 'buy' due to SL > last price: {prediction.sl} > {prediction.last_price}\n{prediction}")
-				continue
-
-			if prediction.action == 'sell' and prediction.sl < prediction.last_price:
-				logger.info(f"Skipping 'sell' due to SL < last price: {prediction.sl} < {prediction.last_price}\n{prediction}")
+				logger.info(f'Skipping due to |SL| / |TP| > {self.config.risk_over_reward.max}: {risk_over_reward}\n{prediction}')
 				continue
 
 			# Only one order per symbol
@@ -84,7 +76,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				symbol = prediction.symbol,
 				tp = prediction.tp,
 				sl = prediction.sl,
-				size = Size.PercentageOfBalanceRiskManagement(0.005),
+				size = Size.FixedAmountRiskManagement(1000),
 				broker = self.config.metatrader_broker,
 			)
 			order.place()

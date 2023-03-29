@@ -35,7 +35,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 	risk_over_reward: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
-			max = None,
+			max = 2,
 		)
 	)
 

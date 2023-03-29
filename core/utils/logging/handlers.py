@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 from pathlib import Path
 from logging import FileHandler, StreamHandler
 from .formatter import ColoredFormatter
@@ -9,8 +10,10 @@ from core.utils.time import now
 
 class JSONFileHandler(FileHandler):
 	def __init__(self) -> None:
-		path = Path(f"core/artifacts/logs/{now(os.getenv('TIMEZONE', 'UTC'))}.json")
-		super().__init__(path)
+		timestamp = now(os.getenv('TIMEZONE', 'UTC'))
+		timestamp = timestamp.strftime('%Y-%m-%d-%H-%M-%S-%Z')
+		self.json_log_path = Path(f"core/artifacts/logs/{timestamp}.json").resolve()
+		super().__init__(self.json_log_path)
 		self.formatter = JSONFormatter(
 			fields = {
 				'level' : 'levelname',
