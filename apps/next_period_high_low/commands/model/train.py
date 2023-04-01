@@ -23,10 +23,16 @@ class TrainModelCommandSession(
 		container = getattr(self.container, self.args.model)()
 		tuner_service = container.tuner_service()
 		trainer_service = container.trainer_service()
+
+		# Print Model
 		model = tuner_service.get_model(trainer_service.config.trial)
 		model.summary()
+
+		# Print Hyperparameters
 		hyperparameters = tuner_service.get_hyperparameters(trainer_service.config.trial)
 		print(pretty_repr(hyperparameters.values))
-		trainer_service.compile(model, hyperparameters)
-		trainer_service.load_weights(model)
-		trainer_service.train(model)
+
+		trainer_service.train(
+			model = model,
+			hyperparameters = hyperparameters
+		)

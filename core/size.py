@@ -84,7 +84,6 @@ class PercentageOfBalance(OrderDependantSize):
 			amount = risk_amount,
 			from_currency = self.order.broker.currency,
 			to_currency = self.repository.get_quote_currency(self.order.symbol),
-			intent = 'buy'
 		)
 
 		return risk_amount / self.repository.get_last_price(
@@ -106,7 +105,6 @@ class PercentageOfBalanceRiskManagement(OrderDependantSize):
 			amount = risk_amount,
 			from_currency = self.order.broker.currency,
 			to_currency = self.repository.get_quote_currency(self.order.symbol),
-			intent = 'buy'
 		)
 		risk_amount_per_pip = risk_amount / self.pips_at_risk
 
@@ -125,7 +123,6 @@ class FixedAmountRiskManagement(OrderDependantSize):
 			amount = self.value,
 			from_currency = self.order.broker.currency,
 			to_currency = self.repository.get_quote_currency(self.order.symbol),
-			intent = 'buy'
 		)
 
 		return risk_amount / self.repository.get_last_price(

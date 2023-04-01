@@ -32,7 +32,7 @@ class Repository:
 			for combination in combinations:
 				for symbol in combination['symbol']:
 					symbols.add(symbol)
-		return list(symbol)
+		return list(symbols)
 
 	def get_available_charts(self, filter = {}, **kwargs):
 		for chart, combination_groups in self.get_available_chart_combinations().items():
@@ -79,21 +79,18 @@ class Repository:
 		amount,
 		from_currency: str,
 		to_currency: str,
-		intent: 'OrderType' = None
 	):
 		if from_currency == to_currency:
 			return amount
 
 		exchange_rate = self.get_last_price(
 			symbol = f'{from_currency}{to_currency}',
-			intent = intent
 		)
 		if exchange_rate:
 			return amount * exchange_rate
 
 		exchange_rate = self.get_last_price(
 			symbol = f'{to_currency}{from_currency}',
-			intent = intent
 		)
 		if exchange_rate:
 			return amount / exchange_rate

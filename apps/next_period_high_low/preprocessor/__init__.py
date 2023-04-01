@@ -11,11 +11,12 @@ logger = Logger(__name__)
 @dataclass
 class NextPeriodHighLowPreprocessorService(PreprocessorService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
+	scale = 1
 
 	def to_model_input(self, input_chart_group: ChartGroup):
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_bars)
 		for chart in input_chart_group.charts:
-			chart.data = chart.data.pct_change()
+			chart.data = chart.data.pct_change() * self.scale
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
 		return input_chart_group.dataframe.to_numpy()
 
@@ -38,9 +39,9 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 			min_low_change = low.min() / low.iloc[0] - 1
 
 			outputs.append([
-				max_high_change,
-				min_low_change,
-				min_low_change if min_low_index < max_high_index else max_high_change
+				max_high_change * self.scale,
+				min_low_change * self.scale,
+				(min_low_change if min_low_index < max_high_index else max_high_change) * self.scale
 			])
 		return numpy.array(outputs)
 
@@ -48,9 +49,9 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		return [
 			{
 				'symbol': chart.symbol,
-				'max_high_change': output[0],
-				'min_low_change': output[1],
-				'tp_change' : output[2],
+				'max_high_change': output[0] / self.scale,
+				'min_low_change': output[1] / self.scale,
+				'tp_change' : output[2] / self.scale,
 			}
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

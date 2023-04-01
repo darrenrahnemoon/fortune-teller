@@ -70,9 +70,19 @@ class TrainerService(ArtifactService):
 	):
 		pass
 
-	def train(self, model: Model):
+	def train(
+		self,
+		model: Model,
+		hyperparameters: HyperParameters = None
+	):
+		self.compile(
+			model = model,
+			hyperparameters = hyperparameters
+		)
 		if self.config.overwrite:
 			rmtree(self.get_checkpoints_path(model).parent, ignore_errors = True)
+		else:
+			self.load_weights(model)
 
 		with self.device_service.selected_device:
 			model.fit(

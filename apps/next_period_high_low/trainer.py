@@ -24,5 +24,5 @@ class NextPeriodHighLowTrainerService(TrainerService):
 					step = 10 ** -4
 				)
 			),
-			loss = 'mae',
+			loss = 'mse',
 		)

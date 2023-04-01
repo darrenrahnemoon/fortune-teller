@@ -18,7 +18,7 @@ from core.utils.config import Config, FloatRangeConfig, dataclass, field, on_sta
 class NextPeriodHighLowStrategyConfig(Config):
 	interval: Interval = Interval.Minute(1)
 
-	forward_window_length: Interval = Interval.Hour(3)
+	forward_window_length: Interval = Interval.Hour(12)
 	forward_window_bars: int = field(init = False)
 
 	backward_window_length: Interval = Interval.Day(2)
@@ -32,9 +32,9 @@ class NextPeriodHighLowStrategyConfig(Config):
 
 	max_spread_to_trade: int = None
 	min_movement_percentage_to_trade: float = 0.0002 # 0.02%
-	risk_over_reward: FloatRangeConfig = field(
+	risk_over_reward: FloatRangeConfig = field( # ABS(SL - PRICE) / ABS(TP - PRICE)
 		default_factory = lambda: FloatRangeConfig(
-			min = None,
+			min = 0.1,
 			max = 2,
 		)
 	)

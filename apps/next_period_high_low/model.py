@@ -111,9 +111,6 @@ class NextPeriodHighLowModelService(ModelService):
 					),
 					activation = 'relu',
 				)(y)
-				y = Dropout(
-					rate = dropout_parameter(hyperparameter_name.build('dropout'))
-				)(y)
 
 		outputs = self.build_outputs(y)
 
