@@ -17,16 +17,14 @@ class ViewModelCommandSession(
 
 	def setup(self):
 		super().setup()
-		self.parser.add_argument('model')
 		self.parser.add_argument('trial', default = 'best')
 		self.parser.add_argument('--plot', action = BooleanOptionalAction)
 
 	def run(self):
 		super().run()
-		container = getattr(self.container, self.args.model)()
-
-		tuner_service = container.tuner_service()
-		trainer_service = container.trainer_service()
+		model_container = self.container.model()
+		tuner_service = model_container.tuner_service()
+		trainer_service = model_container.trainer_service()
 		model = tuner_service.get_model(self.args.trial)
 		model.summary()
 

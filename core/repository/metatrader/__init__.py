@@ -152,7 +152,7 @@ class MetaTraderRepository(Repository):
 				symbol = symbol,
 				to_timestamp = timestamp,
 				count = 1,
-				repository = self.repository,
+				repository = self,
 			).read()
 
 			bid = chart.data['bid'].iloc[0]

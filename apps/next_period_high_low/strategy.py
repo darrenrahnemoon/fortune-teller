@@ -86,10 +86,6 @@ class NextPeriodHighLowStrategy(Strategy):
 	def get_predictions(self, timestamp: pandas.Timestamp):
 		predictions = self.predictor_service.predict(self.model, timestamp)
 		for prediction in predictions:
-			yield NextPeriodHighLowPrediction(
-				symbol = prediction['symbol'],
-				broker = self.config.metatrader_broker,
-				max_high_change = prediction['max_high_change'],
-				min_low_change = prediction['min_low_change'],
-				tp_change = prediction['tp_change'],
-			)
+			prediction.broker = self.config.metatrader_broker
+			prediction.resolve()
+		return predictions

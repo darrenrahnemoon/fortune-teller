@@ -1,9 +1,12 @@
 import numpy
+import pandas
 from dataclasses import dataclass
 from core.chart import ChartGroup
 from core.utils.logging import Logger
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
+from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
+
 from core.tensorflow.preprocessor.service import PreprocessorService
 
 logger = Logger(__name__)
@@ -45,13 +48,19 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 			])
 		return numpy.array(outputs)
 
-	def from_model_output(self, outputs: numpy.ndarray) -> list[dict]:
+	def from_model_output(
+		self,
+		outputs: numpy.ndarray,
+		timestamp: pandas.Timestamp = None
+	):
 		return [
-			{
-				'symbol': chart.symbol,
-				'max_high_change': output[0] / self.scale,
-				'min_low_change': output[1] / self.scale,
-				'tp_change' : output[2] / self.scale,
-			}
+			NextPeriodHighLowPrediction(
+				symbol = chart.symbol,
+				max_high_change = output[0] / self.scale,
+				min_low_change = output[1] / self.scale,
+				tp_change = output[2] / self.scale,
+				broker = self.strategy_config.metatrader_broker,
+				timestamp = timestamp,
+			)
 			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
 		]

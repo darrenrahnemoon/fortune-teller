@@ -103,6 +103,3 @@ class TrainerService(ArtifactService):
 			show_dtype = True,
 			show_layer_activations = True,
 		)
-
-	def predict(self, model: Model, *args, **kwargs):
-		pass

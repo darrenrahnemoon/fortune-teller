@@ -81,7 +81,6 @@ class NextPeriodHighLowStrategyConfig(Config):
 					symbol = symbol,
 					interval = self.interval,
 					select = CandleStickChart.data_fields,
-					count = self.backward_window_bars,
 					repository = self.metatrader_broker.repository,
 				)
 				for symbol in self.metatrader_symbols

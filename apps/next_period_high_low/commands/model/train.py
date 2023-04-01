@@ -16,13 +16,13 @@ class TrainModelCommandSession(
 
 	def setup(self):
 		super().setup()
-		self.parser.add_argument('model')
 
 	def run(self):
 		super().run()
-		container = getattr(self.container, self.args.model)()
-		tuner_service = container.tuner_service()
-		trainer_service = container.trainer_service()
+
+		model_container = self.container.model()
+		tuner_service = model_container.tuner_service()
+		trainer_service = model_container.trainer_service()
 
 		# Print Model
 		model = tuner_service.get_model(trainer_service.config.trial)

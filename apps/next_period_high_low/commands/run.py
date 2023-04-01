@@ -17,5 +17,6 @@ class RunStrategyCommandSession(
 
 	def run(self):
 		super().run()
+		self.config.dataset.batch_size = 1
 		strategy = self.container.strategy()
 		strategy.run()
