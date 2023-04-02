@@ -23,8 +23,8 @@ class NextPeriodHighLowSequence(Sequence):
 		return len(self.timestamps)
 
 	def __getitem__(self, index):
-		input_chart_group = self.strategy_config.input_chart_group
-		output_chart_group = self.strategy_config.output_chart_group
+		input_chart_group = self.strategy_config.build_input_chart_group()
+		output_chart_group = self.strategy_config.build_output_chart_group()
 		timestamp = self.timestamps[index]
 
 		input_chart_group.read(
@@ -65,4 +65,5 @@ class NextPeriodHighLowSequence(Sequence):
 	@property
 	@functools.cache
 	def common_time_window(self):
-		return self.repository.get_common_time_window(self.strategy_config.input_chart_group)
+		input_chart_group = self.strategy_config.build_input_chart_group()
+		return self.repository.get_common_time_window(input_chart_group)

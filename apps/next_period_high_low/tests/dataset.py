@@ -22,8 +22,18 @@ def _():
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
 		assert len(sequence) != 0
 
-		expected_columns_count = sum([ len(chart.select) for chart in config.strategy.input_chart_group.charts ])
-		expected_columns_count += len(config.strategy.input_chart_group.charts[0].indicators['seasonality'].value_fields)
+		input_chart_group = config.strategy.build_input_chart_group()
+		expected_columns_count = sum(
+			(
+				len(chart.select) + sum(
+					(
+						len(indicator.value_fields)
+						for indicator in chart.indicators
+					)
+				)
+				for chart in input_chart_group.charts
+			)
+		)
 
 		for index in range(5):
 			x, y = sequence[index]

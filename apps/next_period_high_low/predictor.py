@@ -13,7 +13,7 @@ class NextPeriodHighLowPredictorService(PredictorService):
 	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 
 	def predict(self, model: Model, timestamp: pandas.Timestamp):
-		input_chart_group = self.strategy_config.input_chart_group
+		input_chart_group = self.strategy_config.build_input_chart_group()
 		input_chart_group.read(
 			count = self.strategy_config.backward_window_bars,
 			to_timestamp = timestamp,
@@ -37,14 +37,14 @@ class NextPeriodHighLowPredictorService(PredictorService):
 		timestamp: pandas.Timestamp
 	):
 		predictions = self.predict(model, timestamp)
-		chart_group = self.strategy_config.output_chart_group
-		chart_group.read(
+		output_chart_group = self.strategy_config.build_output_chart_group()
+		output_chart_group.read(
 			from_timestamp = timestamp + self.strategy_config.interval.to_pandas_timedelta(),
 			to_timestamp = timestamp + self.strategy_config.forward_window_length.to_pandas_timedelta(),
 			count = None,
 		)
 
-		for prediction, chart in zip(predictions, chart_group.charts):
+		for prediction, chart in zip(predictions, output_chart_group.charts):
 			if prediction.action == None:
 				continue
 

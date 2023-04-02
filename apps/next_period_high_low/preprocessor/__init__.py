@@ -53,6 +53,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		outputs: numpy.ndarray,
 		timestamp: pandas.Timestamp = None
 	):
+		output_chart_group = self.strategy_config.build_output_chart_group()
 		return [
 			NextPeriodHighLowPrediction(
 				symbol = chart.symbol,
@@ -62,5 +63,5 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 				broker = self.strategy_config.metatrader_broker,
 				timestamp = timestamp,
 			)
-			for chart, output in zip(self.strategy_config.output_chart_group.charts, outputs)
+			for chart, output in zip(output_chart_group.charts, outputs)
 		]

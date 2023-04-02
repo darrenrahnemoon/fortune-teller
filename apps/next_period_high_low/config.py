@@ -72,8 +72,7 @@ class NextPeriodHighLowStrategyConfig(Config):
 			return False
 		return True
 
-	@property
-	def output_chart_group(self):
+	def build_output_chart_group(self):
 		chart_group = ChartGroup(
 			name = 'NextPeriodHighLow',
 			charts = [
@@ -88,9 +87,8 @@ class NextPeriodHighLowStrategyConfig(Config):
 		)
 		return chart_group
 
-	@property
-	def input_chart_group(self):
-		chart_group = self.output_chart_group
+	def build_input_chart_group(self):
+		chart_group = self.build_output_chart_group()
 		chart_group.charts[0].attach_indicator(SeasonalityIndicator, name = 'seasonality')
 		return chart_group
 
