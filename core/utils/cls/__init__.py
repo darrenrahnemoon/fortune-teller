@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Any, Iterable
+from typing import Any, Iterable, TypeVar
 
 def ensureattr(obj: Any, name: str, default: Any):
 	"""Check if an attribute exists on object and if not set it to default
@@ -24,10 +24,11 @@ def pickattrs(obj, names: Iterable[str]) -> dict:
 		for attr in names
 	}
 
-def product_dict(combinations: dict[list]):
-	return (
+T = TypeVar('T')
+def product_dict(combinations: dict[list[T]]) -> list[dict[str, T]]:
+	return [
 		dict(
 			zip(combinations.keys(), combination)
 		)
 		for combination in product(*combinations.values())
-	)
+	]

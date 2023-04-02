@@ -1,7 +1,5 @@
 import pandas
-import sys
 
-from dataclass_csv import DataclassWriter
 from argparse import BooleanOptionalAction
 from dataclasses import dataclass, field
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
@@ -10,12 +8,13 @@ from apps.next_period_high_low.config import NextPeriodHighLowConfig
 
 from core.utils.command import CommandSession
 from core.utils.time import now, normalize_timestamp
-from core.utils.cls.repr import pretty_repr
+from core.utils.collection.command import ListOutputFormatCommandSession
 from core.utils.container.command import ContainerCommandSession
 
 @dataclass
 class PredictModelCommandSession(
 	ContainerCommandSession,
+	ListOutputFormatCommandSession,
 	CommandSession
 ):
 	config: NextPeriodHighLowConfig = field(default_factory = NextPeriodHighLowConfig)
@@ -26,7 +25,6 @@ class PredictModelCommandSession(
 		self.parser.add_argument('--evaluate', action = BooleanOptionalAction)
 		self.parser.add_argument('--prompt', '-p', action = BooleanOptionalAction)
 		self.parser.add_argument('--timestamp', type = normalize_timestamp, default = now())
-		self.parser.add_argument('--format', choices = [ 'csv', 'repr' ], default = 'csv')
 
 	def run(self):
 		super().run()
@@ -53,7 +51,4 @@ class PredictModelCommandSession(
 			model = self.model,
 			timestamp = timestamp,
 		)
-		if self.args.format == 'csv':
-			DataclassWriter(sys.stdout, predictions, NextPeriodHighLowPrediction).write()
-		else:
-			print(pretty_repr(predictions))
+		self.print_list(predictions)

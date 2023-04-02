@@ -1,14 +1,14 @@
-import functools
 import time
 import os
 import pandas
 import requests
 from dataclasses import dataclass, field
 
-from core.repository.repository import Repository, ChartCombinations
+from core.repository.repository import Repository
 from core.chart import LineChart, OverriddenChart
 from core.interval import Interval
 from .serializers import AlphaVantageSerializers
+from core.utils.cls import product_dict
 from core.utils.logging import Logger
 
 logger = Logger(__name__)
@@ -18,62 +18,61 @@ class AlphaVantageRepository(Repository):
 	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
 	serializers = AlphaVantageSerializers()
 
-	@classmethod
-	@functools.cache
-	def get_available_chart_combinations(self) -> ChartCombinations:
-		return {
-			LineChart: [
-				{
-					'symbol': [ 'REAL_GDP' ],
-					'interval': [ Interval.Year(1), Interval.Quarter(1) ]
-				},
-				{
-					'symbol': [ 'REAL_GDP_PER_CAPITA' ],
-					'interval' : [ Interval.Quarter(1) ]
-				},
-				{
-					'symbol': [ 'TREASURY_YIELD' ],
-					'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ],
-					'maturity': [ Interval.Month(3), Interval.Year(2), Interval.Year(5), Interval.Year(7), Interval.Year(10), Interval.Year(30) ]
-				},
-				{
-					'symbol': [ 'FEDERAL_FUNDS_RATE' ],
-					'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'CPI' ],
-					'interval': [ Interval.Month(1), Interval.Month(6) ]
-				},
-				{
-					'symbol': [ 'INFLATION' ],
-					'interval': [ Interval.Year(1) ]
-				},
-				{
-					'symbol': [ 'INFLATION_EXPECTATION' ],
-					'interval': [ Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'CONSUMER_SENTIMENT' ],
-					'interval': [ Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'RETAIL_SALES' ],
-					'interval': [ Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'DURABLES' ],
-					'interval': [ Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'UNEMPLOYMENT' ],
-					'interval': [ Interval.Month(1) ]
-				},
-				{
-					'symbol': [ 'NONFARM_PAYROLL' ],
-					'interval': [ Interval.Month(1) ]
-				},
-			]
-		}
+	def get_all_available_charts(self, **kwargs):
+		combinations = [
+			{
+				'symbol': [ 'REAL_GDP' ],
+				'interval': [ Interval.Year(1), Interval.Quarter(1) ]
+			},
+			{
+				'symbol': [ 'REAL_GDP_PER_CAPITA' ],
+				'interval' : [ Interval.Quarter(1) ]
+			},
+			{
+				'symbol': [ 'TREASURY_YIELD' ],
+				'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ],
+				'maturity': [ Interval.Month(3), Interval.Year(2), Interval.Year(5), Interval.Year(7), Interval.Year(10), Interval.Year(30) ]
+			},
+			{
+				'symbol': [ 'FEDERAL_FUNDS_RATE' ],
+				'interval': [ Interval.Day(1), Interval.Week(1), Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'CPI' ],
+				'interval': [ Interval.Month(1), Interval.Month(6) ]
+			},
+			{
+				'symbol': [ 'INFLATION' ],
+				'interval': [ Interval.Year(1) ]
+			},
+			{
+				'symbol': [ 'INFLATION_EXPECTATION' ],
+				'interval': [ Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'CONSUMER_SENTIMENT' ],
+				'interval': [ Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'RETAIL_SALES' ],
+				'interval': [ Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'DURABLES' ],
+				'interval': [ Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'UNEMPLOYMENT' ],
+				'interval': [ Interval.Month(1) ]
+			},
+			{
+				'symbol': [ 'NONFARM_PAYROLL' ],
+				'interval': [ Interval.Month(1) ]
+			},
+		]
+		for combination in combinations:
+			for chart_params in product_dict(combination):
+				yield LineChart(**chart_params)
 
 	def read_chart(
 		self,

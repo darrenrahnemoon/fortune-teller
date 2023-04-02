@@ -5,8 +5,8 @@ from core.indicator.indicator import Indicator
 
 @dataclass
 class MACDIndicator(Indicator):
-	query_fields = [ 'window_slow', 'window_fast' ]
-	value_fields = [ 'value' ]
+	query_field_names = Indicator.query_field_names + [ 'window_slow', 'window_fast' ]
+	value_field_names = Indicator.value_field_names + [ 'value' ]
 
 	window_slow: float = None
 	window_fast: float = None

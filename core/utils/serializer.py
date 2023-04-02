@@ -21,7 +21,11 @@ class MappingSerializer(Serializer):
 		return next(key for key, value in self.mapping.items() if value == value)
 
 class RepresentationSerializer(Serializer):
-	def __init__(self, from_type: type[object], include_subclasses = True):
+	def __init__(
+		self,
+		from_type: type[object],
+		include_subclasses = True
+	):
 		self.from_type = from_type
 
 		if type(self.from_type) == str:
@@ -29,10 +33,8 @@ class RepresentationSerializer(Serializer):
 			return
 
 		self.include_subclasses = include_subclasses
-
-		self.allowed_types = [ from_type ]
-		if self.include_subclasses:
-			self.allowed_types.extend(from_type.__subclasses__())
+		self.allowed_types = []
+		self.append_to_allowed_types(from_type)
 
 		self.context = dict()
 		for _type in self.allowed_types:
@@ -44,10 +46,19 @@ class RepresentationSerializer(Serializer):
 						continue
 					self.context[field_type.__name__] = field_type
 
+	def append_to_allowed_types(self, cls):
+		self.allowed_types.append(cls)
+		if self.include_subclasses:
+			for subclass in cls.__subclasses__():
+				self.append_to_allowed_types(subclass)
+
 	def serialize(self, value):
 		return repr(value)
 
 	def deserialize(self, value: str):
+		if value == 'None':
+			return None
+
 		if type(self.from_type) == str:
 			return value
 

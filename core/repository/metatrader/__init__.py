@@ -34,23 +34,20 @@ class MetaTraderRepository(Repository):
 		self._now = normalize_timestamp(value)
 
 	def get_available_symbols(self):
-		return [ symbol.name for symbol in MetaTrader5.symbols_get() ]
+		return [
+			symbol.name
+			for symbol in MetaTrader5.symbols_get()
+		]
 
-	def get_available_chart_combinations(self):
+	def get_all_available_charts(self, **kwargs):
 		symbols = self.get_available_symbols()
-		return {
-			CandleStickChart : [
-				{
-					'symbol': [ symbol ],
-					'interval' : list(self.serializers.interval.mapping.keys())
-				}
-				for symbol in symbols
-			],
-			TickChart : [
-				{ 'symbol' : [ symbol ] }
-				for symbol in symbols
-			]
-		}
+		for symbol in symbols:
+			for interval in self.serializers.interval.mapping.keys():
+				yield CandleStickChart(
+					symbol = symbol,
+					interval = interval,
+				)
+			yield TickChart(symbol = symbol)
 
 	def read_chart(
 		self,

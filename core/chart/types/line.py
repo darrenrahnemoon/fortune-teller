@@ -5,8 +5,8 @@ from core.interval import Interval
 
 @dataclass
 class LineChart(Chart):
-	query_fields = Chart.query_fields + [ 'interval', 'maturity' ]
-	data_fields = Chart.data_fields + [ 'value' ]
+	query_field_names = Chart.query_field_names + [ 'interval', 'maturity' ]
+	data_field_names = Chart.data_field_names + [ 'value' ]
 
 	interval: Interval = None
 	maturity: Interval = None

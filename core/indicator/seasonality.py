@@ -6,7 +6,7 @@ from core.indicator import Indicator
 
 @dataclass
 class SeasonalityIndicator(Indicator):
-	available_seasonalities = {
+	seasonality_metrics = {
 		'year-century': lambda index: index.year % 100 / 100, 
 		'quarter-year': lambda index: (index.quarter + 1) / 4,
 		'month-year': lambda index: index.month / 12,
@@ -16,11 +16,15 @@ class SeasonalityIndicator(Indicator):
 		'hour-day': lambda index: index.hour / 24,
 		'minute-hour': lambda index: index.minute / 60,
 	}
-	value_fields = [ f'{operation}({key})' for key in available_seasonalities.keys() for operation in [ 'sin', 'cos' ]] 
+	value_field_names = Indicator.value_field_names + [
+		f'{operation}({key})'
+		for key in seasonality_metrics.keys() 
+		for operation in [ 'sin', 'cos' ]
+	]
 
 	def run(self, dataframe: pandas.DataFrame):
 		result = pandas.DataFrame(index=dataframe.index)
-		for seasonality, frequency in self.available_seasonalities.items():
+		for seasonality, frequency in self.seasonality_metrics.items():
 			result[f'sin({seasonality})'] = numpy.sin(2 * numpy.pi * frequency(dataframe.index))
 			result[f'cos({seasonality})'] = numpy.cos(2 * numpy.pi * frequency(dataframe.index))
 		return result

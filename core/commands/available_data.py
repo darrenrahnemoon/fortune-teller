@@ -9,9 +9,11 @@ from core.chart import Chart
 from core.utils.serializer import RepresentationSerializer
 from core.utils.command import CommandSession
 from core.chart.command import ChartCommandSession
+from core.utils.collection.command import ListOutputFormatCommandSession
 
 class AvailableDataCommandSession(
 	ChartCommandSession,
+	ListOutputFormatCommandSession,
 	CommandSession
 ):
 	def setup(self):
@@ -52,7 +54,7 @@ class AvailableDataCommandSession(
 	def print_chart(self, chart: Chart):
 		print(
 			type(chart).__name__,
-			*[ getattr(chart, key) for key in chart.query_fields ],
+			*[ getattr(chart, key) for key in chart.query_field_names ],
 			chart.from_timestamp,
 			chart.to_timestamp,
 			getattr(chart, 'gap_percentage', None),

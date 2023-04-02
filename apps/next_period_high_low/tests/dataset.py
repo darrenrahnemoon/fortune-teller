@@ -16,7 +16,7 @@ def _():
 		config.strategy.metatrader_symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
 		config.strategy.interval = Interval.Minute(1)
 
-		container = NextPeriodHighLowContainer(config = config).price()
+		container = NextPeriodHighLowContainer(config = config).model()
 		sequence: NextPeriodHighLowSequence = container.sequence()
 
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
@@ -27,8 +27,8 @@ def _():
 			(
 				len(chart.select) + sum(
 					(
-						len(indicator.value_fields)
-						for indicator in chart.indicators
+						len(indicator.value_field_names)
+						for indicator in chart.indicators.values()
 					)
 				)
 				for chart in input_chart_group.charts

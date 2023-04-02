@@ -1,14 +1,13 @@
 import pandas
 from abc import abstractmethod
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Iterable
 from dataclasses import dataclass
 if TYPE_CHECKING:
 	from core.chart import Chart, Symbol
 	from core.order import OrderType
 
 from core.utils.time import now
-from core.utils.cls import product_dict
-from core.utils.collection import is_any_of
+from core.utils.collection import ensure_list, is_any_of
 
 ChartCombinations = dict[
 	type['Chart'], dict[str, list]
@@ -22,32 +21,37 @@ class Repository:
 	def now(self):
 		return now(self.timezone)
 
-	@abstractmethod
-	def get_available_chart_combinations(self) -> ChartCombinations:
-		pass
-
 	def get_available_symbols(self):
 		symbols = set()
-		for _, combinations in self.get_available_chart_combinations().items():
-			for combination in combinations:
-				for symbol in combination['symbol']:
-					symbols.add(symbol)
+		for chart in self.get_available_charts():
+			symbols.add(chart.symbol)
 		return list(symbols)
 
-	def get_available_charts(self, filter = {}, **kwargs):
-		for chart, combination_groups in self.get_available_chart_combinations().items():
-			if 'chart' in filter and not is_any_of(filter['chart'], lambda filter_chart: issubclass(chart, filter_chart)):
-				continue
-			for combination_group in combination_groups:
-				for combination in product_dict(combination_group):
-					should_skip = False
-					for key, value in combination.items():
-						if key in filter and not value in filter[key]:
-							should_skip = True
-							break
-					if should_skip:
-						continue
-					yield chart(**combination)
+	@abstractmethod
+	def get_all_available_charts(self, **kwargs) -> Iterable['Chart']:
+		pass
+
+	def get_available_charts(
+		self,
+		filter: dict[str] = {},
+		**kwargs,
+	):
+		charts = self.get_all_available_charts(**kwargs)
+		for chart in charts:
+			exclude = False
+			for field_name, filter_values in filter.items():
+				if filter_values == None:
+					continue
+
+				filter_values = ensure_list(filter_values)
+				if len(filter_values) == 0:
+					continue
+
+				if not is_any_of(filter_values, lambda filter_value: filter_value == getattr(chart, field_name, None)):
+					exclude = True
+
+			if not exclude:
+				yield chart
 
 	@abstractmethod
 	def read_chart(
@@ -79,20 +83,23 @@ class Repository:
 		amount,
 		from_currency: str,
 		to_currency: str,
+		timestamp: pandas.Timestamp = None,
 	):
 		if from_currency == to_currency:
 			return amount
 
 		exchange_rate = self.get_last_price(
 			symbol = f'{from_currency}{to_currency}',
+			timestamp = timestamp,
 		)
-		if exchange_rate:
+		if exchange_rate != None:
 			return amount * exchange_rate
 
 		exchange_rate = self.get_last_price(
 			symbol = f'{to_currency}{from_currency}',
+			timestamp = timestamp,
 		)
-		if exchange_rate:
+		if exchange_rate != None:
 			return amount / exchange_rate
 
 		raise Exception(f"Cannot calculate the exchange rate from {from_currency} to {to_currency}'")

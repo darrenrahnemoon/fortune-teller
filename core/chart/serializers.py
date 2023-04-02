@@ -36,14 +36,14 @@ class ChartDataFrameRecordsSerializer(Serializer):
 
 		# Empty dataframes might not have the right columns, so add them
 		if len(value) == 0 and type(value.columns) != pandas.MultiIndex: # NOTE: `select` not supported for MultiIndex columns
-			value[Chart.timestamp_field] = None
+			value[Chart.timestamp_field_name] = None
 			if select and len(select):
 				value[select] = None
 
 		# Ensure timestamp is index
 		if type(value.index) != pandas.DatetimeIndex:
-			value.index = pandas.DatetimeIndex(value[Chart.timestamp_field], name = Chart.timestamp_field)
-			value = value.drop(columns = [ Chart.timestamp_field ])
+			value.index = pandas.DatetimeIndex(value[Chart.timestamp_field_name], name = Chart.timestamp_field_name)
+			value = value.drop(columns = [ Chart.timestamp_field_name ])
 
 		# Make sure the dataframe is ascending
 		if len(value.index) > 1 and value.index[0] > value.index[-1]:
@@ -75,5 +75,5 @@ class ChartDataFrameRecordsSerializer(Serializer):
 
 		return dataframe \
 			.reset_index() \
-			.drop_duplicates(Chart.timestamp_field) \
+			.drop_duplicates(Chart.timestamp_field_name) \
 			.to_dict(orient='records')

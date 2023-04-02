@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 	from core.chart.group import ChartGroup
 	from core.repository import Repository
 
-from core.utils.shared_dataframe_container import SharedDataFrameContainer
+from core.utils.shared_dataframe_container import DataFrameContainer
 from core.utils.time import TimeWindow, now
 from core.utils.logging import Logger
 
@@ -17,41 +17,45 @@ logger = Logger(__name__)
 Symbol = str
 
 @dataclass
-class Chart(TimeWindow, SharedDataFrameContainer):
+class Chart(TimeWindow, DataFrameContainer):
 	symbol: Symbol = None
 	repository: 'Repository' = None
 	chart_group: 'ChartGroup' = None
 	indicators: dict[str, 'Indicator'] = field(repr=False, default_factory=dict)
 	count: int = None
-	select: list[str] = None
+	select: list[str] = field(default_factory = list)
 
-	timestamp_field: ClassVar[str] = 'timestamp'
-	query_fields: ClassVar[list[str]] = [ 'symbol' ]
-	data_fields: ClassVar[list[str]] = []
-	volume_fields: ClassVar[list[str]] = []
+	timestamp_field_name: ClassVar[str] = 'timestamp'
+	query_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + [ 'symbol' ]
+	data_field_names: ClassVar[list[str]] = []
+	volume_field_names: ClassVar[list[str]] = []
 
 	@classmethod
 	@property
-	def value_fields(cls):
-		return cls.data_fields + cls.volume_fields
+	def value_field_names(cls):
+		return DataFrameContainer.value_field_names + cls.data_field_names + cls.volume_field_names
 
 	def __post_init__(self):
 		super().__post_init__()
 		self.dataframe = None
-		self.select = self.select or self.value_fields
+		if len(self.select) == 0:
+			self.select = self.value_field_names
+
 		for name, indicator in self.indicators.items():
 			self.attach_indicator(indicator, name=name)
 
-	def read(self, refresh_indicators = True, repository = None, **overrides):
-		self.dataframe = (repository or self.repository).read_chart(self, **overrides)
+	def read(
+		self,
+		refresh_indicators = True,
+		repository = None,
+		**overrides
+	):
+		repository = repository or self.repository
+		self.dataframe = repository.read_chart(self, **overrides)
 
 		if refresh_indicators:
 			self.refresh_indicators()
 		return self
-
-	@property
-	def type(self):
-		return type(self)
 
 	@property
 	def dataframe(self):
@@ -59,12 +63,13 @@ class Chart(TimeWindow, SharedDataFrameContainer):
 		Returns:
 			pandas.DataFrame:
 				The dataframe of the chart itself if it's been populated
-				Otherwise, the dataframe of the chart group it belongs too
+				Otherwise, the dataframe of the chart group it belongs to
 		"""
-		dataframe = self._dataframe
-		if type(dataframe) != pandas.DataFrame and self.chart_group:
-			dataframe = self.chart_group.dataframe
-		return dataframe
+		if type(self._dataframe) == pandas.DataFrame:
+			return self._dataframe
+		if self.chart_group:
+			return self.chart_group.dataframe
+		return None
 
 	@dataframe.setter
 	def dataframe(self, dataframe: pandas.DataFrame):
@@ -106,13 +111,6 @@ class OverriddenChart:
 		return self[name]
 
 	def __getitem__(self, name: str):
-		# HACK: `type` is a special case as the class type is used during querying as well
-		if name == 'type' or name == 'chart':
-			if self.chart != None:
-				return type(self.chart)
-			else:
-				return self.overrides.get('type', None)
-
 		if name in self.overrides:
 			return self.overrides[name]
 		if hasattr(self.chart, name):

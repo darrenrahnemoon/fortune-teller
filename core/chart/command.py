@@ -25,7 +25,7 @@ class ChartCommandSession(ClassCommandSession):
 
 		chart_classes = [ chart_cls ] + chart_cls.__subclasses__()
 		for chart_class in chart_classes:
-			fields = chart_class.query_fields
+			fields = chart_class.query_field_names
 			for field in fields:
 				self.chart_fields.add(field)
 
@@ -39,7 +39,7 @@ class ChartCommandSession(ClassCommandSession):
 				group = group
 			)
 
-	def get_chart_filter_from_arguments(self):
+	def get_chart_filter_from_arguments(self) -> dict[str, list]:
 		return {
 			key: value
 			for key, value in self.args.__dict__.items()

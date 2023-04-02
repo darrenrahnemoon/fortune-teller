@@ -4,22 +4,19 @@ import pandas
 from typing import ClassVar
 from dataclasses import dataclass
 
-from core.utils.shared_dataframe_container import SharedDataFrameContainer
+from core.utils.shared_dataframe_container import DataFrameContainer
 from core.chart import Chart
 from core.utils.logging import Logger
 
 logger = Logger(__name__)
 
 @dataclass
-class Indicator(SharedDataFrameContainer):
-	value_fields: ClassVar[list[str]] = []
+class Indicator(DataFrameContainer):
+	query_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + []
+	value_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + []
 
 	def __post_init__(self) -> None:
 		self.chart: Chart = None
-
-	@property
-	def name(self):
-		return f'{super().name}({self.chart.name})'
 
 	@property
 	def dataframe(self):

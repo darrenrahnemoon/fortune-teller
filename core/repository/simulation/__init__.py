@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from .serializers import SimulationSerializers
 from core.chart import Chart, ChartGroup, OverriddenChart, CandleStickChart
-from core.repository.repository import ChartCombinations, Repository
+from core.repository.repository import Repository
 from core.interval import Interval
 from core.utils.time import TimeWindow, normalize_timestamp, now
 from core.utils.mongo import MongoRepository
@@ -111,42 +111,11 @@ class SimulationRepository(Repository, MongoRepository):
 			to_timestamp = min(to_timestamp)
 		)
 
-	def get_available_chart_combinations(self) -> ChartCombinations:
-		# SHOULD DO: clean this up or remove entirely
-		collection_names = self.historical_data.list_collection_names()
-		collection_names.sort()
-		available_data = dict()
-		for name in collection_names:
-			chart = self.serializers.collection.to_chart(name)
-			combinations = available_data.setdefault(type(chart), [])
-			symbol_combinations = next((combination for combination in combinations if chart.symbol in combination['symbol'] ), None)
-			if symbol_combinations == None:
-				symbol_combinations = { 'symbol' : [ chart.symbol ] }
-			for field_key in chart.query_fields:
-				if field_key == 'symbol':
-					continue
-				field_value = getattr(chart, field_key)
-				field_combinations = symbol_combinations.setdefault(field_key, [])
-				if field_value not in field_combinations:
-					field_combinations.append(field_value)
-			return available_data
-
-	def get_available_charts(
-		self,
-		filter = {},
-		include_timestamps = False
-	) -> Iterable[Chart]:
+	def get_all_available_charts(self, include_timestamps = False, **kwargs):
 		collection_names = self.historical_data.list_collection_names()
 		collection_names.sort()
 		for name in collection_names:
 			chart = self.serializers.collection.to_chart(name)
-
-			should_skip = False
-			for key, value in chart.__dict__.items():
-				if (key in filter) and (value not in filter[key]):
-					should_skip = True
-			if should_skip:
-				continue
 			if include_timestamps:
 				chart.from_timestamp = self.get_min_available_timestamp(chart)
 				chart.to_timestamp = self.get_max_available_timestamp(chart)
@@ -179,8 +148,8 @@ class SimulationRepository(Repository, MongoRepository):
 	) -> pandas.Timestamp:
 		chart = OverriddenChart(chart, overrides)
 		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
-		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.DESCENDING) ])
-		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
+		record = collection.find_one(sort = [ (Chart.timestamp_field_name, pymongo.DESCENDING) ])
+		return normalize_timestamp(record[Chart.timestamp_field_name]) if record else None
 
 	def get_min_available_timestamp(
 		self,
@@ -189,8 +158,8 @@ class SimulationRepository(Repository, MongoRepository):
 	) -> pandas.Timestamp:
 		chart = OverriddenChart(chart, overrides)
 		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
-		record = collection.find_one(sort = [ (Chart.timestamp_field, pymongo.ASCENDING) ])
-		return normalize_timestamp(record[Chart.timestamp_field]) if record else None
+		record = collection.find_one(sort = [ (Chart.timestamp_field_name, pymongo.ASCENDING) ])
+		return normalize_timestamp(record[Chart.timestamp_field_name]) if record else None
 
 	def backfill_worker(
 		self,

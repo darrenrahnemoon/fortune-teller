@@ -127,7 +127,7 @@ class NextPeriodHighLowModelService(ModelService):
 		for chart in input_chart_group.charts:
 			features_length += len(chart.select)
 			for indicator in chart.indicators.values():
-				features_length += len(indicator.value_fields)
+				features_length += len(indicator.value_field_names)
 		return Input(
 			batch_size = self.dataset_service.config.batch_size,
 			shape = (self.strategy_config.backward_window_bars, features_length)

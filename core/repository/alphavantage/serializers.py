@@ -13,7 +13,7 @@ class LineChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
 		dataframe['value'] = dataframe['value'].astype(float)
 
 		dataframe.index = pandas.to_datetime(dataframe.index)
-		dataframe.index.name = Chart.timestamp_field
+		dataframe.index.name = Chart.timestamp_field_name
 
 		# revert the order to ascending as the AlphaVantage API gives descending data
 		dataframe = dataframe.reindex(index = dataframe.index[::-1])
