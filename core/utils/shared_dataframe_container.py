@@ -12,6 +12,7 @@ class DataFrameContainer(metaclass = DataFrameContainerMetaClass):
 	query_field_names: ClassVar[list[str]] = [ 'type' ]
 	value_field_names: ClassVar[list[str]] = []
 
+	@property
 	def name(self):
 		return '.'.join([ repr(getattr(self, key)) for key in self.query_field_names ])
 

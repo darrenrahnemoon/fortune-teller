@@ -29,7 +29,7 @@ class RepresentationSerializer(Serializer):
 		self.from_type = from_type
 
 		if type(self.from_type) == str:
-			logger.warn(f'Cannot infer types from TYPE_CHECKING string. Value will be forwarded without serialization: {self.from_type}')
+			logger.debug(f'Cannot infer types from TYPE_CHECKING string. Value will be forwarded without serialization: {self.from_type}')
 			return
 
 		self.include_subclasses = include_subclasses
@@ -42,7 +42,7 @@ class RepresentationSerializer(Serializer):
 			if hasattr(_type, '__annotations__'):
 				for field_name, field_type in _type.__annotations__.items():
 					if type(field_type) == str:
-						logger.warn(f'Cannot infer types for fields that are specifying types in TYPE_CHECKING environments only: {field_name}: {field_type}')
+						logger.debug(f'Cannot infer types for fields that are specifying types in TYPE_CHECKING environments only: {field_name}: {field_type}')
 						continue
 					self.context[field_type.__name__] = field_type
 
@@ -62,7 +62,14 @@ class RepresentationSerializer(Serializer):
 		if type(self.from_type) == str:
 			return value
 
-		if self.from_type in [ str, bool, int, float ]:
+		if self.from_type == str:
+			for string_quote in [ '"', "'" ]:
+				if value[0] == string_quote and value[-1] == string_quote:
+					value = value[1:-1]
+					break
+			return value
+
+		if self.from_type in [ bool, int, float ]:
 			return self.from_type(value)
 
 		value = value.strip()

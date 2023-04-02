@@ -53,7 +53,6 @@ class AvailableDataCommandSession(
 
 	def print_chart(self, chart: Chart):
 		print(
-			type(chart).__name__,
 			*[ getattr(chart, key) for key in chart.query_field_names ],
 			chart.from_timestamp,
 			chart.to_timestamp,

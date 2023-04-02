@@ -1,4 +1,5 @@
 import pandas
+import inspect
 import termcolor
 from dataclasses import is_dataclass, fields as get_fields
 from types import NoneType
@@ -70,6 +71,9 @@ def pretty_repr(
 			result += repr_argument(item, separator = '')
 		result += repr_closing(']')
 		return result
+
+	if inspect.isclass(target):
+		return repr(target)
 
 	if type(target) == dict:
 		result = repr_opening('{')

@@ -16,12 +16,12 @@ class ChartCommandSession(ClassCommandSession):
 		is_multiple_arguments = nargs in [ '*', '+' ]
 		group = self.parser.add_argument_group('chart')
 		group.add_argument(
-			'--chart',
+			'--type',
 			nargs = nargs,
 			type = RepresentationSerializer(chart_cls).deserialize,
 			default = [] if is_multiple_arguments else None
 		)
-		self.chart_fields.add('chart') # chart is a valid filter
+		self.chart_fields.add('type') # chart is a valid filter
 
 		chart_classes = [ chart_cls ] + chart_cls.__subclasses__()
 		for chart_class in chart_classes:
