@@ -1,5 +1,5 @@
 from dataclasses import fields
-from dependency_injector.containers import DeclarativeContainer, copy
+from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Configuration, Singleton, Container
 
 from core.tensorflow.tensorboard.service import TensorboardService

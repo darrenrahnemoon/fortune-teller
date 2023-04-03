@@ -5,7 +5,7 @@ from core.chart import ChartGroup
 from core.utils.logging import Logger
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
+from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction, NextPeriodHighLowModelOutput
 
 from core.tensorflow.preprocessor.service import PreprocessorService
 
@@ -17,7 +17,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 	scale = 1
 
 	def to_model_input(self, input_chart_group: ChartGroup):
-		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.backward_window_bars)
+		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.observation.bars)
 		for chart in input_chart_group.charts:
 			chart.data = chart.data.pct_change() * self.scale
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
@@ -25,6 +25,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
+		output_chart_group.dataframe = output_chart_group.dataframe.head(self.strategy_config.action.bars)
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 
 		nan_columns = output_chart_group.dataframe.columns[output_chart_group.dataframe.isna().any().tolist()]
@@ -53,14 +54,17 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		outputs: numpy.ndarray,
 		timestamp: pandas.Timestamp = None
 	):
-		output_chart_group = self.strategy_config.build_output_chart_group()
+		output_chart_group = self.strategy_config.action.build_chart_group()
 		return [
 			NextPeriodHighLowPrediction(
+				model_output = NextPeriodHighLowModelOutput(
+					max_high_change = output[0] / self.scale,
+					min_low_change = output[1] / self.scale,
+					tp_change = output[2] / self.scale,
+				),
 				symbol = chart.symbol,
-				max_high_change = output[0] / self.scale,
-				min_low_change = output[1] / self.scale,
-				tp_change = output[2] / self.scale,
-				broker = self.strategy_config.metatrader_broker,
+				broker = self.strategy_config.action.broker,
+				strategy_config = self.strategy_config,
 				timestamp = timestamp,
 			)
 			for chart, output in zip(output_chart_group.charts, outputs)

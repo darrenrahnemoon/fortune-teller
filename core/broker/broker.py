@@ -34,22 +34,6 @@ class Broker:
 		pass
 
 	@abstractmethod
-	def get_last_bid_price(
-		self,
-		symbol: 'Symbol',
-		timestamp: pandas.Timestamp = None
-	) -> float:
-		pass
-
-	@abstractmethod
-	def get_last_ask_price(
-		self,
-		symbol: 'Symbol',
-		timestamp: pandas.Timestamp = None
-	) -> float:
-		pass
-
-	@abstractmethod
 	def get_orders(
 		self,
 		symbol: 'Symbol' = None,

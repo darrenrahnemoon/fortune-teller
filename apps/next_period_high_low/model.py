@@ -58,7 +58,7 @@ class NextPeriodHighLowModelService(ModelService):
 							kernel_size = hyperparameters.Int(
 								name = hyperparameter_name.build('kernel_size'),
 								min_value = 2,
-								max_value = self.strategy_config.backward_window_bars
+								max_value = self.strategy_config.observation.bars
 							),
 							padding = 'same',
 							activation = 'relu'
@@ -122,7 +122,7 @@ class NextPeriodHighLowModelService(ModelService):
 		return model
 
 	def build_inputs(self) -> Input:
-		input_chart_group = self.strategy_config.build_input_chart_group()
+		input_chart_group = self.strategy_config.observation.build_chart_group()
 		features_length = 0
 		for chart in input_chart_group.charts:
 			features_length += len(chart.select)
@@ -130,11 +130,11 @@ class NextPeriodHighLowModelService(ModelService):
 				features_length += len(indicator.value_field_names)
 		return Input(
 			batch_size = self.dataset_service.config.batch_size,
-			shape = (self.strategy_config.backward_window_bars, features_length)
+			shape = (self.strategy_config.observation.bars, features_length)
 		)
 
 	def build_outputs(self, x):
-		output_chart_group = self.strategy_config.build_output_chart_group()
+		output_chart_group = self.strategy_config.action.build_chart_group()
 		output_shape = (len(output_chart_group.charts), 3)
 		x = Dense(math.prod(iter(output_shape)))(x)
 		x = Reshape(output_shape)(x)

@@ -1,18 +1,15 @@
-import pandas
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 
 from core.strategy import Strategy
 from core.order import Order
 from core.size import Size
 from core.tensorflow.tuner.base.service import TunerService
-from core.utils.collection import is_any_of
 from core.utils.logging import Logger
 
 from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
 
 logger = Logger(__name__)
 
@@ -30,45 +27,25 @@ class NextPeriodHighLowStrategy(Strategy):
 		return super().__post_init__()
 
 	def handler(self):
-		predictions = self.get_predictions(self.config.metatrader_broker.now)
+		predictions = self.predictor_service.predict(self.model, self.config.action.broker.now)
 		for prediction in predictions:
-			# Skip "no action"
-			if prediction.action == None:
-				logger.info(f'Skipping due to lack of certain action:\n{prediction}')
-				continue
-
-			# Skip low movements
-			if self.config.min_movement_percentage_to_trade:
-				if abs(prediction.tp_change) < self.config.min_movement_percentage_to_trade:
-					logger.info(f"Skipping due to movement being less than '{self.config.min_movement_percentage_to_trade}': {prediction.tp_change}%\n{prediction}")
-					continue
-
-			# Skip high spread instruments
-			if self.config.max_spread_to_trade:
-				spread = self.config.metatrader_broker.repository.get_spread(prediction.symbol)
-				if spread > self.config.max_spread_to_trade:
-					logger.info(f"Skipping due to high spread: {spread}\n{prediction}")
-					continue
-
-			# Risk/Reward ratio
-			risk_over_reward = abs(prediction.sl_change) / abs(prediction.tp_change)
-			if self.config.risk_over_reward.min and risk_over_reward < self.config.risk_over_reward.min:
-				logger.info(f'Skipping due to |SL| / |TP| < {self.config.risk_over_reward.min}: {risk_over_reward}\n{prediction}')
-				continue
-			if self.config.risk_over_reward.max and risk_over_reward > self.config.risk_over_reward.max:
-				logger.info(f'Skipping due to |SL| / |TP| > {self.config.risk_over_reward.max}: {risk_over_reward}\n{prediction}')
+			# Prediction has a reason not to trade
+			if not prediction.is_allowed_to_trade:
+				logger.info(f'Skipping due to prediction having reasons not to trade:\n{prediction}')
 				continue
 
 			# Only one order per symbol
-			orders = self.config.metatrader_broker.get_orders(symbol = prediction.symbol, status = 'open')
-			if is_any_of(orders, lambda order: order.symbol == prediction.symbol):
-				logger.info(f"Skipping due to an existing open order.\n{prediction}")
+			orders = self.config.action.broker.get_orders(symbol = prediction.symbol, status = 'open')
+			order = next((order for order in orders if order.symbol == prediction.symbol), None)
+			if order:
+				logger.info(f"Skipping due to an existing open order:\n{order}\n{prediction}")
 				continue
 
 			# Only one position per symbol
-			positions = self.config.metatrader_broker.get_positions(symbol = prediction.symbol, status = 'open')
-			if is_any_of(positions, lambda position: position.symbol == prediction.symbol):
-				logger.info(f"Skipping due to an existing open position.\n{prediction}")
+			positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
+			position = next((position for position in positions if position.symbol == prediction.symbol), None)
+			if position:
+				logger.info(f"Skipping due to an existing open position:\n{position}\n{prediction}")
 				continue
 
 			order = Order(
@@ -77,15 +54,12 @@ class NextPeriodHighLowStrategy(Strategy):
 				tp = prediction.tp,
 				sl = prediction.sl,
 				size = Size.FixedAmountRiskManagement(1000),
-				broker = self.config.metatrader_broker,
+				broker = self.config.action.broker,
 			)
 			order.place()
-			logger.info(f'Sent Order:\n{order}\n{prediction}')
-		time.sleep(60 * 5)
 
-	def get_predictions(self, timestamp: pandas.Timestamp):
-		predictions = self.predictor_service.predict(self.model, timestamp)
-		for prediction in predictions:
-			prediction.broker = self.config.metatrader_broker
-			prediction.resolve()
-		return predictions
+			if order.id:
+				logger.info(f'Placed order:\n{order}\n{prediction}')
+			else:
+				logger.error(f'Failed to place an order:\n{order}\n{prediction}')
+		time.sleep(60 * 5)

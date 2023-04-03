@@ -13,7 +13,7 @@ logger = Logger(__name__)
 @dataclass
 class Indicator(DataFrameContainer):
 	query_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + []
-	value_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + []
+	value_field_names: ClassVar[list[str]] = DataFrameContainer.value_field_names + []
 
 	def __post_init__(self) -> None:
 		self.chart: Chart = None

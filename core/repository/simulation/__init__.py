@@ -99,10 +99,10 @@ class SimulationRepository(Repository, MongoRepository):
 		chart_group: ChartGroup or OverriddenChart = None,
 		**overrides
 	) -> TimeWindow:
-		chart = OverriddenChart(chart_group, overrides)
+		chart_group = OverriddenChart(chart_group, overrides)
 		from_timestamp = []
 		to_timestamp = []
-		for chart in chart.charts:
+		for chart in chart_group.charts:
 			from_timestamp.append(self.get_min_available_timestamp(chart))
 			to_timestamp.append(self.get_max_available_timestamp(chart))
 

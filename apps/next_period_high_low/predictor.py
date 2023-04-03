@@ -13,9 +13,9 @@ class NextPeriodHighLowPredictorService(PredictorService):
 	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 
 	def predict(self, model: Model, timestamp: pandas.Timestamp):
-		input_chart_group = self.strategy_config.build_input_chart_group()
+		input_chart_group = self.strategy_config.observation.build_chart_group()
 		input_chart_group.read(
-			count = self.strategy_config.backward_window_bars,
+			count = self.strategy_config.observation.bars,
 			to_timestamp = timestamp,
 			refresh_indicators = False
 		)
@@ -37,10 +37,10 @@ class NextPeriodHighLowPredictorService(PredictorService):
 		timestamp: pandas.Timestamp
 	):
 		predictions = self.predict(model, timestamp)
-		output_chart_group = self.strategy_config.build_output_chart_group()
+		output_chart_group = self.strategy_config.action.build_chart_group()
 		output_chart_group.read(
-			from_timestamp = timestamp + self.strategy_config.interval.to_pandas_timedelta(),
-			to_timestamp = timestamp + self.strategy_config.forward_window_length.to_pandas_timedelta(),
+			from_timestamp = timestamp + self.strategy_config.action.interval.to_pandas_timedelta(),
+			to_timestamp = timestamp + self.strategy_config.action.period.to_pandas_timedelta(),
 			count = None,
 		)
 
@@ -52,7 +52,7 @@ class NextPeriodHighLowPredictorService(PredictorService):
 			low = chart.data['low']
 
 			# SHOULD DO: get the actual spread at a point in time not just pip size * 2
-			spread = self.strategy_config.metatrader_broker.repository.get_pip_size(chart.symbol) * 2
+			spread = self.strategy_config.action.broker.repository.get_pip_size(chart.symbol) * 2
 
 			if prediction.action == 'buy':
 				tp_triggers = high[high >= prediction.tp + spread]

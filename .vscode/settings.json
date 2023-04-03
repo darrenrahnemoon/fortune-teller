@@ -12,6 +12,7 @@
 		"hyperparameters",
 		"kebabcase",
 		"keras",
+		"lookback",
 		"lstm",
 		"macd",
 		"metatrader",
