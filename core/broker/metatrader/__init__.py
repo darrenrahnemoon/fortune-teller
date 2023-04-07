@@ -3,7 +3,7 @@ import MetaTrader5
 from dataclasses import dataclass, field
 from typing import Iterable, TYPE_CHECKING
 
-from core.chart import TickChart
+from core.broker.metatrader.errors import PositionError, OrderError
 from core.position import Position, PositionStatus, PositionType
 from core.order import Order, OrderStatus, OrderType
 from core.repository import MetaTraderRepository
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 from core.size import Size
 from core.utils.time import TimestampLike
 from core.utils.logging import Logger
-from core.utils.cls.repr import pretty_repr
 
 logger = Logger(__name__)
 
@@ -24,6 +23,48 @@ class MetaTraderBroker(Broker):
 	id = 6969
 	serializers = MetaTraderSerializers()
 	repository: MetaTraderRepository = field(default_factory = MetaTraderRepository)
+
+	def get_orders(
+		self,
+		symbol: 'Symbol' = None,
+		type: OrderType = None,
+		from_timestamp: TimestampLike = None,
+		to_timestamp: TimestampLike = None,
+		status: OrderStatus = 'open',
+	) -> Iterable[Order]:
+		if status == 'open':
+			orders = MetaTrader5.orders_get(symbol = symbol)
+		else:
+			orders = MetaTrader5.history_orders_get(
+				(from_timestamp or pandas.Timestamp(0, tz = 'UTC')).to_pydatetime(),
+				(to_timestamp or self.now).to_pydatetime(),
+			)
+
+		if orders == None:
+			raise OrderError(
+				message = 'Failed to get orders.',
+				response = orders
+			)
+
+		for order in orders:
+			order = self.serializers.order.to_order(order)
+			if symbol and order.symbol != symbol:
+				continue
+
+			if status and order.status != status:
+				continue
+
+			if type and order.type != type:
+				continue
+
+			if from_timestamp and order.open_timestamp < from_timestamp:
+				continue
+
+			if to_timestamp and order.open_timestamp > to_timestamp:
+				continue
+
+			order.broker = self
+			yield order
 
 	def place_order(self, order: Order, comment = '', **kwargs) -> Order:
 		request = dict(
@@ -46,16 +87,14 @@ class MetaTraderBroker(Broker):
 			request['tp'] = float(order.tp)
 
 		response = MetaTrader5.order_send(request)
-		logger.debug(f'place_order:\n{response}')
+		logger.debug(f'Place Order Response:\n{response}')
+
 		if response == None or response.retcode != MetaTrader5.TRADE_RETCODE_DONE:
-			logger.error(
-				(
-					f'Failed to place order.\n'
-					f'Order: {pretty_repr(order)}\n'
-					f'Request: {pretty_repr(request)}\n'
-					f'Response: {response}\n'
-					f'Last MetaTrader Error: {MetaTrader5.last_error()}\n'
-				)
+			raise OrderError(
+				message = 'Failed to place order.',
+				request = request,
+				response = response,
+				order = order,
 			)
 		else:
 			order.status = 'placed'
@@ -70,97 +109,20 @@ class MetaTraderBroker(Broker):
 			order = order.id
 		)
 		response = MetaTrader5.order_send(request)
-		logger.debug(f'cancel_order:\n{response}')
+		logger.debug(f'Cancel Order Response:\n{response}')
 
 		if response == None or response.retcode != MetaTrader5.TRADE_RETCODE_DONE:
-			logger.error(
-				(
-					f'Failed to cancel order.\n'
-					f'Order: {pretty_repr(order)}\n'
-					f'Request: {pretty_repr(request)}\n'
-					f'Response: {response}\n'
-					f'Last MetaTrader Error: {MetaTrader5.last_error()}\n'
-				)
+			raise OrderError(
+				message = 'Failed to cancel order.',
+				order = order,
+				request = request,
+				response = response
 			)
 		else:
 			order.status = 'canceled'
 			order.close_timestamp = self.now
 
 		return order
-
-	def close_position(self, position: Position):
-		request = dict(
-			action = MetaTrader5.TRADE_ACTION_DEAL,
-			symbol = position.symbol,
-			type = MetaTrader5.ORDER_TYPE_SELL if position.type == 'buy' else MetaTrader5.ORDER_TYPE_BUY,
-			volume = self.serializers.order.to_metatrader_size(position.size),
-			position = position.id,
-			magic = self.id,
-			type_filling = MetaTrader5.ORDER_FILLING_IOC,
-		)
-
-		response = MetaTrader5.order_send(request)
-		logger.debug(f'close_position:\n{response}')
-		if response == None or response.retcode != MetaTrader5.TRADE_RETCODE_DONE:
-			logger.error(
-				(
-					f'Failed to close position.\n'
-					f'Position: {pretty_repr(position)}\n'
-					f'Request: {pretty_repr(request)}\n'
-					f'Response: {response}\n'
-					f'Last MetaTrader Error: {MetaTrader5.last_error()}\n'
-				)
-			)
-		else:
-			position.exit_price = response.price
-			position.status = 'closed'
-			position.close_timestamp = self.now
-
-		return position
-
-	def get_orders(
-		self,
-		symbol: 'Symbol' = None,
-		type: OrderType = None,
-		from_timestamp: TimestampLike = None,
-		to_timestamp: TimestampLike = None,
-		status: OrderStatus = 'open',
-	) -> Iterable[Order]:
-		if status == 'open':
-			orders = MetaTrader5.orders_get(symbol = symbol)
-		else:
-			orders = MetaTrader5.history_orders_get(
-				(from_timestamp or pandas.Timestamp(0, tz = 'UTC')).to_pydatetime(),
-				(to_timestamp or self.now).to_pydatetime(),
-			)
-		if orders == None:
-			logger.error(
-				(
-					f'Failed to get orders.\n'
-					f'Last MetaTrader Error: {MetaTrader5.last_error()}\n'
-				)
-			)
-			return []
-
-		for order in orders:
-			order = self.serializers.order.to_order(order)
-			if symbol and order.symbol != symbol:
-				continue
-
-			if status and order.status != status:
-				continue
-
-			if type and order.type != type:
-				continue
-
-			if from_timestamp and order.open_timestamp < from_timestamp:
-				continue
-
-			if to_timestamp and order.open_timestamp > to_timestamp:
-				continue
-
-			order.broker = self
-			yield order
 
 	def get_positions(
 		self,
@@ -173,7 +135,7 @@ class MetaTraderBroker(Broker):
 		if status == 'open':
 			positions = MetaTrader5.positions_get(symbol = symbol)
 		else:
-			raise Exception('Getting `closed` positions is currently not supported by MetaTraderBroker')
+			raise PositionError('Getting `closed` positions is currently not supported by MetaTraderBroker')
 		for position in positions:
 			position = self.serializers.position.to_position(position)
 
@@ -192,6 +154,49 @@ class MetaTraderBroker(Broker):
 			position.broker = self
 			yield position
 
+	def modify_position(self, position: Position):
+		request = dict(
+			action = MetaTrader5.TRADE_ACTION_SLTP,
+			position = position.id,
+			sl = position.sl,
+			tp = position.tp,
+		)
+		response = MetaTrader5.order_send(request)
+		if response == None or response.retcode != MetaTrader5.TRADE_RETCODE_DONE:
+			raise PositionError(
+				message = 'Failed to modify position',
+				position = position,
+				request = request,
+				response = response
+			)
+
+	def close_position(self, position: Position):
+		request = dict(
+			action = MetaTrader5.TRADE_ACTION_DEAL,
+			symbol = position.symbol,
+			type = MetaTrader5.ORDER_TYPE_SELL if position.type == 'buy' else MetaTrader5.ORDER_TYPE_BUY,
+			volume = self.serializers.order.to_metatrader_size(position.size),
+			position = position.id,
+			magic = self.id,
+			type_filling = MetaTrader5.ORDER_FILLING_IOC,
+		)
+
+		response = MetaTrader5.order_send(request)
+		logger.debug(f'Close Position Response:\n{response}')
+		if response == None or response.retcode != MetaTrader5.TRADE_RETCODE_DONE:
+			raise PositionError(
+				message = 'Failed to close position',
+				position = position,
+				request = request,
+				response = response
+			)
+		else:
+			position.exit_price = response.price
+			position.status = 'closed'
+			position.close_timestamp = self.now
+
+		return position
+
 	@property
 	def balance(self) -> float:
 		return MetaTrader5.account_info().balance
@@ -204,6 +209,5 @@ class MetaTraderBroker(Broker):
 	def currency(self) -> str:
 		return MetaTrader5.account_info().currency
 
-	@property
-	def standard_size(self):
-		return Size.Lot
+	def get_units_in_one_lot(self, symbol: 'Symbol'):
+		return MetaTrader5.symbol_info(symbol).trade_contract_size

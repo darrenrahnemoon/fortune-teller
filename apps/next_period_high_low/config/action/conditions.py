@@ -8,18 +8,18 @@ class TradingConditions(Config):
 	spread: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
-			max = None,
+			max = 7,
 		)
 	)
 	tp_change: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.0002,
+			min = 0.0007,
 			max = None,
 		)
 	)
 	risk_over_reward: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.3,
+			min = 0.2,
 			max = 2.5,
 		)
 	)

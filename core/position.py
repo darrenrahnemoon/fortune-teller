@@ -4,6 +4,7 @@ import typing
 from dataclasses import dataclass
 
 from core.chart import Symbol
+from core.size import Size
 if typing.TYPE_CHECKING:
 	from core.broker import Broker
 	from core.order import Order
@@ -14,22 +15,24 @@ PositionType = typing.Literal['buy', 'sell']
 @dataclass
 class Position:
 	id: str or int = None
-	broker: 'Broker' = None
 	symbol: Symbol = None
 	type: PositionType = None
-	size: int = None
-	entry_price: float = None
-	exit_price: float = None
+	size: Size = None
+	status: PositionStatus = None
 	open_timestamp: pandas.Timestamp = None
+	entry_price: float = None
 	close_timestamp: pandas.Timestamp = None
+	exit_price: float = None
 	tp: float = None
 	sl: float = None
-	status: PositionStatus = None
 	order: 'Order' = None
+	broker: 'Broker' = None
+
+	def save(self):
+		self.broker.modify_position(self)
 
 	def close(self):
 		self.broker.close_position(self)
-		return self
 
 	@property
 	def profit(self) -> float:
@@ -49,7 +52,7 @@ class Position:
 			symbol = self.symbol,
 			intent = 'sell' if self.type == 'buy' else 'buy'
 		)
-		return (exit_price / self.entry_price - 1) * 100
+		return (exit_price / self.entry_price - 1)
 
 	@property
 	def loss_percentage(self) -> float:
@@ -65,6 +68,7 @@ class Position:
 
 	@property
 	def duration(self) -> pandas.Timedelta:
-		if (not self.close_timestamp) or (not self.open_timestamp):
+		if not self.open_timestamp:
 			return None
-		return self.close_timestamp - self.open_timestamp
+		reference_timestamp = self.close_timestamp or self.broker.now
+		return reference_timestamp - self.open_timestamp

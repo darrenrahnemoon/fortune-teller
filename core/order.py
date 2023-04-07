@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 	from core.position import Position
 
 from core.chart import Symbol
-from core.size import OrderDependantSize, Size
+from core.size import Size
 
 OrderStatus = typing.Literal['open', 'filled', 'cancelled']
 OrderType = typing.Literal['buy', 'sell']
@@ -30,7 +30,7 @@ class Order:
 	position: 'Position' = None
 
 	def __post_init__(self):
-		if isinstance(self.size, OrderDependantSize):
+		if isinstance(self.size, Size):
 			self.size.order = self
 
 	def place(self, broker: 'Broker' = None, **kwargs):
@@ -48,6 +48,7 @@ class Order:
 
 	@property
 	def duration(self) -> pandas.Timedelta:
-		if (not self.close_timestamp) or (not self.open_timestamp):
+		if not self.open_timestamp:
 			return None
-		return self.close_timestamp - self.open_timestamp
+		reference_timestamp = self.close_timestamp or self.broker.now
+		return reference_timestamp - self.open_timestamp

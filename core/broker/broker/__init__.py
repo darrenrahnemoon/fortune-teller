@@ -22,18 +22,6 @@ class Broker:
 		return now(self.timezone)
 
 	@abstractmethod
-	def place_order(self, order: Order, **kwargs) -> Order:
-		pass
-
-	@abstractmethod
-	def cancel_order(self, order: Order) -> Order:
-		pass
-
-	@abstractmethod
-	def close_position(self, position: Position):
-		pass
-
-	@abstractmethod
 	def get_orders(
 		self,
 		symbol: 'Symbol' = None,
@@ -45,6 +33,14 @@ class Broker:
 		pass
 
 	@abstractmethod
+	def place_order(self, order: Order, **kwargs) -> Order:
+		pass
+
+	@abstractmethod
+	def cancel_order(self, order: Order) -> Order:
+		pass
+
+	@abstractmethod
 	def get_positions(
 		self,
 		symbol: 'Symbol' = None,
@@ -53,6 +49,14 @@ class Broker:
 		to_timestamp: TimestampLike = None,
 		status: PositionStatus = None,
 	) -> list[Position]:
+		pass
+
+	@abstractmethod
+	def modify_position(self, position: Position):
+		pass
+
+	@abstractmethod
+	def close_position(self, position: Position):
 		pass
 
 	@abstractproperty
@@ -67,6 +71,6 @@ class Broker:
 	def currency(self) -> str:
 		pass
 
-	@abstractproperty
-	def standard_size(self) -> type[Size]:
+	@abstractmethod
+	def get_units_in_one_lot(self, symbol: 'Symbol') -> int:
 		pass

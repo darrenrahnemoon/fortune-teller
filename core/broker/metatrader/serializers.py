@@ -29,7 +29,7 @@ class MetaTraderOrderSerializer(Serializer):
 	})
 
 	def to_metatrader_size(self, size: Size):
-		return round(size.to(Size.Lot), 2)
+		return round(size.to(Size.Lot).value, 2)
 
 	def to_metatrader_action(self, order: Order):
 		if order.limit or order.stop:

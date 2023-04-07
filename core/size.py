@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar
 from dataclasses import dataclass
@@ -8,126 +9,137 @@ if TYPE_CHECKING:
 @dataclass
 class Size:
 	value: float
-	units = 1
+	order: 'Order' = None
 
 	# --- Just for easy access ---
 	Lot: ClassVar[type['Size']] = None
 	MiniLot: ClassVar[type['Size']] = None
 	Unit: ClassVar[type['Size']] = None
-	PercentageOfBalance: ClassVar[type['OrderDependantSize']] = None
-	PercentageOfBalanceRiskManagement: ClassVar[type['OrderDependantSize']] = None
-	FixedAmountRiskManagement: ClassVar[type['OrderDependantSize']] = None
+	PercentageOfBalance: ClassVar[type['Size']] = None
+	PercentageOfBalanceRiskManagement: ClassVar[type['Size']] = None
+	FixedAmountRiskManagement: ClassVar[type['Size']] = None
 	# ----------------------------
 
 	def __init__(self, value: float or int) -> None:
 		self.value = value
 
-	@cached_property
+	@abstractmethod
+	def from_units(self, units: int):
+		pass
+
+	@abstractmethod
 	def to_units(self):
-		return self.value * self.units
+		pass
 
-	def to(self, other_size: type['Size']):
-		return self.to_units / other_size.units
+	def to(self, size_class: type['Size']):
+		units = self.to_units()
+		size = size_class(value = 0, order = self.order)
+		size.from_units(units)
+		return size
 
+@dataclass
 class Lot(Size):
-	units = 100000
+	def from_units(self, units: int):
+		self.value = units / self.order.broker.get_units_in_one_lot(self.order.symbol)
+
+	def to_units(self):
+		return self.value * self.order.broker.get_units_in_one_lot(self.order.symbol)
+
 Size.Lot = Lot
 
-class MiniLot(Size):
-	units = 10000
+@dataclass
+class MiniLot(Lot):
+	def from_units(self, units: int):
+		super().from_units(units)
+		self.value = self.value / 10
+
+	def to_units(self):
+		return super().to_units() * 10
+
 Size.MiniLot = MiniLot
 
+@dataclass
 class Unit(Size):
-	units = 1
+	def from_units(self, units: int):
+		self.value = units
+
+	def to_units(self):
+		return self.value
+
 Size.Unit = Unit
 
 @dataclass
-class OrderDependantSize(Size):
-	order: 'Order' = None
+class FixedAmountRiskManagement(Size):
+	def from_units(self, units: int):
+		raise NotImplemented()
 
-	@property
-	def broker(self):
-		return self.order.broker
-
-	@property
-	def repository(self):
-		return self.broker.repository
-
-	@cached_property
-	def pips_at_risk(self):
-		symbol = self.order.symbol
-		sl = self.order.sl
-		last_price = self.repository.get_last_price(
-			symbol = symbol,
+	def to_units(self):
+		risk_amount = self.order.broker.repository.convert_currency(
+			amount = self.value,
+			from_currency = self.order.broker.currency,
+			to_currency = self.order.broker.repository.get_quote_currency(self.order.symbol),
+		) # In instrument's currency
+		last_price = self.order.broker.repository.get_last_price(
+			symbol = self.order.symbol,
 			intent = self.order.type
-		)
-		pip_size = self.repository.get_pip_size(symbol)
-		return abs(sl - last_price) / pip_size
+		) # Instrument's last price
+		return risk_amount / last_price
 
-	@cached_property
-	def pip_value(self):
-		symbol = self.order.symbol
-		return self.repository.convert_currency(
-			amount = self.repository.get_pip_size(symbol) * self.broker.standard_size.units,
-			from_currency = self.repository.get_quote_currency(symbol),
-			to_currency = self.broker.currency
-		)
+Size.FixedAmountRiskManagement = FixedAmountRiskManagement
 
 @dataclass
-class PercentageOfBalance(OrderDependantSize):
-	units = 1
+class PercentageOfBalance(Size):
+	def from_units(self, units: int):
+		raise NotImplemented()
 
-	@cached_property
 	def to_units(self):
 		risk_amount = self.order.broker.balance * self.value # In broker's base currency
-		risk_amount = self.repository.convert_currency(
+		risk_amount = self.order.broker.repository.convert_currency(
 			amount = risk_amount,
 			from_currency = self.order.broker.currency,
-			to_currency = self.repository.get_quote_currency(self.order.symbol),
-		)
-
-		return risk_amount / self.repository.get_last_price(
+			to_currency = self.order.broker.repository.get_quote_currency(self.order.symbol),
+		) # In instrument's currency
+		last_price = self.order.broker.repository.get_last_price(
 			symbol = self.order.symbol,
 			intent = self.order.type
 		)
+		return risk_amount / last_price
 
 Size.PercentageOfBalance = PercentageOfBalance
 
 @dataclass
-class PercentageOfBalanceRiskManagement(OrderDependantSize):
-	units = 1
-	result: float = None
+class PercentageOfBalanceRiskManagement(Size):
+	def from_units(self, units: int):
+		raise NotImplemented()
 
-	@cached_property
 	def to_units(self):
 		risk_amount = self.order.broker.balance * self.value # In broker's base currency
-		risk_amount = self.repository.convert_currency(
+		risk_amount = self.order.broker.repository.convert_currency(
 			amount = risk_amount,
 			from_currency = self.order.broker.currency,
-			to_currency = self.repository.get_quote_currency(self.order.symbol),
-		)
+			to_currency = self.order.broker.repository.get_quote_currency(self.order.symbol),
+		) # In instrument's currency
 		risk_amount_per_pip = risk_amount / self.pips_at_risk
-
 		return risk_amount_per_pip * self.pip_value
 
-Size.PercentageOfBalanceRiskManagement = PercentageOfBalanceRiskManagement
-
-@dataclass
-class FixedAmountRiskManagement(OrderDependantSize):
-	units = 1
-	result: float = 0
+	@cached_property
+	def pip_value(self):
+		symbol = self.order.symbol
+		amount = self.order.broker.repository.get_pip_size(symbol) * self.order.broker.get_units_in_one_lot(symbol)
+		return self.order.broker.repository.convert_currency(
+			amount = amount,
+			from_currency = self.order.broker.repository.get_quote_currency(symbol),
+			to_currency = self.order.broker.currency
+		)
 
 	@cached_property
-	def to_units(self):
-		risk_amount = self.repository.convert_currency(
-			amount = self.value,
-			from_currency = self.order.broker.currency,
-			to_currency = self.repository.get_quote_currency(self.order.symbol),
-		)
-
-		return risk_amount / self.repository.get_last_price(
-			symbol = self.order.symbol,
+	def pips_at_risk(self):
+		symbol = self.order.symbol
+		last_price = self.order.broker.repository.get_last_price(
+			symbol = symbol,
 			intent = self.order.type
 		)
+		pip_size = self.order.broker.repository.get_pip_size(symbol)
+		return abs(self.order.sl - last_price) / pip_size
 
-Size.FixedAmountRiskManagement = FixedAmountRiskManagement
+Size.PercentageOfBalanceRiskManagement = PercentageOfBalanceRiskManagement

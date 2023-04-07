@@ -83,8 +83,9 @@ class NextPeriodHighLowPrediction:
 		if conditions.tp_change.max and conditions.tp_change.max < abs(self.tp_change):
 			self.reasons_to_not_trade.append(f'TP movement is more than {conditions.tp_change.max}: {abs(self.tp_change)}')
 
-		# DIFF SL / DIFF TP
-		risk_over_reward = abs(self.sl_change) / abs(self.tp_change)
+		# Risk / Reward
+		price = (self.buy_price + self.sell_price) / 2 # Note this is naive but it'll do for now
+		risk_over_reward = abs(self.sl - price) / abs(self.tp - price)
 		if conditions.risk_over_reward.min and conditions.risk_over_reward.min > risk_over_reward:
 			self.reasons_to_not_trade.append(f'Risk over reward is less than {conditions.risk_over_reward.min}: {risk_over_reward}')
 		if conditions.risk_over_reward.max and conditions.risk_over_reward.max < risk_over_reward:
@@ -127,12 +128,12 @@ class NextPeriodHighLowPrediction:
 	def populate_prices(self):
 		self.sell_price = self.broker.repository.get_last_price(
 			symbol = self.symbol,
-			timestamp = self.timestamp,
+			# timestamp = self.timestamp,
 			intent = 'sell'
 		)
 		self.buy_price = self.broker.repository.get_last_price(
 			symbol = self.symbol,
-			timestamp = self.timestamp,
+			# timestamp = self.timestamp,
 			intent = 'buy'
 		)
 		self.spread = abs(self.buy_price - self.sell_price)

@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 	from core.strategy import Strategy
 from core.order import Order, OrderStatus, OrderType
 from core.position import Position, PositionStatus, PositionType
-from core.chart import Chart, CandleStickChart, Symbol
+from core.chart import Chart, Symbol
 from core.repository import SimulationRepository
 from core.size import Size
 from .serializers import DataClassMongoDocumentSerializer
@@ -30,7 +30,6 @@ class SimulationBroker(Broker, MongoRepository):
 
 	initial_cash: float = 1000.
 	currency: str = 'USD'
-	standard_size: type[Size] = Size.Unit
 	latency: Interval = Interval.Millisecond(2)
 	positions: list[Position] = field(default_factory = list, repr = False)
 	orders: list[Order] = field(default_factory = list, repr = False)
@@ -38,10 +37,11 @@ class SimulationBroker(Broker, MongoRepository):
 	scheduler: Scheduler = field(default_factory = Scheduler)
 	repository: SimulationRepository = field(default_factory = SimulationRepository)
 
+	equity_curve: pandas.Series = field(default = None, repr = None)
+
 	def __post_init__(self):
 		self._now = None
 		self._timesteps: pandas.DatetimeIndex = None
-		self.equity_curve: pandas.Series = None
 
 	@property
 	def timesteps(self):
