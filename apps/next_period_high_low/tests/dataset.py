@@ -39,8 +39,12 @@ def _():
 			)
 		)
 
-		for index in range(5):
-			x, y = sequence[index]
+		for index in range(10):
+			value = sequence[index]
+			# When a specific item in the dataset is corrupted dataset returns None
+			if value == None:
+				continue
+			x, y = value
 			assert x[-1] != y[0]
 			assert x.shape == (100, expected_columns_count), x.shape
 			assert not numpy.any(numpy.isnan(x))

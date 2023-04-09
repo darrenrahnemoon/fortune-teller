@@ -6,8 +6,15 @@ from core.utils.test import test
 
 @test.group('SimulationRepository')
 def _():
-	simulation_repository = SimulationRepository()
-	alphavantage_repository = AlphaVantageRepository()
+	simulation_repository: SimulationRepository = None
+	alphavantage_repository: SimulationRepository = None
+
+	@test.before()
+	def _():
+		nonlocal simulation_repository
+		nonlocal alphavantage_repository
+		simulation_repository = SimulationRepository()
+		alphavantage_repository = AlphaVantageRepository()
 
 	@test.group('charts')
 	def _():

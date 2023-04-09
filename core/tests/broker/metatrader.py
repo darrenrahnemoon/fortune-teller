@@ -12,6 +12,7 @@ def _():
 
 	@test.before()
 	def _():
+		nonlocal broker
 		broker = MetaTraderBroker()
 
 	@test.case('should place a limit order retrieve the placed order and cancel it')

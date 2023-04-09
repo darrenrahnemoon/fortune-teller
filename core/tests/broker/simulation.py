@@ -12,6 +12,12 @@ from core.utils.test import test
 
 @test.group('SimulationBroker')
 def _():
+	broker: SimulationBroker = None
+
+	@test.before_each()
+	def _():
+		nonlocal broker
+		broker = SimulationBroker()
 
 	@test.case('should backtest based on chart data')
 	def _():
@@ -63,7 +69,6 @@ def _():
 					).place()
 
 				self.count += 1
-		broker = SimulationBroker()
 		strategy = TestStrategy(
 			broker = broker,
 			repository = broker.repository
@@ -78,7 +83,6 @@ def _():
 
 	@test.case('should return the last price as of the current time of the repository')
 	def _():
-		broker = SimulationBroker()
 		broker.now = '2022-11-05'
 		price = broker.repository.get_last_price('EURUSD')
 

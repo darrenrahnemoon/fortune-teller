@@ -40,7 +40,7 @@ class Position:
 			symbol = self.symbol,
 			intent = 'sell' if self.type == 'buy' else 'buy'
 		)
-		return self.size * (exit_price - self.entry_price)
+		return self.size.to_units * (exit_price - self.entry_price)
 
 	@property
 	def loss(self) -> float:

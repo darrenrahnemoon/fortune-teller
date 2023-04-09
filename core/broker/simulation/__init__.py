@@ -204,6 +204,9 @@ class SimulationBroker(Broker, MongoRepository):
 		self.positions.append(order.position)
 		return order.position
 
+	def get_units_in_one_lot(self, symbol: 'Symbol'):
+		return 10000 # SHOULD DO: make this properly work as lot/unit is different based on instrument
+
 	def close_position(self, position: Position, schedule = True):
 		if schedule:
 			self.schedule_action(self.close_position, position, schedule = False)

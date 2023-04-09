@@ -27,14 +27,13 @@ class Size:
 	def from_units(self, units: int):
 		pass
 
-	@abstractmethod
+	@property
 	def to_units(self):
 		pass
 
 	def to(self, size_class: type['Size']):
-		units = self.to_units()
 		size = size_class(value = 0, order = self.order)
-		size.from_units(units)
+		size.from_units(self.to_units)
 		return size
 
 @dataclass
@@ -42,6 +41,7 @@ class Lot(Size):
 	def from_units(self, units: int):
 		self.value = units / self.order.broker.get_units_in_one_lot(self.order.symbol)
 
+	@cached_property
 	def to_units(self):
 		return self.value * self.order.broker.get_units_in_one_lot(self.order.symbol)
 
@@ -53,8 +53,9 @@ class MiniLot(Lot):
 		super().from_units(units)
 		self.value = self.value / 10
 
+	@cached_property
 	def to_units(self):
-		return super().to_units() * 10
+		return super().to_units * 10
 
 Size.MiniLot = MiniLot
 
@@ -63,6 +64,7 @@ class Unit(Size):
 	def from_units(self, units: int):
 		self.value = units
 
+	@cached_property
 	def to_units(self):
 		return self.value
 
@@ -73,6 +75,7 @@ class FixedAmountRiskManagement(Size):
 	def from_units(self, units: int):
 		raise NotImplemented()
 
+	@cached_property
 	def to_units(self):
 		risk_amount = self.order.broker.repository.convert_currency(
 			amount = self.value,
@@ -92,6 +95,7 @@ class PercentageOfBalance(Size):
 	def from_units(self, units: int):
 		raise NotImplemented()
 
+	@cached_property
 	def to_units(self):
 		risk_amount = self.order.broker.balance * self.value # In broker's base currency
 		risk_amount = self.order.broker.repository.convert_currency(
@@ -112,6 +116,7 @@ class PercentageOfBalanceRiskManagement(Size):
 	def from_units(self, units: int):
 		raise NotImplemented()
 
+	@cached_property
 	def to_units(self):
 		risk_amount = self.order.broker.balance * self.value # In broker's base currency
 		risk_amount = self.order.broker.repository.convert_currency(

@@ -1,23 +1,37 @@
 import pandas
 import pymongo
 from multiprocess import Pool
-from typing import Iterable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from .serializers import SimulationSerializers
 from core.chart import Chart, ChartGroup, OverriddenChart, CandleStickChart
 from core.repository.repository import Repository
 from core.interval import Interval
-from core.utils.time import TimeWindow, normalize_timestamp, now
+from core.utils.time import TimeWindow, normalize_timestamp
 from core.utils.mongo import MongoRepository
 from core.utils.logging import Logger
 from core.utils.cls.repr import pretty_repr
+from core.utils.time import TimestampLike, now
+if TYPE_CHECKING:
+	from core.order import OrderType
 
 logger = Logger(__name__)
 
 @dataclass
 class SimulationRepository(Repository, MongoRepository):
 	serializers = SimulationSerializers()
+
+	def __post_init__(self):
+		self._now = None
+
+	@property
+	def now(self) -> pandas.Timestamp:
+		return self._now or super().now
+
+	@now.setter
+	def now(self, value: TimestampLike):
+		self._now = normalize_timestamp(value)
 
 	def read_chart(
 		self,
@@ -46,7 +60,8 @@ class SimulationRepository(Repository, MongoRepository):
 	def get_last_price(
 		self,
 		symbol,
-		timestamp: pandas.Timestamp = None
+		timestamp: pandas.Timestamp = None,
+		intent: 'OrderType' = None,
 	) -> float:
 		if timestamp == None:
 			timestamp = self.now
@@ -55,7 +70,7 @@ class SimulationRepository(Repository, MongoRepository):
 			interval = Interval.Minute(1),
 			count = 1,
 			to_timestamp = timestamp,
-			repository = self.repository
+			repository = self
 		).read()
 		return chart.data['close'].iloc[0]
 
@@ -184,11 +199,12 @@ class SimulationRepository(Repository, MongoRepository):
 		chart: Chart = None,
 		repository: type[Repository] = None,
 		from_timestamp: pandas.Timestamp = None,
-		to_timestamp: pandas.Timestamp = now(),
+		to_timestamp: pandas.Timestamp = None,
 		clean: bool = False,
 		workers: int = 1,
 		batch_size: Interval = None,
 	):
+		to_timestamp = to_timestamp or now()
 		if clean:
 			self.remove_historical_data(chart)
 
