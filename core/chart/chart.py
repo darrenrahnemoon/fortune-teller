@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 	from core.chart.group import ChartGroup
 	from core.repository import Repository
 
-from core.utils.shared_dataframe_container import DataFrameContainer
+from core.utils.dataframe_container import DataFrameContainer
 from core.utils.time import TimeWindow, now
 from core.utils.logging import Logger
 

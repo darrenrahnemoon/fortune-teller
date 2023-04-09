@@ -3,13 +3,13 @@ from core.indicator import MACDIndicator
 from core.repository import SimulationRepository
 
 from core.interval import Interval
-from core.utils.test import it, describe
+from core.utils.test import test
 
-@describe('Indicator')
+@test.group('Indicator')
 def _():
 	simulation_repository = SimulationRepository()
 
-	@it("should be able to attach to a chart before it's loaded")
+	@test.case("should be able to attach to a chart before it's loaded")
 	def _():
 		chart = CandleStickChart(
 			symbol = 'EURUSD',
@@ -30,7 +30,7 @@ def _():
 		chart.detach_indicator('macd')
 		assert len(indicator) == 0
 
-	@it("should be able to attach to a chart after a it's loaded")
+	@test.case("should be able to attach to a chart after a it's loaded")
 	def _():
 		chart = CandleStickChart(
 			symbol = 'EURUSD',

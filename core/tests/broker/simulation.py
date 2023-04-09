@@ -8,12 +8,12 @@ from core.chart import CandleStickChart
 from core.interval import Interval
 from core.size import Size
 from core.repository import Repository
-from core.utils.test import describe, it
+from core.utils.test import test
 
-@describe('SimulationBroker')
+@test.group('SimulationBroker')
 def _():
 
-	@it('should backtest based on chart data')
+	@test.case('should backtest based on chart data')
 	def _():
 		@dataclass
 		class TestStrategy(Strategy):
@@ -76,7 +76,7 @@ def _():
 		)
 		broker.backtest(strategy)
 
-	@it('should return the last price as of the current time of the repository')
+	@test.case('should return the last price as of the current time of the repository')
 	def _():
 		broker = SimulationBroker()
 		broker.now = '2022-11-05'

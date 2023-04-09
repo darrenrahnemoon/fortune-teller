@@ -1,12 +1,12 @@
 from core.repository import AlphaVantageRepository
 from core.interval import Interval
 from core.chart import LineChart
-from core.utils.test import it, describe
+from core.utils.test import test
 
-@describe('AlphaVantageRepository')
+@test.group('AlphaVantageRepository')
 def _():
 	alphavantage_repository = AlphaVantageRepository()
-	@it('should read economical data from AlphaVantageRepository')
+	@test.case('should read economical data from AlphaVantageRepository')
 	def _():
 		chart = LineChart(
 			symbol = 'TREASURY_YIELD',

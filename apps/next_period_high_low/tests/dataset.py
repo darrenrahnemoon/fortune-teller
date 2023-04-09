@@ -1,21 +1,24 @@
 import numpy
 from core.interval import Interval
-from core.utils.test import describe, it
+from core.utils.test import test
 
 from apps.next_period_high_low.config import NextPeriodHighLowConfig
 from apps.next_period_high_low.container import NextPeriodHighLowContainer
 from apps.next_period_high_low.dataset.sequence import NextPeriodHighLowSequence
 
-@describe('NextPeriodHighLowSequence')
+@test.group('NextPeriodHighLowSequence')
 def _():
-	@it('should generate (x, y) pairs given an index')
+	@test.case('should generate (x, y) pairs given an index')
 	def _():
 		config = NextPeriodHighLowConfig()
-		config.strategy.backward_window_bars_count = 100
-		config.strategy.forward_window_bars_count = 10
-		config.strategy.symbols_to_observe = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
-		config.strategy.symbols_to_trade = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
-		config.strategy.interval = Interval.Minute(1)
+		config.strategy.observation.interval = Interval.Minute(1)
+		config.strategy.observation.period = Interval.Minute(100)
+
+		config.strategy.action.interval = Interval.Minute(1)
+		config.strategy.action.period = Interval.Minute(10)
+
+		config.strategy.observation.symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
+		config.strategy.action.symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
 
 		container = NextPeriodHighLowContainer(config = config).model()
 		sequence: NextPeriodHighLowSequence = container.sequence()
@@ -23,7 +26,7 @@ def _():
 		assert sequence.common_time_window.from_timestamp < sequence.common_time_window.to_timestamp
 		assert len(sequence) != 0
 
-		input_chart_group = config.strategy.build_input_chart_group()
+		input_chart_group = config.strategy.observation.build_chart_group()
 		expected_columns_count = sum(
 			(
 				len(chart.select) + sum(
@@ -39,7 +42,7 @@ def _():
 		for index in range(5):
 			x, y = sequence[index]
 			assert x[-1] != y[0]
-			assert x.shape == (100, expected_columns_count)
+			assert x.shape == (100, expected_columns_count), x.shape
 			assert not numpy.any(numpy.isnan(x))
-			assert y.shape == (3, 2)
+			assert y.shape == (3, 3), y.shape
 			assert not numpy.any(numpy.isnan(y))

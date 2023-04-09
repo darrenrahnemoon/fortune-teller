@@ -4,12 +4,17 @@ from core.size import Size
 
 from core.utils.environment import is_windows
 from core.utils.collection import find, is_any_of
-from core.utils.test import describe, it
+from core.utils.test import test
 
-@describe('MetaTraderBroker', skip = not is_windows)
+@test.group('MetaTraderBroker', skip = not is_windows)
 def _():
-	broker = MetaTraderBroker()
-	@it('should place a limit order retrieve the placed order and cancel it')
+	broker: MetaTraderBroker = None
+
+	@test.before()
+	def _():
+		broker = MetaTraderBroker()
+
+	@test.case('should place a limit order retrieve the placed order and cancel it')
 	def _():
 		order = Order(
 			broker = broker,
@@ -32,7 +37,7 @@ def _():
 		orders = broker.get_orders(symbol = order.symbol)
 		assert not is_any_of(orders, lambda existing_order: existing_order.id == order.id)
 
-	@it('it should place a market order and get all the positions and cancel that executed market order')
+	@test.case('it should place a market order and get all the positions and cancel that executed market order')
 	def _():
 		order = Order(
 			broker = broker,

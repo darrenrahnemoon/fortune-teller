@@ -2,16 +2,16 @@ from core.chart import CandleStickChart, LineChart, Chart
 from core.repository import SimulationRepository, AlphaVantageRepository
 from core.interval import Interval
 
-from core.utils.test import it, describe
+from core.utils.test import test
 
-@describe('SimulationRepository')
+@test.group('SimulationRepository')
 def _():
 	simulation_repository = SimulationRepository()
 	alphavantage_repository = AlphaVantageRepository()
 
-	@describe('charts')
+	@test.group('charts')
 	def _():
-		@it('should read chart data within the date range provided from the database')
+		@test.case('should read chart data within the date range provided from the database')
 		def _():
 			chart = CandleStickChart(
 				symbol = 'EURUSD',
@@ -29,7 +29,7 @@ def _():
 				assert column in chart.data.columns, column
 				assert chart.data[column].isna().all() == False
 
-		@it('should read a specific number of bars from the database')
+		@test.case('should read a specific number of bars from the database')
 		def _():
 			chart = CandleStickChart(
 				symbol = 'EURUSD',
@@ -40,7 +40,7 @@ def _():
 			).read()
 			assert len(chart) == chart.count
 
-		@it("should upsert chart data to it's historical data")
+		@test.case("should upsert chart data to it's historical data")
 		def _():
 			chart = LineChart(
 				symbol = 'INFLATION',

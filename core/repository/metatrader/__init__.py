@@ -1,3 +1,5 @@
+import core.repository.metatrader.resolve
+
 import numpy
 import pandas
 import MetaTrader5

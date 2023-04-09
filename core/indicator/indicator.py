@@ -4,7 +4,7 @@ import pandas
 from typing import ClassVar
 from dataclasses import dataclass
 
-from core.utils.shared_dataframe_container import DataFrameContainer
+from core.utils.dataframe_container import DataFrameContainer
 from core.chart import Chart
 from core.utils.logging import Logger
 

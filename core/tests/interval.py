@@ -1,16 +1,16 @@
 import numpy
 import pandas
 from core.interval import Interval
-from core.utils.test import it, describe
+from core.utils.test import test
 
-@describe('Interval')
+@test.group('Interval')
 def _():
 
-	@it('should implicitly assume interval classes and interval instances of amount 1 are equal')
+	@test.case('should implicitly assume interval classes and interval instances of amount 1 are equal')
 	def _():
 		assert Interval.Day(2) != Interval.Month(2)
 
-	@it('should return the correct timedelta given an interval')
+	@test.case('should return the correct timedelta given an interval')
 	def _():
 		assert Interval.Day(2).to_pandas_timedelta() == pandas.Timedelta(2, 'day')
 		assert Interval.Hour(1).to_pandas_timedelta() == pandas.Timedelta(1, 'H')

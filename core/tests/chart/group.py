@@ -2,12 +2,12 @@ from core.interval import Interval
 from core.chart import ChartGroup, CandleStickChart, LineChart
 from core.repository import SimulationRepository
 
-from core.utils.test import it, describe
+from core.utils.test import test
 from core.utils.time import normalize_timestamp
 
-@describe('ChartGroup')
+@test.group('ChartGroup')
 def _():
-	@it('should read a group of charts and construct their values in a single dataframe')
+	@test.case('should read a group of charts and block their values in a single dataframe')
 	def _():
 		simulation_repository = SimulationRepository()
 		chart_group = ChartGroup(

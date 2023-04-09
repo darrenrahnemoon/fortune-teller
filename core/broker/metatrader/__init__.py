@@ -1,3 +1,5 @@
+import core.repository.metatrader.resolve
+
 import pandas
 import MetaTrader5
 from dataclasses import dataclass, field
