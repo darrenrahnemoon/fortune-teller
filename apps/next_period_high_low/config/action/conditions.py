@@ -3,12 +3,16 @@ from core.utils.config import Config, FloatRangeConfig, dataclass, field
 
 @dataclass
 class TradingConditions(Config):
-	model_output_adjustment_due_to_model_error: float = 0.0004
-
 	spread: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
 			max = 7,
+		)
+	)
+	model_confidence: FloatRangeConfig = field(
+		default_factory = lambda: FloatRangeConfig(
+			min = 0.0003,
+			max = None,
 		)
 	)
 	tp_change: FloatRangeConfig = field(
@@ -19,8 +23,8 @@ class TradingConditions(Config):
 	)
 	risk_over_reward: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.2,
-			max = 2.5,
+			min = None,
+			max = 2,
 		)
 	)
 

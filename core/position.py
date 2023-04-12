@@ -28,6 +28,10 @@ class Position:
 	order: 'Order' = None
 	broker: 'Broker' = None
 
+	def __post_init__(self):
+		if isinstance(self.size, Size):
+			self.size.order = self
+
 	def save(self):
 		self.broker.modify_position(self)
 
