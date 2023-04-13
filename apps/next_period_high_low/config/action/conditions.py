@@ -3,7 +3,7 @@ from core.utils.config import Config, FloatRangeConfig, dataclass, field
 
 @dataclass
 class TradingConditions(Config):
-	spread: FloatRangeConfig = field(
+	spread_pips: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
 			max = 7,
@@ -11,7 +11,7 @@ class TradingConditions(Config):
 	)
 	model_confidence: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.0003,
+			min = None,
 			max = None,
 		)
 	)
@@ -24,20 +24,32 @@ class TradingConditions(Config):
 	risk_over_reward: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
-			max = 2,
+			max = 2.5,
 		)
 	)
 
 	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
+		if timestamp.tz:
+			timestamp = timestamp.tz_localize('UTC')
+
+		# New Year
 		if timestamp.month == 1 and timestamp.day == 1:
 			return False
+
+		# Christmas
 		if timestamp.month == 12 and timestamp.day == 25:
 			return False
 
-		if timestamp.day_of_week == 4 and timestamp.hour > 22: # Friday at 10PM UTC market closes
+		# Friday at 10PM UTC market closes
+		if timestamp.day_of_week == 4 and timestamp.hour > 22: 
 			return False
-		if timestamp.day_of_week == 5: # Saturday
+
+		# Saturday
+		if timestamp.day_of_week == 5:
 			return False
-		if timestamp.day_of_week == 6 and timestamp.hour < 22: # Monday at 10PM UTC market opens
+
+		# Monday at 10PM UTC market opens
+		if timestamp.day_of_week == 6 and timestamp.hour < 22:
 			return False
+
 		return True

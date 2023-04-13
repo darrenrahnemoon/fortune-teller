@@ -19,7 +19,14 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 	def to_model_input(self, input_chart_group: ChartGroup):
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.observation.bars)
 		for chart in input_chart_group.charts:
-			chart.data = chart.data.pct_change() * self.scale
+			data = chart.data.copy()
+			if 'volume_tick' in data.columns:
+				if not data['volume_tick'].isna().all():
+					data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 in the next
+					data['volume_tick'] = numpy.log(data['volume_tick'])
+			data = data.pct_change()
+			data = data * self.scale
+			chart.data = data
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
 		return input_chart_group.dataframe.to_numpy()
 

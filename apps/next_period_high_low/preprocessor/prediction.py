@@ -58,7 +58,8 @@ class NextPeriodHighLowPrediction:
 			self.sl_change = self.model_output.min_low_change
 			self.sl = self.sell_price * (self.sl_change + 1)
 			self.sl -= self.spread
-		elif self.model_output.tp_change < 0:
+
+		else:
 			self.action = 'sell'
 
 			# Sell TP
@@ -78,12 +79,11 @@ class NextPeriodHighLowPrediction:
 	def populate_prices(self):
 		self.sell_price = self.broker.repository.get_last_price(
 			symbol = self.symbol,
-			# timestamp = self.timestamp,
 			intent = 'sell'
 		)
 		self.buy_price = self.broker.repository.get_last_price(
 			symbol = self.symbol,
-			# timestamp = self.timestamp,
 			intent = 'buy'
 		)
 		self.spread = abs(self.buy_price - self.sell_price)
+		self.spread_pips = self.spread / self.broker.repository.get_pip_size(self.symbol)

@@ -32,7 +32,7 @@ class ObservationConfig(Config):
 				CandleStickChart(
 					symbol = symbol,
 					interval = self.interval,
-					select = CandleStickChart.data_field_names,
+					select = CandleStickChart.data_field_names + [ 'volume_tick' ],
 					repository = self.repository,
 				)
 				for symbol in self.symbols
