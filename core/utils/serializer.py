@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from typing import Any
 from core.utils.collection import is_any_of
 from core.utils.logging import Logger
 
@@ -6,19 +8,21 @@ logger = Logger(__name__)
 class Serializer:
 	pass
 
+@dataclass
 class MappingSerializer(Serializer):
-	def __init__(self, mapping: dict = None) -> None:
-		self.mapping = mapping
+	mapping: dict
+	serialize_default: Any = None
+	deserialize_default: Any = None
 
 	def serialize(self, value):
 		if value == None:
 			return None
-		return self.mapping[value]
+		return self.mapping.get(value, self.serialize_default)
 
 	def deserialize(self, value):
 		if value == None:
 			return None
-		return next(key for key, value in self.mapping.items() if value == value)
+		return next((key for key, value in self.mapping.items() if value == value), self.deserialize_default)
 
 class RepresentationSerializer(Serializer):
 	def __init__(

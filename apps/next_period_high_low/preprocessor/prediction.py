@@ -36,6 +36,7 @@ class NextPeriodHighLowPrediction:
 	sell_price: float = field(default = None, init = False)
 	buy_price: float = field(default = None, init = False)
 	spread: float = field(default = None, init = False)
+	spread_pips: float = field(default = None, init = False)
 
 	broker: Broker = field(default = None, repr = False)
 	timestamp: pandas.Timestamp = field(default_factory = now)

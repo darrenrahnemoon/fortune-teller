@@ -42,7 +42,6 @@ class NextPeriodHighLowStrategy(Strategy):
 				position = next(positions, None)
 				if position:
 					if position.type == prediction.action:
-						self.block_letting_losses_run(position, prediction)
 						self.modify_position(position, prediction)
 						continue
 					else:
@@ -53,7 +52,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				self.place_order(prediction)
 			except Exception as exception:
 				logger.error(f'{exception}\n{prediction}')
-		time.sleep(60 * 2)
+		time.sleep(30)
 
 	def ensure_only_one_open_order_at_a_time(self, prediction: NextPeriodHighLowPrediction):
 		orders = self.config.action.broker.get_orders(symbol = prediction.symbol, status = 'open')
@@ -103,16 +102,6 @@ class NextPeriodHighLowStrategy(Strategy):
 				raise Exception(f"Trade TP '{prediction.tp}' is more than buy price '{prediction.buy_price}' in a 'sell' order.")
 			if prediction.sl < prediction.sell_price:
 				raise Exception(f"Trade SL '{prediction.sl}' is less than sell price '{prediction.sell_price}' in a 'sell' order.")
-
-	def block_letting_losses_run(self, position: Position, prediction: NextPeriodHighLowPrediction):
-		if position.type != prediction.action:
-			return
-
-		if position.type == 'buy' and prediction.sl < position.sl:
-			raise Exception(f"Prediction is moving existing 'buy' position's SL lower.\n{position}")
-
-		if position.type == 'sell' and prediction.sl > position.sl:
-			raise Exception(f"Prediction is moving existing 'sell' position's SL higher.\n{position}")
 
 	def close_position(self, position: Position, prediction: NextPeriodHighLowPrediction):
 		position.close()
