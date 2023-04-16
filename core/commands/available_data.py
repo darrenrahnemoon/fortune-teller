@@ -4,7 +4,7 @@ from argparse import BooleanOptionalAction
 from multiprocess import Pool
 
 from core.repository import Repository
-from core.chart import Chart
+from core.chart import Chart, CandleStickChart
 
 from core.utils.serializer import RepresentationSerializer
 from core.utils.command import CommandSession
@@ -21,23 +21,29 @@ class AvailableDataCommandSession(
 		self.add_chart_fields_to_arguments(nargs = '*')
 		self.parser.add_argument('repository', type = RepresentationSerializer(Repository).deserialize)
 		self.parser.add_argument('--gap-percentage', action = BooleanOptionalAction)
+		self.parser.add_argument('--common-timestamps', action = BooleanOptionalAction)
 		self.parser.add_argument('--histogram', action = BooleanOptionalAction)
 
 	def run(self):
 		super().run()
-		repository = self.args.repository()
+		repository: Repository = self.args.repository()
 		charts = repository.get_available_charts(
 			filter = self.get_chart_filter_from_arguments(),
 			include_timestamps = True
 		)
 		charts = list(charts)
 
+		if self.args.common_timestamps:
+			time_window = repository.get_common_time_window(charts)
+			for chart in charts:
+				chart.from_timestamp = time_window.from_timestamp
+				chart.to_timestamp = time_window.to_timestamp
+
 		if self.args.gap_percentage:
-			with Pool(5) as pool:
-				interval_charts = [ chart for chart in charts if hasattr(chart, 'interval') ]
-				percentages = pool.map(repository.get_gap_percentage, interval_charts)
-				for chart, percentage in zip(interval_charts, percentages):
-					chart.gap_percentage = percentage
+			for chart in charts:
+				if not isinstance(chart, CandleStickChart):
+					continue
+				chart.gap_percentage = repository.get_gap_percentage(chart)
 
 		if self.args.histogram:
 			_, edges = numpy.histogram([ chart.from_timestamp.to_pydatetime().timestamp() for chart in charts ], bins = 'auto')

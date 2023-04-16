@@ -1,5 +1,6 @@
 import pandas
 import pymongo
+from pymongo.collection import Collection
 from multiprocess import Pool
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -111,13 +112,22 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def get_common_time_window(
 		self,
-		chart_group: ChartGroup or OverriddenChart = None,
+		chart_group: ChartGroup or OverriddenChart or list[Chart]= None,
 		**overrides
 	) -> TimeWindow:
-		chart_group = OverriddenChart(chart_group, overrides)
+		if type(chart_group) == ChartGroup:
+			chart_group = OverriddenChart(chart_group, overrides)
+
+		if type(chart_group) == OverriddenChart:
+			charts = chart_group.charts
+		elif type(chart_group) == list:
+			charts = chart_group
+		else:
+			raise Exception(f"Invalid parameter 'chart_group'. Received {chart_group}.")
+
 		from_timestamp = []
 		to_timestamp = []
-		for chart in chart_group.charts:
+		for chart in charts:
 			from_timestamp.append(self.get_min_available_timestamp(chart))
 			to_timestamp.append(self.get_max_available_timestamp(chart))
 
@@ -142,8 +152,9 @@ class SimulationRepository(Repository, MongoRepository):
 		**overrides,
 	):
 		chart = OverriddenChart(chart, overrides)
-		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
-		return collection.count_documents({})
+		collection: Collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
+		find_options = self.serializers.find_options.to_find_options(chart)
+		return collection.count_documents(filter = find_options['filter'])
 
 	def get_gap_percentage(
 		self,

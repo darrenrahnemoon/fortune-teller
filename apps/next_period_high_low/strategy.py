@@ -126,3 +126,8 @@ class NextPeriodHighLowStrategy(Strategy):
 		)
 		order.place()
 		logger.info(f'Placed Order.\n{order}\n{prediction}')
+
+	def run(self):
+		logger.info(f'Observing Instruments:\n{self.config.observation.symbols}')
+		logger.info(f'Trading Instruments:\n{self.config.action.symbols}')
+		return super().run()

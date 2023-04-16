@@ -30,8 +30,9 @@ class TradingConditions(Config):
 
 	def is_trading_hours(self, timestamp: pandas.Timestamp) -> bool:
 		if timestamp.tz:
-			timestamp = timestamp.tz_localize('UTC')
-
+			timestamp = timestamp.tz_convert('UTC')
+		else:
+			timestamp.tz_localize('UTC')
 		# New Year
 		if timestamp.month == 1 and timestamp.day == 1:
 			return False

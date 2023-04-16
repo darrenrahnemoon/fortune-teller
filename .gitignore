@@ -5,8 +5,8 @@ core/artifacts/logs/*
 core/artifacts/pycache/*
 !core/artifacts/**/.gitignore
 
-apps/**/artifacts/tuner/**/*
 apps/**/artifacts/tensorboard/**/*
 apps/**/artifacts/trainer/**/*
+apps/**/artifacts/tuner/**/*
 
 !**/.gitignore
