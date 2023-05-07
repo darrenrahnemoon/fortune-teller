@@ -8,7 +8,38 @@ from core.utils.config import Config, dataclass, field, on_stage
 class ObservationConfig(Config):
 	symbols: list[str] = field(
 		default_factory = lambda: [
-			'CHINA50', 'AUS200', 'UK100', 'XAGUSD', 'UKOIL', 'US500', 'COPPER', 'USOIL', 'USDHKD', 'XAUUSD', 'US2000', 'US30', 'USDTRY', 'USDCNH', 'USDSGD', 'SGDJPY', 'GBPAUD', 'USDMXN', 'USDCHF', 'GBPCAD', 'GBPCHF', 'NZDCAD', 'NZDUSD', 'EURNZD', 'CHFJPY', 'USDCAD', 'EURCHF', 'AUDUSD', 'GBPUSD', 'AUDCHF', 'AUDCAD', 'EURUSD', 'NZDJPY', 'EURCAD', 'USDJPY', 'AUDNZD', 'CADJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'AUDJPY', 'EURJPY'
+			'GBPNZD',
+			'CADJPY',
+			'EURAUD',
+			'EURGBP',
+			'GBPAUD',
+			'GBPCAD',
+			'AUDCAD',
+			'AUDNZD',
+			'AUDUSD',
+			'EURCAD',
+			'EURCHF',
+			'EURJPY',
+			'EURUSD',
+			'GBPUSD',
+			'USDCAD',
+			'USDJPY',
+			'AUDCHF',
+			'AUDJPY',
+			'CHFJPY',
+			'GBPCHF',
+			'GBPJPY',
+			'NZDJPY',
+			'SGDJPY',
+			'USDCHF',
+			'NZDUSD',
+			'XAUUSD',
+			'EURTRY',
+			'EURNZD',
+			'NZDCAD',
+			'NZDCHF',
+			'USDNOK',
+			'USDSEK',
 		]
 	)
 	interval: Interval = Interval.Minute(1)
