@@ -17,6 +17,10 @@ class CandleStickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer
 			}
 		)
 
+		if 'spread' in dataframe.columns:
+			dataframe['spread_pips'] = dataframe['spread'] / 10
+			dataframe = dataframe.drop('spread', axis = 1)
+
 		# make sure a `timestamp` field is present so it becomes an index later
 		if 'time' in dataframe.columns:
 			dataframe[Chart.timestamp_field_name] = pandas.to_datetime(dataframe['time'], unit='s')

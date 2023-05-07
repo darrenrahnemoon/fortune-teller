@@ -9,7 +9,7 @@ class ActionConfig(Config):
 	conditions: TradingConditions = field(default_factory = TradingConditions)
 	symbols: list[str] = field(
 		default_factory = lambda: [
-			'AUDUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPCHF', 'GBPJPY', 'GBPUSD', 'EURAUD', 'AUDCAD', 'AUDCHF', 'AUDNZD', 'CADCHF', 'CADJPY', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'SGDJPY', 'GBPNZD', 'US100'
+			'UK100', 'XAGUSD', 'UKOIL', 'US500', 'COPPER', 'USOIL', 'USDHKD', 'XAUUSD', 'US2000', 'US30', 'GBPNZD', 'USDCNH', 'USDSGD', 'SGDJPY', 'GBPAUD', 'USDMXN', 'USDCHF', 'GBPCAD', 'GBPCHF', 'NZDCAD', 'NZDUSD', 'EURNZD', 'CHFJPY', 'USDCAD', 'AUDUSD', 'GBPUSD', 'AUDCHF', 'AUDCAD', 'EURUSD', 'NZDJPY', 'EURCAD', 'USDJPY', 'AUDNZD', 'CADJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'AUDJPY', 'EURJPY'
 		]
 	)
 	interval: Interval = Interval.Minute(1)

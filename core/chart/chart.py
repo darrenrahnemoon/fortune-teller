@@ -29,11 +29,12 @@ class Chart(TimeWindow, DataFrameContainer):
 	query_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + [ 'symbol' ]
 	data_field_names: ClassVar[list[str]] = []
 	volume_field_names: ClassVar[list[str]] = []
+	spread_field_names: ClassVar[list[str]] = []
 
 	@classmethod
 	@property
 	def value_field_names(cls):
-		return DataFrameContainer.value_field_names + cls.data_field_names + cls.volume_field_names
+		return DataFrameContainer.value_field_names + cls.data_field_names + cls.volume_field_names + cls.spread_field_names
 
 	def __post_init__(self):
 		super().__post_init__()

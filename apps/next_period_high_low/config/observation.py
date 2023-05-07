@@ -4,12 +4,11 @@ from core.indicator import SeasonalityIndicator
 from core.repository import Repository, SimulationRepository, MetaTraderRepository
 from core.utils.config import Config, dataclass, field, on_stage
 
-
 @dataclass
 class ObservationConfig(Config):
 	symbols: list[str] = field(
 		default_factory = lambda: [
-			'ETHUSD', 'BTCUSD', 'USDCNH', 'USDCZK', 'USDHUF', 'EURHUF', 'EURPLN', 'US100', 'EURNOK', 'EURSEK', 'USDPLN', 'EURTRY', 'USDTRY', 'GBPNZD', 'USDSEK', 'XAGUSD', 'GBPAUD', 'GBPCAD', 'NZDCHF', 'SGDJPY', 'NZDCAD', 'EURNZD', 'EURCAD', 'CADCHF', 'AUDCHF', 'AUDNZD', 'CADJPY', 'AUDCAD', 'NZDJPY', 'TRYJPY', 'USDNOK', 'EURAUD', 'NZDUSD', 'CHFJPY', 'AUDJPY', 'GBPCHF', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPJPY', 'USDCAD', 'USDCHF', 'AUDUSD', 'GBPUSD', 'USDJPY'
+			'CHINA50', 'AUS200', 'UK100', 'XAGUSD', 'UKOIL', 'US500', 'COPPER', 'USOIL', 'USDHKD', 'XAUUSD', 'US2000', 'US30', 'USDTRY', 'USDCNH', 'USDSGD', 'SGDJPY', 'GBPAUD', 'USDMXN', 'USDCHF', 'GBPCAD', 'GBPCHF', 'NZDCAD', 'NZDUSD', 'EURNZD', 'CHFJPY', 'USDCAD', 'EURCHF', 'AUDUSD', 'GBPUSD', 'AUDCHF', 'AUDCAD', 'EURUSD', 'NZDJPY', 'EURCAD', 'USDJPY', 'AUDNZD', 'CADJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'AUDJPY', 'EURJPY'
 		]
 	)
 	interval: Interval = Interval.Minute(1)
@@ -32,7 +31,7 @@ class ObservationConfig(Config):
 				CandleStickChart(
 					symbol = symbol,
 					interval = self.interval,
-					select = CandleStickChart.data_field_names + [ 'volume_tick' ],
+					select = CandleStickChart.data_field_names + [ 'volume_tick', 'spread_pips' ],
 					repository = self.repository,
 				)
 				for symbol in self.symbols

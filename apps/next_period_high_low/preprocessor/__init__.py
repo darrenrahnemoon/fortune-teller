@@ -20,12 +20,25 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.observation.bars)
 		for chart in input_chart_group.charts:
 			data = chart.data.copy()
+
+			# Forward fill missing spread data
+			if 'spread_pips' in data.columns:
+				data['spread_pips'] = data['spread_pips'].replace(to_replace = 0, method = 'ffill')
+				data['spread_pips'] = data['spread_pips'] + 2 # to prevent log returning 0 when spread is `1`
+				data['spread_pips'] = numpy.log(data['spread_pips'])
+
+			# Log normalize the volume
 			if 'volume_tick' in data.columns:
 				if not data['volume_tick'].isna().all():
-					data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 in the next
+					data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 when volume is `1`
 					data['volume_tick'] = numpy.log(data['volume_tick'])
+
+			# Convert to `change`
 			data = data.pct_change()
+
+			# Final Scaling
 			data = data * self.scale
+
 			chart.data = data
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
 		return input_chart_group.dataframe.to_numpy()

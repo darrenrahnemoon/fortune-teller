@@ -44,6 +44,7 @@ class LoggingCommandSession:
 				self.logging_handlers.serialize(handler)()
 				for handler in self.args.log_destinations
 			],
+			force = True,
 		)
 
 		if len(self.args.log_filter):
