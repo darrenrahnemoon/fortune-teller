@@ -7,6 +7,5 @@ core/artifacts/pycache/*
 
 apps/**/artifacts/tensorboard/**/*
 apps/**/artifacts/trainer/**/*
-apps/**/artifacts/tuner/**/*
 
 !**/.gitignore
