@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass
 from core.strategy import Strategy
 from core.position import Position
@@ -52,7 +51,6 @@ class NextPeriodHighLowStrategy(Strategy):
 				self.place_order(prediction)
 			except Exception as exception:
 				logger.error(f'{exception}\n{prediction}')
-		time.sleep(30)
 
 	def ensure_only_one_open_order_at_a_time(self, prediction: NextPeriodHighLowPrediction):
 		orders = self.config.action.broker.get_orders(symbol = prediction.symbol, status = 'open')
