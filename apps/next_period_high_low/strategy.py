@@ -40,6 +40,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
 				position = next(positions, None)
 				if position:
+					self.block_running_losses(prediction, position)
 					if position.type == prediction.action:
 						self.modify_position(position, prediction)
 						continue
@@ -100,6 +101,16 @@ class NextPeriodHighLowStrategy(Strategy):
 				raise Exception(f"Trade TP '{prediction.tp}' is more than buy price '{prediction.buy_price}' in a 'sell' order.")
 			if prediction.sl < prediction.sell_price:
 				raise Exception(f"Trade SL '{prediction.sl}' is less than sell price '{prediction.sell_price}' in a 'sell' order.")
+
+	def block_running_losses(self, prediction: NextPeriodHighLowPrediction, position: Position):
+		if position.type != prediction.action:
+			return
+
+		if position.type == 'buy' and position.sl > prediction.sl:
+			raise Exception(f"Cannot let losses run. SL lowered from '{position.sl}' to '{prediction.sl}' in a 'buy' order.")
+
+		if position.type == 'sell' and position.sl < prediction.sl:
+			raise Exception(f"Cannot let losses run. SL increased from '{position.sl}' to '{prediction.sl}' in a 'sell' order.")
 
 	def close_position(self, position: Position, prediction: NextPeriodHighLowPrediction):
 		position.close()

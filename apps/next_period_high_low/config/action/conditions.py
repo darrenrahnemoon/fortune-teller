@@ -24,7 +24,7 @@ class TradingConditions(Config):
 	risk_over_reward: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
 			min = None,
-			max = 2.5,
+			max = None,
 		)
 	)
 
