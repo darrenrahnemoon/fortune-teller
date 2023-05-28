@@ -115,7 +115,7 @@ class NextPeriodHighLowModelService(ModelService):
 		outputs = self.build_outputs(y)
 
 		model = Model(
-			inputs = inputs,
+			inputs = [ inputs ],
 			outputs = outputs
 		)
 
@@ -129,8 +129,9 @@ class NextPeriodHighLowModelService(ModelService):
 			for indicator in chart.indicators.values():
 				features_length += len(indicator.value_field_names)
 		return Input(
+			shape = (self.strategy_config.observation.bars, features_length),
 			batch_size = self.dataset_service.config.batch_size,
-			shape = (self.strategy_config.observation.bars, features_length)
+			name = 'foo'
 		)
 
 	def build_outputs(self, x):

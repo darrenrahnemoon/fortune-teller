@@ -41,7 +41,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 
 			chart.data = data
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
-		return input_chart_group.dataframe.to_numpy()
+		return { 'foo': input_chart_group.dataframe.to_numpy() }
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []

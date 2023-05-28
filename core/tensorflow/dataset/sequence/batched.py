@@ -19,6 +19,19 @@ class BatchedSequence(Sequence):
 			x, y = self.sequence[batch_item_index]
 			inputs.append(x)
 			outputs.append(y)
-		inputs = numpy.array(inputs)
-		outputs = numpy.array(outputs)
+
+		inputs = self.convert_potential_list_of_dicts_to_dict_of_lists(inputs)
+		outputs = self.convert_potential_list_of_dicts_to_dict_of_lists(outputs)
+
 		return inputs, outputs
+
+	def convert_potential_list_of_dicts_to_dict_of_lists(self, data):
+		if type(data[0]) == dict:
+			return {
+				key : numpy.stack([
+					item[key]
+					for item in data
+				])
+				for key in data[0]
+			}
+		return data

@@ -2,13 +2,15 @@ import numpy
 
 from dataclasses import dataclass, field
 from keras.utils.data_utils import Sequence
-from multiprocess import Process, Queue, shared_memory, managers
+from multiprocess import Process, Queue
+from multiprocess.shared_memory import SharedMemory
+from multiprocess.managers import SharedMemoryManager
 
 from .kwargs import sequence_dataclass_kwargs
 
-class GarbageCollectedSharedMemory(shared_memory.SharedMemory):
+class GarbageCollectedSharedMemory(SharedMemory):
 	def __del__(self):
-		super(GarbageCollectedSharedMemory, self).__del__()
+		super().__del__()
 		self.unlink()
 
 class SharedMemoryNumpyArray(numpy.ndarray):
@@ -27,7 +29,7 @@ class SharedMemorySequence(Sequence):
 	workers: int = 3
 	max_queue_size: int = 8
 
-	manager: managers.SharedMemoryManager = field(init = False, default = None)
+	manager: SharedMemoryManager = field(init = False, default = None)
 	processes: list[Process] = field(init = False, default = None)
 	queue: Queue = field(init = False, default = None)
 
@@ -35,63 +37,121 @@ class SharedMemorySequence(Sequence):
 		return len(self.sequence)
 
 	def __getitem__(self, index):
-		self.ensure_workers_initialized()
-		queue_item = self.queue.get(block = True)
-		existing_shared_memory = GarbageCollectedSharedMemory(name = queue_item['name'])
+		def convert_from_address_book(address_book) -> dict[str, dict or list or SharedMemoryNumpyArray]:
+			if address_book['_type'] == 'numpy':
+				shared_memory = GarbageCollectedSharedMemory(
+					name = address_book['_name'],
+				)
+				shared_array = SharedMemoryNumpyArray(
+					shape = address_book['_shape'],
+					dtype = address_book['_dtype'],
+					buffer = shared_memory.buf,
+					offset = 0,
+					shared_memory = shared_memory
+				)
+				return shared_array
 
-		x = SharedMemoryNumpyArray(
-			shape = queue_item['x']['shape'],
-			dtype = queue_item['x']['dtype'],
-			buffer = existing_shared_memory.buf,
-			offset = 0,
-			shared_memory = existing_shared_memory
-		)
-		y = SharedMemoryNumpyArray(
-			shape = queue_item['y']['shape'],
-			dtype = queue_item['y']['dtype'],
-			buffer = existing_shared_memory.buf,
-			offset = x.nbytes,
-			shared_memory = existing_shared_memory
-		)
-		return x, y
+			if address_book['_type'] == 'list':
+				return [
+					convert_from_address_book(item)
+					for item in address_book['_items']
+				]
+			
+			if address_book['_type'] == 'tuple':
+				return tuple(
+					convert_from_address_book(item)
+					for item in address_book['_items']
+				)
+
+			if address_book['_type'] == 'dict':
+				return {
+					key : convert_from_address_book(value)
+					for key, value in address_book.items()
+					if key != '_type' # Skip the type indicator
+				}
+
+			raise Exception(f'Could not parse address book {address_book}')
+
+		self.ensure_workers_initialized()
+		item = self.queue.get(block = True)
+		item = convert_from_address_book(item)
+		return item['x'], item['y']
 
 	def __del__(self):
 		self.ensure_workers_destroyed()
 
 	@staticmethod
 	def worker(
-		manager: managers.SharedMemoryManager = None,
+		manager: SharedMemoryManager = None,
 		sequence: Sequence = None,
 		queue: Queue = None,
 		indices: list[int] = None,
 	):
+		def convert_numpy_array_to_shared_memory(data: numpy.ndarray):
+			shared_memory = manager.SharedMemory(
+				size = data.nbytes
+			)
+			shared_array = numpy.ndarray(
+				shape = data.shape,
+				dtype = data.dtype,
+				buffer = shared_memory.buf,
+				offset = 0
+			)
+			shared_array[:] = data[:]
+			return shared_array, shared_memory
+
+		def convert_to_memory_address_book(data: list or numpy.ndarray or dict[str, dict or numpy.ndarray]):
+			if type(data) == numpy.ndarray:
+				shared_array, shared_memory = convert_numpy_array_to_shared_memory(data)
+				return {
+					'_type' : 'numpy',
+					'_name' : shared_memory.name,
+					'_shape': shared_array.shape,
+					'_dtype': shared_array.dtype,
+				}
+
+			if type(data) == list:
+				return {
+					'_type': 'list',
+					'_items': [
+						convert_to_memory_address_book(item)
+						for item in data
+					]
+				}
+
+			if type(data) == tuple:
+				return {
+					'_type': 'tuple',
+					'_items': [
+						convert_to_memory_address_book(item)
+						for item in data
+					]
+				}
+
+			if type(data) == dict:
+				address = {
+					key : convert_to_memory_address_book(value)
+					for key, value in data.items()
+				}
+				address['_type'] = 'dict'
+				return address
+
+			raise Exception(f'Unrecognized type to share between processes {type(data)}')
+
 		for index in indices:
 			x, y = sequence[index]
-			shared_memory = manager.SharedMemory(size = x.nbytes + y.nbytes)
-			shared_x = numpy.ndarray(x.shape, dtype = x.dtype, buffer = shared_memory.buf, offset = 0)
-			shared_y = numpy.ndarray(y.shape, dtype = y.dtype, buffer = shared_memory.buf, offset = x.nbytes)
-			shared_x[:] = x[:]
-			shared_y[:] = y[:]
-
-			queue.put({
-				'name': shared_memory.name,
-				'x': {
-					'shape': shared_x.shape,
-					'dtype': shared_x.dtype,
-				},
-				'y': {
-					'shape': shared_y.shape,
-					'dtype': shared_y.dtype
-				}
-			})
-			shared_memory.close()
-			del shared_memory
+			item = {
+				'x' : x,
+				'y' : y,
+			}
+			item = convert_to_memory_address_book(item)
+			queue.put(item)
 
 	def ensure_workers_initialized(self):
 		if self.manager != None:
 			return
 
-		self.manager = managers.SharedMemoryManager()
+		self.manager = SharedMemoryManager()
 		self.manager.start()
 		self.queue = Queue(maxsize = self.max_queue_size)
 
