@@ -18,6 +18,12 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 
 	def to_model_input(self, input_chart_group: ChartGroup):
 		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.observation.bars)
+
+		nan_columns = input_chart_group.dataframe.columns[input_chart_group.dataframe.isna().all().tolist()]
+		if len(nan_columns):
+			logger.debug(f'Full NaN columns at {input_chart_group.dataframe.index[0]}:\n{nan_columns}\n\n{input_chart_group.dataframe}')
+			return
+
 		for chart in input_chart_group.charts:
 			data = chart.data.copy()
 
@@ -40,8 +46,13 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 			data = data * self.scale
 
 			chart.data = data
+
 		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
-		return { 'foo': input_chart_group.dataframe.to_numpy() }
+
+		return {
+			key: input_chart_group.dataframe[key].to_numpy()
+			for key in input_chart_group.dataframe.columns.get_level_values(0)
+		}
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = []
@@ -52,6 +63,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		if len(nan_columns):
 			logger.debug(f'Full NaN columns at {output_chart_group.dataframe.index[0]}:\n{nan_columns}')
 			return
+
 		output_chart_group.dataframe = output_chart_group.dataframe.reset_index(drop = True)
 		for chart in output_chart_group.charts:
 			high = chart.data['high']

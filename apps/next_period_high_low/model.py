@@ -3,7 +3,7 @@ import math
 from dataclasses import dataclass
 
 from keras import Model
-from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape
+from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape, Concatenate
 from keras_tuner import HyperParameters
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -19,7 +19,8 @@ class NextPeriodHighLowModelService(ModelService):
 		hyperparameters: HyperParameters = None
 	):
 		inputs = self.build_inputs()
-		features_length = inputs.shape[-1]
+		inputs_merged = Concatenate(axis = -1)(inputs)
+		features_length = inputs_merged.shape[-1]
 		hyperparameter_name = HyperParameterName()
 
 		def dropout_parameter(name: str):
@@ -38,7 +39,7 @@ class NextPeriodHighLowModelService(ModelService):
 				max_value = 5
 			)
 		):
-			flow = inputs
+			flow = inputs_merged
 			with hyperparameter_name.prefixed('flow', parallel_flow_index):
 				for cnn_index in range(
 					hyperparameters.Int(
@@ -115,24 +116,32 @@ class NextPeriodHighLowModelService(ModelService):
 		outputs = self.build_outputs(y)
 
 		model = Model(
-			inputs = [ inputs ],
+			inputs = inputs,
 			outputs = outputs
 		)
 
 		return model
 
 	def build_inputs(self) -> Input:
+		inputs = []
 		input_chart_group = self.strategy_config.observation.build_chart_group()
-		features_length = 0
 		for chart in input_chart_group.charts:
-			features_length += len(chart.select)
+			inputs.append(
+				Input(
+					shape = (chart.count, len(chart.select)),
+					batch_size = self.dataset_service.config.batch_size,
+					name = chart.name,
+				)
+			)
 			for indicator in chart.indicators.values():
-				features_length += len(indicator.value_field_names)
-		return Input(
-			shape = (self.strategy_config.observation.bars, features_length),
-			batch_size = self.dataset_service.config.batch_size,
-			name = 'foo'
-		)
+				inputs.append(
+					Input(
+						shape = (chart.count, len(indicator.value_field_names)),
+						batch_size = self.dataset_service.config.batch_size,
+						name = indicator.name,
+					)
+				)
+		return inputs
 
 	def build_outputs(self, x):
 		output_chart_group = self.strategy_config.action.build_chart_group()
