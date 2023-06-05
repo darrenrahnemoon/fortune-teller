@@ -46,14 +46,6 @@ class AlphaVantageRepository(Repository):
 				'interval': [ Interval.Year(1) ]
 			},
 			{
-				'symbol': [ 'INFLATION_EXPECTATION' ],
-				'interval': [ Interval.Month(1) ]
-			},
-			{
-				'symbol': [ 'CONSUMER_SENTIMENT' ],
-				'interval': [ Interval.Month(1) ]
-			},
-			{
 				'symbol': [ 'RETAIL_SALES' ],
 				'interval': [ Interval.Month(1) ]
 			},
@@ -96,6 +88,9 @@ class AlphaVantageRepository(Repository):
 			logger.warn('Rate limit reached. Waiting for 1 minute...')
 			time.sleep(60) # Alphavantage only allows 5 requests per minute
 			return self.read_chart(chart, **overrides)
+
+		if not 'data' in response:
+			raise Exception(f"Missing 'data' in response:\n{response}")
 
 		return self.serializers.records.to_dataframe(
 			response['data'],

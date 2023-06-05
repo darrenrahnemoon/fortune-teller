@@ -2,6 +2,7 @@ import numpy
 import pandas
 from dataclasses import dataclass
 from core.chart import ChartGroup
+from core.interval import Interval
 from core.utils.logging import Logger
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -16,42 +17,43 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
 	scale = 1
 
-	def to_model_input(self, input_chart_group: ChartGroup):
-		input_chart_group.dataframe = input_chart_group.dataframe.tail(self.strategy_config.observation.bars)
+	def to_model_input(self, input_chart_groups: dict[Interval, ChartGroup]):
+		for interval, chart_group in input_chart_groups.items():
+			chart_group.dataframe = chart_group.dataframe.tail(self.strategy_config.observation.bars)
 
-		nan_columns = input_chart_group.dataframe.columns[input_chart_group.dataframe.isna().all().tolist()]
-		if len(nan_columns):
-			logger.debug(f'Full NaN columns at {input_chart_group.dataframe.index[0]}:\n{nan_columns}\n\n{input_chart_group.dataframe}')
-			return
+			nan_columns = chart_group.dataframe.columns[chart_group.dataframe.isna().all().tolist()]
+			if len(nan_columns):
+				logger.debug(f'Full NaN columns at {chart_group.dataframe.index[0]}:\n{nan_columns}\n\n{chart_group.dataframe}')
+				return
 
-		for chart in input_chart_group.charts:
-			data = chart.data.copy()
+			for chart in chart_group.charts:
+				data = chart.data.copy()
 
-			# Forward fill missing spread data
-			if 'spread_pips' in data.columns:
-				data['spread_pips'] = data['spread_pips'].replace(to_replace = 0, method = 'ffill')
-				data['spread_pips'] = data['spread_pips'] + 2 # to prevent log returning 0 when spread is `1`
-				data['spread_pips'] = numpy.log(data['spread_pips'])
+				# Forward fill missing spread data
+				if 'spread_pips' in data.columns:
+					data['spread_pips'] = data['spread_pips'].replace(to_replace = 0, method = 'ffill')
+					data['spread_pips'] = data['spread_pips'] + 2 # to prevent log returning 0 when spread is `1`
+					data['spread_pips'] = numpy.log(data['spread_pips'])
 
-			# Log normalize the volume
-			if 'volume_tick' in data.columns:
-				if not data['volume_tick'].isna().all():
-					data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 when volume is `1`
-					data['volume_tick'] = numpy.log(data['volume_tick'])
+				# Log normalize the volume
+				if 'volume_tick' in data.columns:
+					if not data['volume_tick'].isna().all():
+						data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 when volume is `1`
+						data['volume_tick'] = numpy.log(data['volume_tick'])
 
-			# Convert to `change`
-			data = data.pct_change()
+				# Convert to `change`
+				data = data.pct_change()
 
-			# Final Scaling
-			data = data * self.scale
+				# Final Scaling
+				data = data * self.scale
 
-			chart.data = data
+				chart.data = data
 
-		input_chart_group.dataframe = input_chart_group.dataframe.fillna(0)
+			chart_group.dataframe = chart_group.dataframe.fillna(0)
 
 		return {
-			key: input_chart_group.dataframe[key].to_numpy()
-			for key in input_chart_group.dataframe.columns.get_level_values(0)
+			str(interval): chart_group.dataframe.to_numpy()
+			for interval, chart_group in input_chart_groups.items()
 		}
 
 	def to_model_output(self, output_chart_group: ChartGroup):

@@ -112,7 +112,7 @@ class SimulationRepository(Repository, MongoRepository):
 
 	def get_common_time_window(
 		self,
-		chart_group: ChartGroup or OverriddenChart or list[Chart]= None,
+		chart_group: ChartGroup or OverriddenChart or list[Chart] = None,
 		**overrides
 	) -> TimeWindow:
 		if type(chart_group) == ChartGroup:
@@ -216,8 +216,14 @@ class SimulationRepository(Repository, MongoRepository):
 		batch_size: Interval = None,
 	):
 		to_timestamp = to_timestamp or now()
+
 		if clean:
 			self.remove_historical_data(chart)
+
+		# Did not specify time range so import all at once
+		if not from_timestamp:
+			self.backfill_worker(chart, {}, repository)
+			return
 
 		with Pool(workers) as pool:
 			increments = list(pandas.date_range(

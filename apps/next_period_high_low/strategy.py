@@ -40,7 +40,7 @@ class NextPeriodHighLowStrategy(Strategy):
 				positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
 				position = next(positions, None)
 				if position:
-					self.block_running_losses(prediction, position)
+					# self.block_running_losses(prediction, position)
 					if position.type == prediction.action:
 						self.modify_position(position, prediction)
 						continue

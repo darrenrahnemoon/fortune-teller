@@ -12,10 +12,10 @@ def _():
 	def _():
 		config = NextPeriodHighLowConfig()
 		config.strategy.observation.interval = Interval.Minute(1)
-		config.strategy.observation.period = Interval.Minute(100)
+		config.strategy.observation.bars = 100
 
 		config.strategy.action.interval = Interval.Minute(1)
-		config.strategy.action.period = Interval.Minute(10)
+		config.strategy.action.bars = 10
 
 		config.strategy.observation.symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]
 		config.strategy.action.symbols = [ 'EURUSD', 'USDCAD', 'EURCAD' ]

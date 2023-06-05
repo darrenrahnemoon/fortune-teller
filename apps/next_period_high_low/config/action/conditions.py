@@ -11,7 +11,7 @@ class TradingConditions(Config):
 	)
 	model_confidence: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = None,
+			min = 0.0001,
 			max = None,
 		)
 	)

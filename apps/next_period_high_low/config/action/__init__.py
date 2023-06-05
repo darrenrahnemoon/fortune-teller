@@ -9,52 +9,62 @@ class ActionConfig(Config):
 	conditions: TradingConditions = field(default_factory = TradingConditions)
 	symbols: list[str] = field(
 		default_factory = lambda: [
-			'GBPNZD',
-			'CADJPY',
-			'EURAUD',
-			'EURGBP',
-			'GBPAUD',
-			'GBPCAD',
 			'AUDCAD',
-			'AUDNZD',
-			'AUDUSD',
-			'EURCAD',
-			'EURCHF',
-			'EURJPY',
-			'EURUSD',
-			'GBPUSD',
-			'USDCAD',
-			'USDJPY',
 			'AUDCHF',
 			'AUDJPY',
+			'AUDNZD',
+			'AUDUSD',
+			'AUS200',
+			'CADJPY',
 			'CHFJPY',
+			'EURAUD',
+			'EURCAD',
+			'EURCHF',
+			'EURGBP',
+			'EURJPY',
+			'EURNOK',
+			'EURNZD',
+			'EURSEK',
+			'EURUSD',
+			'GBPAUD',
+			'GBPCAD',
 			'GBPCHF',
 			'GBPJPY',
-			'NZDJPY',
-			'SGDJPY',
-			'USDCHF',
-			'NZDUSD',
-			'XAUUSD',
-			'EURTRY',
-			'EURNZD',
+			'GBPNZD',
+			'GBPUSD',
+			'NATGAS',
 			'NZDCAD',
 			'NZDCHF',
+			'NZDJPY',
+			'NZDUSD',
+			'SGDJPY',
+			'UK100',
+			'UKOIL',
+			'US2000',
+			'US30',
+			'US500',
+			'USDCAD',
+			'USDCHF',
+			'USDCNH',
+			'USDHKD',
+			'USDJPY',
+			'USDMXN',
 			'USDNOK',
 			'USDSEK',
+			'USDSGD',
+			'USOIL',
+			'XAGUSD',
+			'XAUUSD',
 		]
 	)
-	interval: Interval = Interval.Minute(1)
-	period: Interval = Interval.Hour(12)
+	interval: Interval = Interval.Hour(1)
+	bars: int = 12
 	broker: Broker = field(
 		default_factory = on_stage(
 			development = SimulationBroker,
 			production = MetaTraderBroker,
 		)
 	)
-
-	@property
-	def bars(self) -> int:
-		return int(self.period.to_pandas_timedelta() // self.interval.to_pandas_timedelta())
 
 	def build_chart_group(self):
 		chart_group = ChartGroup(
