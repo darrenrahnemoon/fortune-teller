@@ -71,10 +71,10 @@ class ObservationConfig(Config):
 	)
 
 	repository: Repository = field(
-		default_factory = on_stage(
+		default_factory = lambda: on_stage(
 			development = SimulationRepository,
 			production = MetaTraderRepository,
-		)
+		)()
 	)
 
 	def build_chart_group(self) -> dict[Interval, ChartGroup]:

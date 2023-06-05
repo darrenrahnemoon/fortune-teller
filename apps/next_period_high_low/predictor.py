@@ -24,7 +24,9 @@ class NextPeriodHighLowPredictorService(PredictorService):
 				chart.refresh_indicators()
 
 		model_input = self.preprocessor_service.to_model_input(input_chart_groups)
-		model_input = numpy.array([ model_input ] * self.dataset_config.batch_size)
+		model_input = { key: numpy.expand_dims(value, axis = 0) for key, value in model_input.items() }
+		for key, value in model_input.items():
+			print(key, value.shape)
 		with self.device_service.selected_device:
 			model_output = model.predict(model_input)
 			return self.preprocessor_service.from_model_output(

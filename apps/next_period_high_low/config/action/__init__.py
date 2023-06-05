@@ -60,10 +60,10 @@ class ActionConfig(Config):
 	interval: Interval = Interval.Hour(1)
 	bars: int = 12
 	broker: Broker = field(
-		default_factory = on_stage(
+		default_factory = lambda : on_stage(
 			development = SimulationBroker,
 			production = MetaTraderBroker,
-		)
+		)()
 	)
 
 	def build_chart_group(self):

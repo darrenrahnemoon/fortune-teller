@@ -21,8 +21,5 @@ class StageSpecificValue(TypedDict):
 	development: Any
 
 def on_stage(**kwargs: StageSpecificValue):
-	def wrapper():
-		value = kwargs.get(environment.stage)
-		return value()
-
-	return wrapper
+	value = kwargs.get(environment.stage)
+	return value
