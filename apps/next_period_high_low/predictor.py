@@ -13,16 +13,17 @@ class NextPeriodHighLowPredictorService(PredictorService):
 	preprocessor_service: NextPeriodHighLowPreprocessorService = None
 
 	def predict(self, model: Model, timestamp: pandas.Timestamp):
-		input_chart_group = self.strategy_config.observation.build_chart_group()
-		input_chart_group.read(
-			count = self.strategy_config.observation.bars,
-			to_timestamp = timestamp,
-			refresh_indicators = False
-		)
-		for chart in input_chart_group.charts:
-			chart.refresh_indicators()
+		input_chart_groups = self.strategy_config.observation.build_chart_group()
+		for input_chart_group in input_chart_groups.values():
+			input_chart_group.read(
+				count = self.strategy_config.observation.bars,
+				to_timestamp = timestamp,
+				refresh_indicators = False
+			)
+			for chart in input_chart_group.charts:
+				chart.refresh_indicators()
 
-		model_input = self.preprocessor_service.to_model_input(input_chart_group)
+		model_input = self.preprocessor_service.to_model_input(input_chart_groups)
 		model_input = numpy.array([ model_input ] * self.dataset_config.batch_size)
 		with self.device_service.selected_device:
 			model_output = model.predict(model_input)
