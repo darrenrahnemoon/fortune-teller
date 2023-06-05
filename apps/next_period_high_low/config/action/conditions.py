@@ -17,7 +17,7 @@ class TradingConditions(Config):
 	)
 	tp_change: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.0007,
+			min = 0.0001,
 			max = None,
 		)
 	)
