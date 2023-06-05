@@ -4,6 +4,7 @@ from core.position import Position
 from core.order import Order
 from core.size import Size
 from core.utils.logging import Logger
+from core.utils.config import FloatRangeConfig
 
 from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
@@ -36,16 +37,18 @@ class NextPeriodHighLowStrategy(Strategy):
 			try:
 				self.ensure_model_confidence_within_range(prediction)
 				self.block_invalid_sl_tp(prediction)
-				self.ensure_tp_change_within_range(prediction)
 				positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
 				position = next(positions, None)
 				if position:
+					self.ensure_tp_change_within_range(prediction, self.config.action.conditions.existing_position_tp_change)
 					# self.block_running_losses(prediction, position)
 					if position.type == prediction.action:
 						self.modify_position(position, prediction)
 						continue
 					else:
 						self.close_position(position, prediction)
+				else:
+					self.ensure_tp_change_within_range(prediction, self.config.action.conditions.new_order_tp_change)
 				self.ensure_risk_over_reward_within_range(prediction)
 				self.ensure_spread_within_range(prediction)
 				self.ensure_only_one_open_order_at_a_time(prediction)
@@ -59,12 +62,12 @@ class NextPeriodHighLowStrategy(Strategy):
 		if order:
 			raise Exception(f"An open Order already exists.\n{order}")
 
-	def ensure_tp_change_within_range(self, prediction: NextPeriodHighLowPrediction):
-		if self.conditions.tp_change.min and self.conditions.tp_change.min > abs(prediction.tp_change):
-			raise Exception(f"Model calculated TP change '{prediction.tp_change}' is less than '{self.conditions.tp_change.min}'.")
+	def ensure_tp_change_within_range(self, prediction: NextPeriodHighLowPrediction, tp_change: FloatRangeConfig):
+		if tp_change.min and tp_change.min > abs(prediction.tp_change):
+			raise Exception(f"Model calculated TP change '{prediction.tp_change}' is less than '{tp_change.min}'.")
 
-		if self.conditions.tp_change.max and self.conditions.tp_change.max < abs(prediction.tp_change):
-			raise Exception(f"Model calculated TP change '{prediction.tp_change}' is more than '{self.conditions.tp_change.max}'.")
+		if tp_change.max and tp_change.max < abs(prediction.tp_change):
+			raise Exception(f"Model calculated TP change '{prediction.tp_change}' is more than '{tp_change.max}'.")
 
 	def ensure_model_confidence_within_range(self, prediction: NextPeriodHighLowPrediction):
 		if self.conditions.model_confidence.min and self.conditions.model_confidence.min > abs(prediction.model_output.tp_change):
