@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass
 from core.strategy import Strategy
 from core.position import Position
@@ -33,33 +32,30 @@ class NextPeriodHighLowStrategy(Strategy):
 		return super().__post_init__()
 
 	def handler(self):
-		try:
-			predictions = self.predictor_service.predict(self.model, self.config.action.broker.now)
-			for prediction in predictions:
-				try:
-					self.ensure_model_confidence_within_range(prediction)
-					self.block_invalid_sl_tp(prediction)
-					positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
-					position = next(positions, None)
-					if position:
-						self.ensure_tp_change_within_range(prediction, self.config.action.conditions.existing_position_tp_change)
-						# self.block_running_losses(prediction, position)
-						if position.type == prediction.action:
-							self.modify_position(position, prediction)
-							continue
-						else:
-							self.close_position(position, prediction)
+		predictions = self.predictor_service.predict(self.model, self.config.action.broker.now)
+		for prediction in predictions:
+			try:
+				self.ensure_model_confidence_within_range(prediction)
+				self.block_invalid_sl_tp(prediction)
+				positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
+				position = next(positions, None)
+				if position:
+					self.ensure_tp_change_within_range(prediction, self.config.action.conditions.existing_position_tp_change)
+					# self.block_running_losses(prediction, position)
+					if position.type == prediction.action:
+						self.modify_position(position, prediction)
+						continue
 					else:
-						self.ensure_tp_change_within_range(prediction, self.config.action.conditions.new_order_tp_change)
-					self.ensure_risk_over_reward_within_range(prediction)
-					self.ensure_spread_within_range(prediction)
-					self.ensure_only_one_open_order_at_a_time(prediction)
-					self.place_order(prediction)
-				except Exception as exception:
-					logger.error(f'{exception}\n{prediction}')
-		except Exception as e:
-			print(e, 'Continuing...')
-			time.sleep(60)
+						self.close_position(position, prediction)
+				else:
+					self.ensure_tp_change_within_range(prediction, self.config.action.conditions.new_order_tp_change)
+				self.ensure_risk_over_reward_within_range(prediction)
+				self.ensure_spread_within_range(prediction)
+				self.ensure_only_one_open_order_at_a_time(prediction)
+				self.place_order(prediction)
+			except Exception as exception:
+				logger.error(f'{exception}\n{prediction}')
+
 	def ensure_only_one_open_order_at_a_time(self, prediction: NextPeriodHighLowPrediction):
 		orders = self.config.action.broker.get_orders(symbol = prediction.symbol, status = 'open')
 		order = next((order for order in orders if order.symbol == prediction.symbol), None)
