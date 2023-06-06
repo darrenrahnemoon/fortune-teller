@@ -23,7 +23,7 @@ class TradingConditions(Config):
 	)
 	existing_position_tp_change: FloatRangeConfig = field(
 		default_factory = lambda: FloatRangeConfig(
-			min = 0.0001,
+			min = 0.0005,
 			max = None,
 		)
 	)
