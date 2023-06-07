@@ -57,8 +57,8 @@ class ActionConfig(Config):
 			'XAUUSD',
 		]
 	)
-	interval: Interval = Interval.Hour(1)
-	bars: int = 12
+	interval: Interval = Interval.Minute(15)
+	bars: int = 12 * 4
 	broker: Broker = field(
 		default_factory = lambda : on_stage(
 			development = SimulationBroker,

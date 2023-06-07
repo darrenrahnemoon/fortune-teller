@@ -77,9 +77,10 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 			outputs.append([
 				max_high_change * self.scale,
 				min_low_change * self.scale,
-				(min_low_change if min_low_index < max_high_index else max_high_change) * self.scale
+				0 if min_low_index < max_high_index else 1
 			])
-		return numpy.array(outputs)
+		model_output = numpy.array(outputs)
+		return model_output
 
 	def from_model_output(
 		self,
@@ -92,7 +93,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 				model_output = NextPeriodHighLowModelOutput(
 					max_high_change = output[0] / self.scale,
 					min_low_change = output[1] / self.scale,
-					tp_change = output[2] / self.scale,
+					direction = 'buy' if output[2] > 0.5 else 'sell' ,
 				),
 				symbol = chart.symbol,
 				broker = self.strategy_config.action.broker,

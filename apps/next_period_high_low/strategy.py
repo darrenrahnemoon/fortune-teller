@@ -6,7 +6,7 @@ from core.size import Size
 from core.utils.logging import Logger
 from core.utils.config import FloatRangeConfig
 
-from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.trainer.service import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
 from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
@@ -35,7 +35,6 @@ class NextPeriodHighLowStrategy(Strategy):
 		predictions = self.predictor_service.predict(self.model, self.config.action.broker.now)
 		for prediction in predictions:
 			try:
-				self.ensure_model_confidence_within_range(prediction)
 				self.block_invalid_sl_tp(prediction)
 				positions = self.config.action.broker.get_positions(symbol = prediction.symbol, status = 'open')
 				position = next(positions, None)
@@ -68,13 +67,6 @@ class NextPeriodHighLowStrategy(Strategy):
 
 		if tp_change.max and tp_change.max < abs(prediction.tp_change):
 			raise Exception(f"Model calculated TP change '{prediction.tp_change}' is more than '{tp_change.max}'.")
-
-	def ensure_model_confidence_within_range(self, prediction: NextPeriodHighLowPrediction):
-		if self.conditions.model_confidence.min and self.conditions.model_confidence.min > abs(prediction.model_output.tp_change):
-			raise Exception(f"Model predicted TP change confidence magnitude '{prediction.model_output.tp_change}' is less than '{self.conditions.model_confidence.min}'.")
-
-		if self.conditions.model_confidence.max and self.conditions.model_confidence.max < abs(prediction.model_output.tp_change):
-			raise Exception(f"Model predicted TP change confidence magnitude '{prediction.model_output.tp_change}' is more than '{self.conditions.model_confidence.max}'.")
 
 	def ensure_risk_over_reward_within_range(self, prediction: NextPeriodHighLowPrediction):
 		price = (prediction.buy_price + prediction.sell_price) / 2

@@ -10,7 +10,7 @@ from apps.next_period_high_low.config import NextPeriodHighLowConfig
 from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
 
 from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
-from apps.next_period_high_low.trainer import NextPeriodHighLowTrainerService
+from apps.next_period_high_low.trainer.service import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.dataset.sequence import NextPeriodHighLowSequence
 from apps.next_period_high_low.dataset import NextPeriodHighLowDatasetService

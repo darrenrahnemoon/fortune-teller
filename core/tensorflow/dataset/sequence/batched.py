@@ -20,12 +20,12 @@ class BatchedSequence(Sequence):
 			inputs.append(x)
 			outputs.append(y)
 
-		inputs = self.convert_potential_list_of_dicts_to_dict_of_lists(inputs)
-		outputs = self.convert_potential_list_of_dicts_to_dict_of_lists(outputs)
+		inputs = self.normalize(inputs)
+		outputs = self.normalize(outputs)
 
 		return inputs, outputs
 
-	def convert_potential_list_of_dicts_to_dict_of_lists(self, data):
+	def normalize(self, data):
 		if type(data[0]) == dict:
 			return {
 				key : numpy.stack([
@@ -34,4 +34,6 @@ class BatchedSequence(Sequence):
 				])
 				for key in data[0]
 			}
+		if type(data) == list:
+			return numpy.array(data)
 		return data

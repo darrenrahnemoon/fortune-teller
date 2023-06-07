@@ -8,7 +8,7 @@ from core.utils.time import now
 
 @dataclass
 class NextPeriodHighLowModelOutput:
-	tp_change: float = None
+	direction: str = None
 	max_high_change: float = None
 	min_low_change: float = None
 
@@ -47,9 +47,8 @@ class NextPeriodHighLowPrediction:
 		self.populate_price_action()
 
 	def populate_price_action(self):
-		if self.model_output.tp_change > 0:
-			self.action = 'buy'
-
+		self.action = self.model_output.direction
+		if self.action == 'buy':
 			# Buy TP
 			self.tp_change = self.model_output.max_high_change
 			self.tp = self.sell_price * (self.tp_change + 1)
@@ -61,8 +60,6 @@ class NextPeriodHighLowPrediction:
 			self.sl -= self.spread
 
 		else:
-			self.action = 'sell'
-
 			# Sell TP
 			self.tp_change = self.model_output.min_low_change
 			self.tp = self.buy_price * (self.tp_change + 1)
