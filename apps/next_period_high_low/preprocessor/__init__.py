@@ -93,7 +93,7 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 				model_output = NextPeriodHighLowModelOutput(
 					max_high_change = output[0] / self.scale,
 					min_low_change = output[1] / self.scale,
-					direction = 'buy' if output[2] > 0.5 else 'sell' ,
+					direction = output[2],
 				),
 				symbol = chart.symbol,
 				broker = self.strategy_config.action.broker,

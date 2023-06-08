@@ -47,7 +47,7 @@ class NextPeriodHighLowPrediction:
 		self.populate_price_action()
 
 	def populate_price_action(self):
-		self.action = self.model_output.direction
+		self.action = 'buy' if self.model_output.direction > 0.5 else 'sell'
 		if self.action == 'buy':
 			# Buy TP
 			self.tp_change = self.model_output.max_high_change
