@@ -9,11 +9,11 @@ from apps.next_period_high_low.config import NextPeriodHighLowConfig
 
 from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
 
-from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
+from apps.next_period_high_low.preprocessor.service import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.trainer.service import NextPeriodHighLowTrainerService
 from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.dataset.sequence import NextPeriodHighLowSequence
-from apps.next_period_high_low.dataset import NextPeriodHighLowDatasetService
+from apps.next_period_high_low.dataset.service import NextPeriodHighLowDatasetService
 from apps.next_period_high_low.model import NextPeriodHighLowModelService
 from apps.next_period_high_low.strategy import NextPeriodHighLowStrategy
 
