@@ -15,7 +15,6 @@ logger = Logger(__name__)
 @dataclass
 class NextPeriodHighLowPreprocessorService(PreprocessorService):
 	strategy_config: NextPeriodHighLowStrategyConfig = None
-	scale = 1
 
 	def to_model_input(self, input_chart_groups: dict[Interval, ChartGroup]):
 		for interval, chart_group in input_chart_groups.items():
@@ -41,9 +40,6 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 
 				# Convert to `change`
 				data = data.pct_change()
-
-				# Final Scaling
-				data = data * self.scale
 
 				chart.data = data
 			chart_group.dataframe = chart_group.dataframe.fillna(0)
@@ -75,8 +71,8 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 			min_low_change = low.min() / low.iloc[0] - 1
 
 			outputs.append([
-				max_high_change * self.scale,
-				min_low_change * self.scale,
+				max_high_change,
+				min_low_change,
 				0 if min_low_index < max_high_index else 1
 			])
 		model_output = numpy.array(outputs)
@@ -91,8 +87,8 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		return [
 			NextPeriodHighLowPrediction(
 				model_output = NextPeriodHighLowModelOutput(
-					max_high_change = output[0] / self.scale,
-					min_low_change = output[1] / self.scale,
+					max_high_change = output[0],
+					min_low_change = output[1],
 					direction = output[2],
 				),
 				symbol = chart.symbol,
