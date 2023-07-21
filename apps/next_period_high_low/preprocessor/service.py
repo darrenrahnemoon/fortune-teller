@@ -44,7 +44,6 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 				chart.data = data
 			chart_group.dataframe = chart_group.dataframe.fillna(0)
 			chart_group.dataframe = chart_group.dataframe.tail(self.strategy_config.observation.bars)
-
 		return {
 			str(interval): chart_group.dataframe.to_numpy()
 			for interval, chart_group in input_chart_groups.items()
@@ -68,15 +67,18 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		output_chart_group.dataframe = output_chart_group.dataframe.reset_index(drop = True)
 		for chart in output_chart_group.charts:
 			top_datapoints_count = int(0.1 * len(chart.data))
+
 			high = chart.data['high']
 			high_index_sorted = high.argsort()
+			high_sorted = numpy.sort(high)
 			median_max_high_index = numpy.median(high_index_sorted[-1 * top_datapoints_count:])
-			max_high_change = high.max() / high.iloc[0] - 1
+			median_max_high_change = numpy.median(high_sorted[-1 * top_datapoints_count:]) / high.iloc[0] - 1
 
 			low = chart.data['low']
 			low_index_sorted = low.argsort()
+			low_sorted = numpy.sort(low)
 			median_min_low_index = numpy.median(low_index_sorted[:top_datapoints_count])
-			min_low_change = low.min() / low.iloc[0] - 1
+			median_min_low_change = numpy.median(low_sorted[:top_datapoints_count]) / low.iloc[0] - 1
 
 			is_uncertain = numpy.isclose(median_max_high_index, median_min_low_index, atol = top_datapoints_count)
 			if is_uncertain:
@@ -87,8 +89,8 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 				is_short = int(not median_max_high_index)
 
 			outputs['high_low'].append([
-				max_high_change,
-				min_low_change,
+				median_max_high_change,
+				median_min_low_change,
 			])
 			outputs['direction'].append([
 				is_long,
@@ -106,13 +108,12 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		timestamp: pandas.Timestamp = None
 	):
 		output_chart_group = self.strategy_config.action.build_chart_group()
-
 		return [
 			NextPeriodHighLowPrediction(
 				model_output = NextPeriodHighLowModelOutput(
 					max_high_change = outputs['high_low'][0][index][0],
 					min_low_change = outputs['high_low'][0][index][1],
-					direction = numpy.argmax(outputs['direction'][0][index]),
+					direction = numpy.greater(outputs['direction'][0][index], 0.5),
 				),
 				symbol = chart.symbol,
 				broker = self.strategy_config.action.broker,

@@ -51,4 +51,4 @@ class PredictModelCommandSession(
 			model = self.model,
 			timestamp = timestamp,
 		)
-		self.print_list(predictions)
+		self.print_list(predictions, NextPeriodHighLowPrediction)
