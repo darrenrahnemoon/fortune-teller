@@ -6,6 +6,6 @@ class TensorboardConfig(Config):
 	overwrite: bool = False
 	debugger_enabled: bool = False
 
-	histogram_frequency: int = 1
+	histogram_frequency: int = 0
 	write_steps_per_second: bool = True
 	write_images: bool = True 

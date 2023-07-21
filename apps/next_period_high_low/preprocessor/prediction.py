@@ -8,7 +8,7 @@ from core.utils.time import now
 
 @dataclass
 class NextPeriodHighLowModelOutput:
-	direction: str = None
+	direction: int = None
 	max_high_change: float = None
 	min_low_change: float = None
 

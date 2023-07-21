@@ -3,5 +3,5 @@ from core.tensorflow.trainer.config import TrainerConfig
 
 @dataclass
 class NextPeriodHighLowTrainerConfig(TrainerConfig):
-	numerical_loss_scale: int = 1
-	direction_loss_scale: int = 1
+	high_low_loss_weight: int = 1
+	direction_loss_weight: int = 1

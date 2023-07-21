@@ -31,7 +31,7 @@ class NextPeriodHighLowPredictorService(PredictorService):
 		with self.device_service.selected_device:
 			model_output = model.predict(model_input)
 			return self.preprocessor_service.from_model_output(
-				model_output[0],
+				model_output,
 				timestamp = timestamp,
 			)
 

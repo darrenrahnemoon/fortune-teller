@@ -3,11 +3,11 @@ import math
 from dataclasses import dataclass
 
 from keras import Model
-from keras.layers import Input, Dense, Conv1D, Add, Dropout, Flatten, LSTM, Reshape, Concatenate, MultiHeadAttention, LayerNormalization
+from keras.layers import Input, Dense, Add, Conv1D, Flatten, LSTM, Reshape, Concatenate, MultiHeadAttention
 from keras_tuner import HyperParameters
 
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
-from core.tensorflow.tuner.hyperparameters import HyperParameterName
+# from core.tensorflow.tuner.hyperparameters import HyperParameterName
 from core.tensorflow.model.service import ModelService
 
 @dataclass
@@ -18,39 +18,36 @@ class NextPeriodHighLowModelService(ModelService):
 		self,
 		hyperparameters: HyperParameters = None
 	):
-		hyperparameter_name = HyperParameterName()
+		# hyperparameter_name = HyperParameterName()
 		inputs = self.build_inputs()
 		y = []
 		for chart in inputs:
+			# MHA
 			x = MultiHeadAttention(
 				num_heads = 4,
 				key_dim = chart.shape[-1],
-				dropout = 0.7,
+				dropout = 0.6,
 			)(chart, chart, chart)
-			x = x + chart
-			x = LayerNormalization()(x)
+
+			# LSTM
+			x = LSTM(
+				units = chart.shape[-1],
+				return_sequences = True,
+			)(x)
 			y.append(x)
 
 		y = Add()(y)
+		y = Conv1D(
+			kernel_size = 20,
+			filters = 10,
+		)(y)
 		y = Flatten()(y)
 
-		for index in range(
-			hyperparameters.Int(
-				name = 'dense_layers_count',
-				min_value = 1,
-				max_value = 4,
-			)
-		):
-			with hyperparameter_name.prefixed(f'dense_{index}'):
-				y = Dense(
-					units = hyperparameters.Int(
-						name = hyperparameter_name.build('units'),
-						min_value = 64,
-						max_value = 4096
-					),
-					activation = 'relu',
-				)(y)
-
+		for _ in range(2):
+			y = Dense(
+				units = 512,
+				activation = 'relu',
+			)(y)
 		outputs = self.build_outputs(y)
 
 		model = Model(
@@ -81,13 +78,21 @@ class NextPeriodHighLowModelService(ModelService):
 
 	def build_outputs(self, x):
 		output_chart_group = self.strategy_config.action.build_chart_group()
-		numerical_output_shape = (len(output_chart_group.charts), 2)
-		numerical_output = Dense(math.prod(iter(numerical_output_shape)))(x)
-		numerical_output = Reshape(numerical_output_shape)(numerical_output)
 
-		direction_output_shape = (len(output_chart_group.charts), 1)
-		direction_output = Dense(math.prod(iter(direction_output_shape)), activation = 'sigmoid')(x)
-		direction_output = Reshape(direction_output_shape)(direction_output)
+		high_low_shape = (len(output_chart_group.charts), 2)
+		high_low = Dense(math.prod(iter(high_low_shape)))(x)
+		high_low = Reshape(high_low_shape, name = 'high_low')(high_low)
 
-		y = Concatenate(axis = -1)([ numerical_output, direction_output ])
-		return y
+		direction = [
+			Reshape((1, 2))(
+				Dense(2, activation = 'softmax', name = f'{chart.symbol}_direction')(x)
+			)
+			for chart in output_chart_group.charts
+		]
+
+		direction = Concatenate(axis = 1, name = 'direction')(direction)
+
+		return {
+			'direction' : direction,
+			'high_low' : high_low,
+		}

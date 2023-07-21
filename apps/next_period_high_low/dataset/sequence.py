@@ -7,6 +7,7 @@ from keras.utils.data_utils import Sequence
 
 from core.repository import SimulationRepository
 from core.utils.logging import Logger
+from core.interval import Interval
 
 from apps.next_period_high_low.preprocessor import NextPeriodHighLowPreprocessorService
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
@@ -32,8 +33,10 @@ class NextPeriodHighLowSequence(Sequence):
 			chart_group.read(
 				repository = self.repository,
 				to_timestamp = timestamp, #inclusive
-				count = self.strategy_config.observation.bars,
+				count = self.strategy_config.observation.bars + 1,
 			)
+			chart_group.dataframe = chart_group.dataframe[:-1] # remove the inclusive end to prevent hindsight
+
 		output_chart_group.read(
 			repository = self.repository,
 			from_timestamp = timestamp, # inclusive

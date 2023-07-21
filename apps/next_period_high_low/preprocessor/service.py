@@ -51,7 +51,12 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 		}
 
 	def to_model_output(self, output_chart_group: ChartGroup):
-		outputs = []
+		outputs = {
+			'direction' : [],
+			'high_low' : []
+		}
+		high_low_outputs = []
+
 		output_chart_group.dataframe = output_chart_group.dataframe.head(self.strategy_config.action.bars)
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 
@@ -62,39 +67,57 @@ class NextPeriodHighLowPreprocessorService(PreprocessorService):
 
 		output_chart_group.dataframe = output_chart_group.dataframe.reset_index(drop = True)
 		for chart in output_chart_group.charts:
+			top_datapoints_count = int(0.1 * len(chart.data))
 			high = chart.data['high']
-			max_high_index = high.idxmax()
+			high_index_sorted = high.argsort()
+			median_max_high_index = numpy.median(high_index_sorted[-1 * top_datapoints_count:])
 			max_high_change = high.max() / high.iloc[0] - 1
 
 			low = chart.data['low']
-			min_low_index = low.idxmin()
+			low_index_sorted = low.argsort()
+			median_min_low_index = numpy.median(low_index_sorted[:top_datapoints_count])
 			min_low_change = low.min() / low.iloc[0] - 1
 
-			outputs.append([
+			is_uncertain = numpy.isclose(median_max_high_index, median_min_low_index, atol = top_datapoints_count)
+			if is_uncertain:
+				is_long = 0
+				is_short = 0
+			else:
+				is_long = int(median_max_high_index < median_min_low_index)
+				is_short = int(not median_max_high_index)
+
+			outputs['high_low'].append([
 				max_high_change,
 				min_low_change,
-				0 if min_low_index < max_high_index else 1
 			])
-		model_output = numpy.array(outputs)
-		return model_output
+			outputs['direction'].append([
+				is_long,
+				is_short
+			])
+		outputs = {
+			key: numpy.array(value)
+			for key, value in outputs.items()
+		}
+		return outputs
 
 	def from_model_output(
 		self,
-		outputs: numpy.ndarray,
+		outputs: dict, # dict['direction' | 'high_low', (batch, chart, values)]
 		timestamp: pandas.Timestamp = None
 	):
 		output_chart_group = self.strategy_config.action.build_chart_group()
+
 		return [
 			NextPeriodHighLowPrediction(
 				model_output = NextPeriodHighLowModelOutput(
-					max_high_change = output[0],
-					min_low_change = output[1],
-					direction = output[2],
+					max_high_change = outputs['high_low'][0][index][0],
+					min_low_change = outputs['high_low'][0][index][1],
+					direction = numpy.argmax(outputs['direction'][0][index]),
 				),
 				symbol = chart.symbol,
 				broker = self.strategy_config.action.broker,
 				strategy_config = self.strategy_config,
 				timestamp = timestamp,
 			)
-			for chart, output in zip(output_chart_group.charts, outputs)
+			for index, chart in enumerate(output_chart_group.charts)
 		]

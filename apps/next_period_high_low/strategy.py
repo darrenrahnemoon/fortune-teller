@@ -7,8 +7,8 @@ from core.utils.logging import Logger
 from core.utils.config import FloatRangeConfig
 
 from apps.next_period_high_low.trainer.service import NextPeriodHighLowTrainerService
-from apps.next_period_high_low.tuner import NextPeriodHighLowTunerService
-from apps.next_period_high_low.predictor import NextPeriodHighLowPredictorService
+from apps.next_period_high_low.tuner.service import NextPeriodHighLowTunerService
+from apps.next_period_high_low.predictor.service import NextPeriodHighLowPredictorService
 from apps.next_period_high_low.preprocessor.prediction import NextPeriodHighLowPrediction
 from apps.next_period_high_low.config import NextPeriodHighLowStrategyConfig
 
