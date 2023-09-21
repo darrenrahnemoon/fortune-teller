@@ -4,7 +4,7 @@ from pymongo.collection import Collection
 from core.chart import Chart, OverriddenChart
 from core.interval import * # HACK: only for eval to process intervals # SHOULD DO: find a better way
 from core.utils.serializer import Serializer
-from core.chart.serializers import ChartDataFrameRecordsSerializer
+from core.chart.serializers import ChartRecordsSerializer
 
 class ChartMongoFindOptionsSerializer(Serializer):
 	def to_find_options(self, chart: OverriddenChart):
@@ -47,6 +47,6 @@ class ChartCollectionSerializer(Serializer):
 		return Chart.from_name(collection)
 
 class SimulationSerializers:
-	records = ChartDataFrameRecordsSerializer()
+	records = ChartRecordsSerializer()
 	find_options = ChartMongoFindOptionsSerializer()
 	collection = ChartCollectionSerializer()

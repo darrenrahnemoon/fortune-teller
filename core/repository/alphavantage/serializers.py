@@ -1,11 +1,11 @@
 import pandas
 from typing import Iterable
 from core.utils.serializer import MappingSerializer
-from core.chart.serializers import ChartDataFrameRecordsSerializer
+from core.chart.serializers import ChartRecordsSerializer
 from core.chart import Chart
 from core.interval import Interval
 
-class LineChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
+class LineChartRecordsSerializer(ChartRecordsSerializer):
 	def to_dataframe(self, records: Iterable[dict], **kwargs):
 		dataframe = pandas.DataFrame.from_records(records, index='date')
 
@@ -21,7 +21,7 @@ class LineChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
 		return super().to_dataframe(dataframe, **kwargs)
 
 class AlphaVantageSerializers:
-	records = LineChartDataFrameRecordsSerializer()
+	records = LineChartRecordsSerializer()
 	interval = MappingSerializer({
 		Interval.Day(1): 'daily',
 		Interval.Week(1): 'weekly',

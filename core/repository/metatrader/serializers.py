@@ -3,10 +3,10 @@ import MetaTrader5
 
 from core.chart import Chart
 from core.utils.serializer import MappingSerializer
-from core.chart.serializers import ChartDataFrameRecordsSerializer
+from core.chart.serializers import ChartRecordsSerializer
 from core.interval import Interval
 
-class CandleStickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
+class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
 	def to_dataframe(self, records, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
@@ -28,7 +28,7 @@ class CandleStickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer
 
 		return super().to_dataframe(dataframe, **kwargs)
 
-class TickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
+class TickChartRecordsSerializer(ChartRecordsSerializer):
 	def to_dataframe(self, records, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
@@ -51,8 +51,8 @@ class TickChartDataFrameRecordsSerializer(ChartDataFrameRecordsSerializer):
 		return super().to_dataframe(dataframe, **kwargs)
 
 class MetaTraderRecordsSerializers:
-	candlestick = CandleStickChartDataFrameRecordsSerializer()
-	tick = TickChartDataFrameRecordsSerializer()
+	candlestick = CandleStickChartRecordsSerializer()
+	tick = TickChartRecordsSerializer()
 
 class MetaTraderSerializers:
 	records = MetaTraderRecordsSerializers()

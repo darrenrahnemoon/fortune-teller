@@ -10,7 +10,7 @@ logger = Logger(__name__)
 
 MULTI_INDEX_COLUMN_SEPARATOR = '/'
 
-class ChartDataFrameRecordsSerializer(Serializer):
+class ChartRecordsSerializer(Serializer):
 	def to_dataframe(
 		self,
 		value: pandas.DataFrame or Iterable,
