@@ -1,13 +1,15 @@
 import pandas
 import MetaTrader5
 
-from core.chart import Chart
+from core.chart import CandleStickChart, TickChart
 from core.utils.serializer import MappingSerializer
 from core.chart.serializers import ChartRecordsSerializer
 from core.interval import Interval
 
 class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
-	def to_dataframe(self, records, **kwargs):
+	chart_class = CandleStickChart
+
+	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
 		dataframe = dataframe.rename(
@@ -17,6 +19,7 @@ class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
 			}
 		)
 
+		# Metatrader provides spread in points
 		if 'spread' in dataframe.columns:
 			dataframe['spread_pips'] = dataframe['spread'] / 10
 			dataframe = dataframe.drop('spread', axis = 1)
@@ -26,10 +29,12 @@ class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
 			dataframe['timestamp'] = pandas.to_datetime(dataframe['time'], unit='s')
 			dataframe = dataframe.drop('time', axis = 1)
 
-		return super().to_dataframe(dataframe, **kwargs)
+		return super().to_dataframe(dataframe, *args, **kwargs)
 
 class TickChartRecordsSerializer(ChartRecordsSerializer):
-	def to_dataframe(self, records, **kwargs):
+	chart_class = TickChart
+	
+	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
 		# standardize the columns
@@ -48,7 +53,7 @@ class TickChartRecordsSerializer(ChartRecordsSerializer):
 		if 'time' in dataframe.columns:
 			dataframe = dataframe.drop('time', axis = 1)
 
-		return super().to_dataframe(dataframe, **kwargs)
+		return super().to_dataframe(dataframe, *args, **kwargs)
 
 class MetaTraderRecordsSerializers:
 	candlestick = CandleStickChartRecordsSerializer()

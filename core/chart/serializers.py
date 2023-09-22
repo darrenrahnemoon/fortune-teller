@@ -1,5 +1,6 @@
 import pandas
 from typing import Iterable
+from dataclasses import fields
 
 from core.utils.collection import is_any_of
 from core.chart import Chart
@@ -11,6 +12,8 @@ logger = Logger(__name__)
 MULTI_INDEX_COLUMN_SEPARATOR = '/'
 
 class ChartRecordsSerializer(Serializer):
+	chart_class = Chart
+
 	def to_dataframe(
 		self,
 		value: pandas.DataFrame or Iterable,
@@ -25,7 +28,7 @@ class ChartRecordsSerializer(Serializer):
 			if not isinstance(value, (pandas.DataFrame, pandas.Series)):
 				if type(value) != list:
 					value = list(value)
-					# pandas doesn't accept iterators
+					# pandas.DataFrame constructor doesn't directly accept iterators
 					value = pandas.DataFrame.from_records(value)
 
 		# Skip if not a dataframe
@@ -56,6 +59,16 @@ class ChartRecordsSerializer(Serializer):
 		# Unflatten columns if columns are flattened
 		if is_any_of(value.columns, lambda column: MULTI_INDEX_COLUMN_SEPARATOR in column and type(column) == str):
 			value.columns = pandas.MultiIndex.from_tuples([ column.split(MULTI_INDEX_COLUMN_SEPARATOR) for column in value.columns ])
+
+		# set column types from Chart.Query schema
+		for field in fields(self.chart_class.Query):
+			if not field.name in value.columns:
+				continue
+
+			if value.dtypes[field.name] == field.type:
+				continue
+
+			value[field.name] = value[field.name].astype(field.type)
 
 		# Add the wrapping column based on the chart specified
 		if type(value.columns) != pandas.MultiIndex:

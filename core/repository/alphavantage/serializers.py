@@ -2,23 +2,33 @@ import pandas
 from typing import Iterable
 from core.utils.serializer import MappingSerializer
 from core.chart.serializers import ChartRecordsSerializer
-from core.chart import Chart
+from core.chart import LineChart
 from core.interval import Interval
 
 class LineChartRecordsSerializer(ChartRecordsSerializer):
-	def to_dataframe(self, records: Iterable[dict], **kwargs):
-		dataframe = pandas.DataFrame.from_records(records, index='date')
+	chart_class = LineChart
 
+	def to_dataframe(self, records: Iterable[dict], *args, **kwargs):
+		dataframe = pandas.DataFrame.from_records(records)
+
+		dataframe = dataframe.rename(
+			columns = {
+				'date' : 'timestamp'
+			}
+		)
+
+		# Remove null values that are specified as '.' by Alphavantage
 		dataframe = dataframe[dataframe['value'] != '.']
-		dataframe['value'] = dataframe['value'].astype(float)
 
-		dataframe.index = pandas.to_datetime(dataframe.index)
-		dataframe.index.name = 'timestamp'
+		dataframe = super().to_dataframe(dataframe, *args, **kwargs)
 
-		# revert the order to ascending as the AlphaVantage API gives descending data
-		dataframe = dataframe.reindex(index = dataframe.index[::-1])
+		# Alphavantage gives results in descending order. Switch to ascending
+		dataframe = dataframe.sort_values(
+			by = 'timestamp',
+			ascending = True
+		)
 
-		return super().to_dataframe(dataframe, **kwargs)
+		return dataframe
 
 class AlphaVantageSerializers:
 	records = LineChartRecordsSerializer()

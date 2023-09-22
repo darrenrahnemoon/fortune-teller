@@ -15,6 +15,7 @@ logger = Logger(__name__)
 
 @dataclass
 class AlphaVantageRepository(Repository):
+	base_url: str = 'https://www.alphavantage.co/query'
 	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
 	serializers = AlphaVantageSerializers()
 
@@ -82,7 +83,7 @@ class AlphaVantageRepository(Repository):
 			maturity = self.serializers.treasury_yield_maturity.serialize(chart.maturity)
 		)
 
-		response = requests.get('https://www.alphavantage.co/query', params = api_params).json()
+		response = requests.get(self.base_url, params = api_params).json()
 		# HACK/SHOULD DO: find a less naive way to know if rate limit is reached (probably from status code)
 		if 'Note' in response and response['Note'].startswith('Thank you'):
 			logger.warn('Rate limit reached. Waiting for 1 minute...')
