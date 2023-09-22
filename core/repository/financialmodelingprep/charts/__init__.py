@@ -1,1 +1,1 @@
-from .income_statement import IncomeStatements
+from .income_statement import IncomeStatementChart

@@ -60,7 +60,7 @@ class MetaTraderRepository(Repository):
 		dataframe = None
 		if chart.type == CandleStickChart:
 			dataframe = self.read_raw_candlestick_chart(chart)
-			dataframe = self.ensure_interval_integrity(
+			dataframe = self.check_interval_integrity(
 				dataframe = dataframe,
 				chart = chart
 			)
@@ -84,7 +84,7 @@ class MetaTraderRepository(Repository):
 				chart.to_timestamp.to_pydatetime(),
 				MetaTrader5.COPY_TICKS_ALL
 			)
-		return self.serializers.records.tick.to_dataframe(
+		return self.serializers.records[chart.type].to_dataframe(
 			records,
 			name = chart.name,
 			select = chart.select,
@@ -106,14 +106,14 @@ class MetaTraderRepository(Repository):
 				chart.from_timestamp.to_pydatetime(),
 				chart.to_timestamp.to_pydatetime(),
 			)
-		return self.serializers.records.candlestick.to_dataframe(
+		return self.serializers.records[chart.type].to_dataframe(
 			records,
 			name = chart.name,
 			select = chart.select,
 			tz = self.timezone,
 		)
 
-	def ensure_interval_integrity(
+	def check_interval_integrity(
 		self,
 		dataframe: pandas.DataFrame = None,
 		chart: OverriddenChart = None,
@@ -130,7 +130,7 @@ class MetaTraderRepository(Repository):
 			expected_frequency = chart.interval.to_pandas_timedelta()
 			if average_frequency / expected_frequency > frequency_tolerance:
 				logger.warn(f"Missing too many data points. It's likely that MetaTrader attempted to compensate for less granularity by returning a higher granular data. Skipping results...\nAverage Frequency of Received Data: {average_frequency}\nExpected Frequency: {expected_frequency}")
-				return self.serializers.records.candlestick.to_dataframe(
+				return self.serializers.records[chart.type].to_dataframe(
 					[],
 					name = chart.name,
 					select = chart.select,

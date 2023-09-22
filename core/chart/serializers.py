@@ -1,6 +1,6 @@
 import pandas
 from typing import Iterable
-from dataclasses import fields
+from dataclasses import dataclass, fields, field
 
 from core.utils.collection import is_any_of
 from core.chart import Chart
@@ -11,8 +11,9 @@ logger = Logger(__name__)
 
 MULTI_INDEX_COLUMN_SEPARATOR = '/'
 
+@dataclass
 class ChartRecordsSerializer(Serializer):
-	chart_class = Chart
+	chart_class: type[Chart] = field(default_factory = lambda : Chart)
 
 	def to_dataframe(
 		self,
@@ -61,7 +62,7 @@ class ChartRecordsSerializer(Serializer):
 			value.columns = pandas.MultiIndex.from_tuples([ column.split(MULTI_INDEX_COLUMN_SEPARATOR) for column in value.columns ])
 
 		# set column types from Chart.Query schema
-		for field in fields(self.chart_class.Query):
+		for field in fields(self.chart_class.Record):
 			if not field.name in value.columns:
 				continue
 

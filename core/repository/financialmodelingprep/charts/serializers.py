@@ -1,6 +1,7 @@
 import pandas
+from dataclasses import field, dataclass
 
-from .income_statement import IncomeStatements
+from .income_statement import IncomeStatementChart
 from core.chart.serializers import ChartRecordsSerializer
 from core.interval import Interval
 from core.utils.serializer import MappingSerializer
@@ -10,10 +11,11 @@ period_serializer = MappingSerializer({
 	Interval.Quarter(1) : 'quarter'
 })
 
-class IncomeStatementsSerializer(ChartRecordsSerializer):
-	chart_class = IncomeStatements
+@dataclass
+class IncomeStatementChartSerializer(ChartRecordsSerializer):
+	chart_class: type[IncomeStatementChart] = field(default_factory = lambda : IncomeStatementChart)
 
-	def to_request(self, chart: IncomeStatements):
+	def to_request(self, chart: IncomeStatementChart):
 		return {
 			'path' : f'/api/v3/income-statement/{chart.symbol}',
 			'params' : {
@@ -24,12 +26,11 @@ class IncomeStatementsSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol', 'link', 'finalLink' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'cik', 'link', 'finalLink' ], axis = 1)
 		dataframe = dataframe.rename(
 			columns = {
 				'date' : 'timestamp',
 				'reportedCurrency' : 'reported_currency',
-				'cik' : 'cik',
 				'fillingDate' : 'filing_date',
 				'acceptedDate' : 'accepted_date',
 				'calendarYear' : 'calendar_year',

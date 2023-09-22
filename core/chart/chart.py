@@ -23,7 +23,7 @@ class Chart(TimeWindow, DataFrameContainer):
 	chart_group: 'ChartGroup' = None
 	indicators: dict[str, 'Indicator'] = field(repr=False, default_factory=dict)
 	count: int = None
-	select: list[str] = field(default_factory = list)
+	select: list[str] = field(repr=False, default_factory=list)
 
 	@dataclass
 	class Query(DataFrameContainer.Query):

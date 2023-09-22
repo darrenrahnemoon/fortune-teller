@@ -1,13 +1,15 @@
 import pandas
 import MetaTrader5
+from dataclasses import field, dataclass
 
 from core.chart import CandleStickChart, TickChart
 from core.utils.serializer import MappingSerializer
 from core.chart.serializers import ChartRecordsSerializer
 from core.interval import Interval
 
+@dataclass
 class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
-	chart_class = CandleStickChart
+	chart_class: type[CandleStickChart] = field(default_factory = lambda : CandleStickChart)
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame(records)
@@ -31,9 +33,10 @@ class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
 
 		return super().to_dataframe(dataframe, *args, **kwargs)
 
+@dataclass
 class TickChartRecordsSerializer(ChartRecordsSerializer):
-	chart_class = TickChart
-	
+	chart_class: type[TickChart] = field(default_factory = lambda : TickChart)
+
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame(records)
 
@@ -55,12 +58,12 @@ class TickChartRecordsSerializer(ChartRecordsSerializer):
 
 		return super().to_dataframe(dataframe, *args, **kwargs)
 
-class MetaTraderRecordsSerializers:
-	candlestick = CandleStickChartRecordsSerializer()
-	tick = TickChartRecordsSerializer()
 
 class MetaTraderSerializers:
-	records = MetaTraderRecordsSerializers()
+	records = {
+		TickChart : TickChartRecordsSerializer(),
+		CandleStickChart : CandleStickChartRecordsSerializer()
+	}
 	interval = MappingSerializer({
 		Interval.Minute(1) : MetaTrader5.TIMEFRAME_M1,
 		Interval.Minute(2) : MetaTrader5.TIMEFRAME_M2,

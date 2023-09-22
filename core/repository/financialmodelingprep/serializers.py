@@ -1,7 +1,7 @@
-from .charts import IncomeStatements
-from .charts.serializers import IncomeStatementsSerializer
+from .charts import IncomeStatementChart
+from .charts.serializers import IncomeStatementChartSerializer
 
 class FinancialModelingPrepSerializers:
 	records = {
-		IncomeStatements : IncomeStatementsSerializer()
+		IncomeStatementChart : IncomeStatementChartSerializer()
 	}

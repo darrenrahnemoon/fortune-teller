@@ -5,7 +5,7 @@ from core.chart.chart import Chart
 from core.interval import Interval
 
 @dataclass
-class IncomeStatements(Chart):
+class IncomeStatementChart(Chart):
 	interval: Interval = None
 
 	@dataclass
@@ -15,7 +15,6 @@ class IncomeStatements(Chart):
 	@dataclass
 	class Record(Chart.Record):
 		reported_currency: str = None
-		cik: float = None
 		filing_date: pandas.Timestamp = None
 		accepted_date: pandas.Timestamp = None
 		calendar_year: pandas.Timestamp = None

@@ -1,12 +1,14 @@
 import pandas
+from dataclasses import dataclass, field
 from typing import Iterable
 from core.utils.serializer import MappingSerializer
 from core.chart.serializers import ChartRecordsSerializer
 from core.chart import LineChart
 from core.interval import Interval
 
+@dataclass
 class LineChartRecordsSerializer(ChartRecordsSerializer):
-	chart_class = LineChart
+	chart_class: type[LineChart] = field(default_factory = lambda : LineChart)
 
 	def to_dataframe(self, records: Iterable[dict], *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
