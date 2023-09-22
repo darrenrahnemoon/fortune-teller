@@ -1,3 +1,4 @@
+from dataclasses import fields
 from core.chart import CandleStickChart, LineChart, Chart
 from core.repository import SimulationRepository, AlphaVantageRepository
 from core.interval import Interval
@@ -29,12 +30,12 @@ def _():
 			).read()
 
 			assert len(chart) != 0
-			assert chart.data.index.name == Chart.timestamp_field_name
+			assert chart.data.index.name == 'timestamp'
 			assert chart.dataframe.index.min() >= chart.from_timestamp
 			assert chart.dataframe.index.max() <= chart.to_timestamp
-			for column in chart.value_field_names:
-				assert column in chart.data.columns, column
-				assert chart.data[column].isna().all() == False
+			for field in fields(chart.Record):
+				assert field.name in chart.data.columns, field.name
+				assert chart.data[field.name].isna().all() == False
 
 		@test.case('should read a specific number of bars from the database')
 		def _():

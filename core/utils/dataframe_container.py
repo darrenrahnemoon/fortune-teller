@@ -1,7 +1,7 @@
 import pandas
-from dataclasses import fields
+from dataclasses import dataclass, fields
 from abc import abstractproperty
-from typing import ClassVar
+from typing import ClassVar, Any
 from core.utils.serializer import RepresentationSerializer
 
 class DataFrameContainerMetaClass(type):
@@ -9,12 +9,21 @@ class DataFrameContainerMetaClass(type):
 		return self.__name__
 
 class DataFrameContainer(metaclass = DataFrameContainerMetaClass):
-	query_field_names: ClassVar[list[str]] = [ 'type' ]
-	value_field_names: ClassVar[list[str]] = []
+
+	@dataclass
+	class Record:
+		pass
+
+	@dataclass
+	class Query:
+		type: Any = None
 
 	@property
 	def name(self):
-		return '.'.join([ repr(getattr(self, key)) for key in self.query_field_names ])
+		return '.'.join([ 
+			repr(getattr(self, field.name))
+			for field in fields(self.Query)
+	])
 
 	@property
 	def type(self):
@@ -29,12 +38,8 @@ class DataFrameContainer(metaclass = DataFrameContainerMetaClass):
 		chart_class_fields = fields(chart_class)
 		chart_kwargs = {}
 
-		for field_name, field_value in zip(chart_class.query_field_names, chunks):
-			field = next((field for field in chart_class_fields if field.name == field_name), None)
-			if not field:
-				continue
-
-			chart_kwargs[field_name] = RepresentationSerializer(field.type).deserialize(field_value)
+		for field, field_value in zip(fields(chart_class), chunks):
+			chart_kwargs[field.name] = RepresentationSerializer(field.type).deserialize(field_value)
 
 		return chart_class(**chart_kwargs)
 
@@ -51,8 +56,9 @@ class DataFrameContainer(metaclass = DataFrameContainerMetaClass):
 
 	@data.setter
 	def data(self, value: pandas.DataFrame or pandas.Series):
-		if type(value) == pandas.Series and len(self.value_field_names) == 1:
-			self.dataframe[self.name, self.value_field_names[0]] = value
+		record_fields = fields(self.Record)
+		if type(value) == pandas.Series and len(record_fields) == 1:
+			self.dataframe[self.name, record_fields[0].name] = value
 			return
 
 		if type(value) == pandas.DataFrame:

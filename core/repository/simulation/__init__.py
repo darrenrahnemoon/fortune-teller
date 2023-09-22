@@ -174,8 +174,8 @@ class SimulationRepository(Repository, MongoRepository):
 	) -> pandas.Timestamp:
 		chart = OverriddenChart(chart, overrides)
 		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
-		record = collection.find_one(sort = [ (Chart.timestamp_field_name, pymongo.DESCENDING) ])
-		return normalize_timestamp(record[Chart.timestamp_field_name]) if record else None
+		record = collection.find_one(sort = [ ('timestamp', pymongo.DESCENDING) ])
+		return normalize_timestamp(record['timestamp']) if record else None
 
 	def get_min_available_timestamp(
 		self,
@@ -184,8 +184,8 @@ class SimulationRepository(Repository, MongoRepository):
 	) -> pandas.Timestamp:
 		chart = OverriddenChart(chart, overrides)
 		collection = self.historical_data[self.serializers.collection.to_collection_name(chart)]
-		record = collection.find_one(sort = [ (Chart.timestamp_field_name, pymongo.ASCENDING) ])
-		return normalize_timestamp(record[Chart.timestamp_field_name]) if record else None
+		record = collection.find_one(sort = [ ('timestamp', pymongo.ASCENDING) ])
+		return normalize_timestamp(record['timestamp']) if record else None
 
 	def backfill_worker(
 		self,

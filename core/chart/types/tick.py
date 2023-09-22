@@ -1,5 +1,12 @@
+from dataclasses import dataclass
 from core.chart.chart import Chart
 
+@dataclass
 class TickChart(Chart):
-	data_field_names = Chart.data_field_names + [ 'bid', 'ask', 'last' ]
-	volume_field_names = Chart.volume_field_names + [ 'volume_tick', 'volume_real' ]
+	@dataclass
+	class Record(Chart.Record):
+		bid: float = None
+		ask: float = None
+		last: float = None
+		volume_tick: float = None
+		volume_real: float = None

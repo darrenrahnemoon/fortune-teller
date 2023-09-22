@@ -5,8 +5,18 @@ from core.interval import Interval
 
 @dataclass
 class CandleStickChart(Chart):
-	query_field_names = Chart.query_field_names + [ 'interval' ]
-	data_field_names = Chart.data_field_names + [ 'open', 'high', 'low', 'close' ]
-	volume_field_names = Chart.volume_field_names + [ 'volume_tick', 'volume_real' ]
-	spread_field_names = Chart.spread_field_names + [ 'spread_pips' ]
 	interval: Interval = None
+
+	@dataclass
+	class Query(Chart.Query):
+		interval: Interval = None
+
+	@dataclass
+	class Record(Chart.Record):
+		open: float = None
+		high: float = None
+		low: float = None
+		close: float = None
+		volume_tick: float = None
+		volume_real: float = None
+		spread_pips: float = None

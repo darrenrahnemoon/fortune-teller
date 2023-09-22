@@ -1,5 +1,6 @@
 import numpy
 import pandas
+from dataclasses import fields
 from argparse import BooleanOptionalAction
 from multiprocess import Pool
 
@@ -59,7 +60,7 @@ class AvailableDataCommandSession(
 
 	def print_chart(self, chart: Chart):
 		print(
-			*[ getattr(chart, key) for key in chart.query_field_names ],
+			*[ getattr(chart, field.name) for field in fields(type(chart)) ],
 			chart.from_timestamp,
 			chart.to_timestamp,
 			getattr(chart, 'gap_percentage', None),

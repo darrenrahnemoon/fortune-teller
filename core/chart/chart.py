@@ -1,7 +1,7 @@
 import pandas
 import inspect
-from typing import TYPE_CHECKING, ClassVar
-from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+from dataclasses import dataclass, field, fields
 
 if TYPE_CHECKING:
 	from core.indicator import Indicator
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 	from core.repository import Repository
 
 from core.utils.dataframe_container import DataFrameContainer
-from core.utils.time import TimeWindow, now
+from core.utils.time import TimeWindow
 from core.utils.logging import Logger
 
 logger = Logger(__name__)
@@ -25,22 +25,19 @@ class Chart(TimeWindow, DataFrameContainer):
 	count: int = None
 	select: list[str] = field(default_factory = list)
 
-	timestamp_field_name: ClassVar[str] = 'timestamp'
-	query_field_names: ClassVar[list[str]] = DataFrameContainer.query_field_names + [ 'symbol' ]
-	data_field_names: ClassVar[list[str]] = []
-	volume_field_names: ClassVar[list[str]] = []
-	spread_field_names: ClassVar[list[str]] = []
+	@dataclass
+	class Query(DataFrameContainer.Query):
+		symbol: str = None
 
-	@classmethod
-	@property
-	def value_field_names(cls):
-		return DataFrameContainer.value_field_names + cls.data_field_names + cls.volume_field_names + cls.spread_field_names
+	@dataclass
+	class Record(DataFrameContainer.Record):
+		pass
 
 	def __post_init__(self):
 		super().__post_init__()
 		self.dataframe = None
 		if len(self.select) == 0:
-			self.select = self.value_field_names
+			self.select = [ field.name for field in fields(self.Record) ]
 
 		for name, indicator in self.indicators.items():
 			self.attach_indicator(indicator, name=name)
@@ -76,7 +73,11 @@ class Chart(TimeWindow, DataFrameContainer):
 	def dataframe(self, dataframe: pandas.DataFrame):
 		self._dataframe = dataframe
 
-	def attach_indicator(self, indicator: 'Indicator' or type['Indicator'], name: str = None):
+	def attach_indicator(
+		self,
+		indicator: 'Indicator' or type['Indicator'],
+		name: str = None
+	):
 		if inspect.isclass(indicator):
 			indicator = indicator()
 		self.indicators[name or type(indicator)] = indicator

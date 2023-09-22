@@ -23,7 +23,7 @@ class CandleStickChartRecordsSerializer(ChartRecordsSerializer):
 
 		# make sure a `timestamp` field is present so it becomes an index later
 		if 'time' in dataframe.columns:
-			dataframe[Chart.timestamp_field_name] = pandas.to_datetime(dataframe['time'], unit='s')
+			dataframe['timestamp'] = pandas.to_datetime(dataframe['time'], unit='s')
 			dataframe = dataframe.drop('time', axis = 1)
 
 		return super().to_dataframe(dataframe, **kwargs)
@@ -42,7 +42,7 @@ class TickChartRecordsSerializer(ChartRecordsSerializer):
 
 		# make sure a `timestamp` field is present so it becomes an index later
 		if 'time_msc' in dataframe.columns:
-			dataframe[Chart.timestamp_field_name] = pandas.to_datetime(dataframe['time_msc'], unit='ms')
+			dataframe['timestamp'] = pandas.to_datetime(dataframe['time_msc'], unit='ms')
 			dataframe = dataframe.drop('time_msc', axis = 1)
 
 		if 'time' in dataframe.columns:

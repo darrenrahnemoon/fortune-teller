@@ -41,12 +41,12 @@ class MongoRepository:
 		collection = database.get_collection(name)
 		indexes = collection.index_information()
 
-		if Chart.timestamp_field_name not in indexes:
+		if 'timestamp' not in indexes:
 			collection.create_index(
 				keys = [
-					(Chart.timestamp_field_name, pymongo.ASCENDING)
+					('timestamp', pymongo.ASCENDING)
 				],
-				name = Chart.timestamp_field_name,
+				name = 'timestamp',
 				unique = True
 			)
 

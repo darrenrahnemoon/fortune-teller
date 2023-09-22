@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 
 from core.utils.cls.command import ClassCommandSession
 from core.utils.serializer import RepresentationSerializer
@@ -25,13 +25,13 @@ class ChartCommandSession(ClassCommandSession):
 
 		chart_classes = [ chart_cls ] + chart_cls.__subclasses__()
 		for chart_class in chart_classes:
-			fields = chart_class.query_field_names
-			for field in fields:
-				self.chart_fields.add(field)
+			field_names = [ field.name for field in fields(chart_class) ]
+			for field_name in field_names:
+				self.chart_fields.add(field_name)
 
 			self.add_class_fields_to_arguments(
 				cls = chart_class,
-				select = fields,
+				select = field_names,
 				kwargs = {
 					'nargs' : nargs,
 					'default': [] if is_multiple_arguments else None,

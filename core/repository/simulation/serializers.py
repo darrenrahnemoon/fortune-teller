@@ -13,7 +13,7 @@ class ChartMongoFindOptionsSerializer(Serializer):
 		# Only select the fields needed
 		find_options['projection'] = {
 			'_id': False,
-			Chart.timestamp_field_name : True,
+			'timestamp' : True,
 		}
 		for field in chart.select:
 			find_options['projection'][field] = True
@@ -22,15 +22,15 @@ class ChartMongoFindOptionsSerializer(Serializer):
 		filter = find_options['filter'] = {}
 
 		if chart.from_timestamp:
-			filter.setdefault(Chart.timestamp_field_name, {})
-			filter[Chart.timestamp_field_name]['$gte'] = chart.from_timestamp
-			find_options['sort'] = [ (Chart.timestamp_field_name, pymongo.ASCENDING) ]
+			filter.setdefault('timestamp', {})
+			filter['timestamp']['$gte'] = chart.from_timestamp
+			find_options['sort'] = [ ('timestamp', pymongo.ASCENDING) ]
 
 		if chart.to_timestamp:
-			filter.setdefault(Chart.timestamp_field_name, {})
-			filter[Chart.timestamp_field_name]['$lte'] = chart.to_timestamp
+			filter.setdefault('timestamp', {})
+			filter['timestamp']['$lte'] = chart.to_timestamp
 			if chart.count:
-				find_options['sort'] = [ (Chart.timestamp_field_name, pymongo.DESCENDING) ]
+				find_options['sort'] = [ ('timestamp', pymongo.DESCENDING) ]
 
 		return find_options
 

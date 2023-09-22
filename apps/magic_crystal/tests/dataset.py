@@ -1,4 +1,5 @@
 import numpy
+from dataclasses import fields
 from core.interval import Interval
 from core.utils.test import test
 
@@ -31,7 +32,7 @@ def _():
 			(
 				len(chart.select) + sum(
 					(
-						len(indicator.value_field_names)
+						len(fields(indicator.Record))
 						for indicator in chart.indicators.values()
 					)
 				)

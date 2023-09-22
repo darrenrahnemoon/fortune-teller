@@ -1,6 +1,6 @@
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from keras import Model
 from keras.layers import Input, Dense, Add, Conv1D, Flatten, LSTM, Reshape, Concatenate, MultiHeadAttention
@@ -65,7 +65,7 @@ class MagicCrystalModelService(ModelService):
 			for chart in chart_group.charts:
 				features_length += len(chart.select)
 				for indicator in chart.indicators.values():
-					features_length += len(indicator.value_field_names)
+					features_length += len(fields(indicator.Record))
 
 			inputs.append(
 				Input(

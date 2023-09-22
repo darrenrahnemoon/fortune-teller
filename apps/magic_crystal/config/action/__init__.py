@@ -73,7 +73,7 @@ class ActionConfig(Config):
 				CandleStickChart(
 					symbol = symbol,
 					interval = self.interval,
-					select = CandleStickChart.data_field_names,
+					select = [ 'open', 'high', 'low', 'close' ],
 					repository = self.broker.repository,
 				)
 				for symbol in self.symbols
