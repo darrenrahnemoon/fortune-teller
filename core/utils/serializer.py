@@ -48,7 +48,10 @@ class RepresentationSerializer(Serializer):
 					if type(field_type) == str:
 						logger.debug(f'Cannot infer types for fields that are specifying types in TYPE_CHECKING environments only: {field_name}: {field_type}')
 						continue
-					self.context[field_type.__name__] = field_type
+					try:
+						self.context[field_type.__name__] = field_type
+					except:
+						pass
 
 	def append_to_allowed_types(self, cls):
 		self.allowed_types.append(cls)
