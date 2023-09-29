@@ -69,8 +69,10 @@ class ChartRecordsSerializer(Serializer):
 
 			if dataframe.dtypes[field.name] == field.type:
 				continue
-
-			dataframe[field.name] = dataframe[field.name].astype(field.type)
+			try:
+				dataframe[field.name] = dataframe[field.name].astype(field.type)
+			except:
+				logger.warn(f"Unable to cast field '{field.name}' from '{dataframe.dtypes[field.name]}' to '{field.type}'.")
 
 		# Add the wrapping column based on the chart specified
 		if type(dataframe.columns) != pandas.MultiIndex:

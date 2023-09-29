@@ -7,3 +7,6 @@ from .enterprise_value import EnterpriseValueChart
 from .owner_earnings import OwnerEarningsChart
 from .esg_score import ESGScoreChart
 from .employee_count import EmployeeCountChart
+from .executive_compensation import ExecutiveCompensationChart
+from .senate_disclosure import SenateDisclosureChart
+from .candlestick import CandleStickChart

@@ -6,6 +6,9 @@ from .charts.financial_ratio import FinancialRatioChart, FinancialRatioChartSeri
 from .charts.enterprise_value import EnterpriseValueChart, EnterpriseValueChartSerializer
 from .charts.esg_score import ESGScoreChart, ESGScoreChartSerializer
 from .charts.employee_count import EmployeeCountChart, EmployeeCountChartSerializer
+from .charts.executive_compensation import ExecutiveCompensationChart, ExecutiveCompensationChartSerializer
+from .charts.senate_disclosure import SenateDisclosureChart, SenateDisclosureChartSerializer
+from .charts.candlestick import CandleStickChart, CandleStickChartSerializer
 
 class FinancialModelingPrepSerializers:
 	records = {
@@ -17,4 +20,7 @@ class FinancialModelingPrepSerializers:
 		EnterpriseValueChart : EnterpriseValueChartSerializer(),
 		ESGScoreChart : ESGScoreChartSerializer(),
 		EmployeeCountChart : EmployeeCountChartSerializer(),
+		ExecutiveCompensationChart : ExecutiveCompensationChartSerializer(),
+		SenateDisclosureChart : SenateDisclosureChartSerializer(),
+		CandleStickChart : CandleStickChartSerializer()
 	}

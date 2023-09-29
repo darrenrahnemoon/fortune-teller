@@ -19,7 +19,10 @@ from .charts import (
 	EnterpriseValueChart,
 	OwnerEarningsChart,
 	ESGScoreChart,
-	EmployeeCountChart
+	EmployeeCountChart,
+	ExecutiveCompensationChart,
+	SenateDisclosureChart,
+	CandleStickChart
 )
 
 logger = Logger(__name__)
@@ -111,6 +114,19 @@ class FinancialModelingPrepRepository(Repository):
 			{
 				'type' : [ EmployeeCountChart ],
 				'symbol': symbols,
+			},
+			{
+				'type' : [ SenateDisclosureChart ],
+				'symbol': symbols,
+			},
+			{
+				'type' : [ ExecutiveCompensationChart ],
+				'symbol': symbols,
+			},
+			{
+				'type' : [ CandleStickChart ],
+				'symbol': symbols,
+				'interval' : [ Interval.Minute(1), Interval.Minute(5), Interval.Minute(15), Interval.Minute(30), Interval.Hour(1), Interval.Hour(4) ],
 			},
 		]
 		for combination in combinations:

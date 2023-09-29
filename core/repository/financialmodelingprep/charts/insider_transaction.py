@@ -10,7 +10,6 @@ class InsiderTransactionChart(Chart):
 	class Record(Chart.Record):
 		transaction_date: pandas.Timestamp = None
 		report_cik: str = None
-		company_cik: str = None
 		insider_name: str = None
 		insider_type: str = None
 		insider_securities_owned: float = None
@@ -37,7 +36,7 @@ class InsiderTransactionChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'companyCik' ], axis = 1)
 		dataframe = dataframe.rename(
 			columns = {
 				'filingDate' : 'timestamp',
@@ -49,7 +48,7 @@ class InsiderTransactionChartSerializer(ChartRecordsSerializer):
 				'transactionDate' : 'transaction_date',
 				'transactionType' : 'transaction_type',
 				'securityName' : 'transaction_security_name',
-				'securitiesTransacted' : 'transactions_security_count',
+				'securitiesTransacted' : 'transaction_security_count',
 				'price' : 'transaction_security_price',
 				'acquistionOrDisposition' : 'transaction_acquisition_or_disposition',
 				'formType' : 'form_type',
