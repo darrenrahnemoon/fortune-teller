@@ -4,7 +4,7 @@ from dataclass_csv import DataclassWriter
 from core.utils.cls.repr import pretty_repr
 
 @dataclass
-class ListOutputFormatCommandSession:
+class ListOutputFormatCommandSessionMixin:
 	def setup(self):
 		super().setup()
 		self.parser.add_argument('--output-format', choices = [ 'csv', 'repr', 'pretty_repr' ], default = 'raw')

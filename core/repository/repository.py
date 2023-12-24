@@ -23,20 +23,29 @@ class Repository:
 
 	def get_available_symbols(self):
 		symbols = set()
-		for chart in self.get_available_charts():
+		for chart in self.get_filtered_charts():
 			symbols.add(chart.symbol)
 		return list(symbols)
 
 	@abstractmethod
-	def get_all_available_charts(self, **kwargs) -> Iterable['Chart']:
+	def get_charts(self, **kwargs) -> Iterable['Chart']:
+		"""lists out all available chart combinations for this repository"""
 		pass
 
-	def get_available_charts(
+	def get_filtered_charts(
 		self,
 		filter: dict[str] = {},
 		**kwargs,
-	):
-		charts = self.get_all_available_charts(**kwargs)
+	) -> Iterable['Chart']:
+		"""similar to get_charts but with the ability to filter charts
+
+		Args:
+			filter (dict[str], optional): filter dict. Defaults to {}.
+
+		Yields:
+			Iterable['Chart']: iterable of charts with filter applied
+		"""
+		charts = self.get_charts(**kwargs)
 		for chart in charts:
 			exclude = False
 			for field_name, filter_values in filter.items():

@@ -1,7 +1,7 @@
 import pandas
 from dataclasses import dataclass, fields
 from abc import abstractproperty
-from typing import ClassVar, Any
+from typing import Any
 from core.utils.serializer import RepresentationSerializer
 
 class DataFrameContainerMetaClass(type):
@@ -33,12 +33,12 @@ class DataFrameContainer(metaclass = DataFrameContainerMetaClass):
 	def from_name(cls, name: str):
 		chunks = name.split('.')
 
-		chart_class_name = chunks[0]
+		chart_class_name = chunks.pop(0)
 		chart_class = RepresentationSerializer(cls).deserialize(chart_class_name)
-		chart_class_fields = fields(chart_class)
+		chart_fields = [ field for field in fields(chart_class.Query) if field.name != 'type' ]
 		chart_kwargs = {}
 
-		for field, field_value in zip(fields(chart_class), chunks):
+		for field, field_value in zip(chart_fields, chunks):
 			chart_kwargs[field.name] = RepresentationSerializer(field.type).deserialize(field_value)
 
 		return chart_class(**chart_kwargs)

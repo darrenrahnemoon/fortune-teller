@@ -5,7 +5,7 @@ from core.utils.serializer import RepresentationSerializer
 from .chart import Chart
 
 @dataclass
-class ChartCommandSession(ClassCommandSession):
+class ChartCommandSessionMixin(ClassCommandSession):
 	chart_fields: set = field(default_factory = set)
 
 	def add_chart_fields_to_arguments(

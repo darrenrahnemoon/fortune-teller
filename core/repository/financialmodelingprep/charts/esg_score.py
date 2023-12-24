@@ -31,11 +31,10 @@ class ESGScoreChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'date' ], axis = 1, errors='ignore')
 		dataframe = dataframe.rename(
 			columns = {
-				'date' : 'timestamp',
-				'acceptedDate' : 'accepted_date',
+				'acceptedDate' : 'timestamp',
 				'environmentalScore' : 'environmental_score',
 				'socialScore' : 'social_score',
 				'governanceScore' : 'governance_score',

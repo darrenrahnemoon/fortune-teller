@@ -18,7 +18,6 @@ class BalanceSheetChart(Chart):
 	class Record(Chart.Record):
 		reported_currency: str = None
 		filling_date: pandas.Timestamp = None
-		accepted_date: pandas.Timestamp = None
 		calendar_year: int = None
 		period: str = None
 		cash_and_cash_equivalents: float = None
@@ -87,13 +86,12 @@ class BalanceSheetChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol', 'cik', 'link', 'finalLink' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'cik', 'link', 'finalLink', 'date' ], axis = 1)
 		dataframe = dataframe.rename(
 			columns = {
-				'date' : 'timestamp',
+				'acceptedDate' : 'timestamp',
 				'reportedCurrency' : 'reported_currency',
-				'fillingDate' : 'filling_date',
-				'acceptedDate' : 'accepted_date',
+				'filingDate' : 'filing_date',
 				'calendarYear' : 'calendar_year',
 				'period' : 'period',
 				'cashAndCashEquivalents' : 'cash_and_cash_equivalents',

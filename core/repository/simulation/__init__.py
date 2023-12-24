@@ -136,7 +136,7 @@ class SimulationRepository(Repository, MongoRepository):
 			to_timestamp = min(to_timestamp)
 		)
 
-	def get_all_available_charts(self, include_timestamps = False, **kwargs):
+	def get_charts(self, include_timestamps = False, **kwargs):
 		collection_names = self.historical_data.list_collection_names()
 		collection_names.sort()
 		for name in collection_names:

@@ -81,5 +81,5 @@ class RepresentationSerializer(Serializer):
 
 		value = value.strip()
 		if not is_any_of(self.allowed_types, lambda _type: value.startswith(_type.__name__)):
-			raise Exception(f"Invalid representation of '{self.from_type.__name__}'{' or descendants' if self.include_subclasses else ''} was passed: {value}")
+			raise Exception(f"Invalid representation of '{self.from_type.__name__}' was passed: {value}")
 		return eval(value, {}, self.context)

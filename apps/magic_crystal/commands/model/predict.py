@@ -8,13 +8,13 @@ from apps.magic_crystal.config import MagicCrystalConfig
 
 from core.utils.command import CommandSession
 from core.utils.time import now, normalize_timestamp
-from core.utils.collection.command import ListOutputFormatCommandSession
+from core.utils.collection.command import ListOutputFormatCommandSessionMixin
 from core.utils.container.command import ContainerCommandSession
 
 @dataclass
 class PredictModelCommandSession(
 	ContainerCommandSession,
-	ListOutputFormatCommandSession,
+	ListOutputFormatCommandSessionMixin,
 	CommandSession
 ):
 	config: MagicCrystalConfig = field(default_factory = MagicCrystalConfig)

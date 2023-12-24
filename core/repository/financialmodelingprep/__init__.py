@@ -71,7 +71,7 @@ class FinancialModelingPrepRepository(Repository):
 			tz = self.timezone,
 		)
 
-	def get_all_available_charts(self, **kwargs):
+	def get_charts(self, **kwargs):
 		symbols = self.get_available_symbols()
 		combinations = [
 			{

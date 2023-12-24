@@ -8,6 +8,7 @@ from .charts.esg_score import ESGScoreChart, ESGScoreChartSerializer
 from .charts.employee_count import EmployeeCountChart, EmployeeCountChartSerializer
 from .charts.executive_compensation import ExecutiveCompensationChart, ExecutiveCompensationChartSerializer
 from .charts.senate_disclosure import SenateDisclosureChart, SenateDisclosureChartSerializer
+from .charts.owner_earnings import OwnerEarningsChart, OwnerEarningsChartSerializer
 from .charts.candlestick import CandleStickChart, CandleStickChartSerializer
 
 class FinancialModelingPrepSerializers:
@@ -22,5 +23,6 @@ class FinancialModelingPrepSerializers:
 		EmployeeCountChart : EmployeeCountChartSerializer(),
 		ExecutiveCompensationChart : ExecutiveCompensationChartSerializer(),
 		SenateDisclosureChart : SenateDisclosureChartSerializer(),
+		OwnerEarningsChart : OwnerEarningsChartSerializer(),
 		CandleStickChart : CandleStickChartSerializer()
 	}

@@ -6,12 +6,12 @@ from core.utils.time import normalize_timestamp, now
 from core.utils.logging import Logger
 from core.utils.serializer import RepresentationSerializer
 from core.utils.command import CommandSession
-from core.chart.command import ChartCommandSession
+from core.chart.command import ChartCommandSessionMixin
 
 logger = Logger(__name__)
 
 class BackfillCommandSession(
-	ChartCommandSession,
+	ChartCommandSessionMixin,
 	CommandSession
 ):
 	def setup(self):
@@ -32,7 +32,7 @@ class BackfillCommandSession(
 		if len(self.args.symbol) == 0:
 			self.args.symbol = source_repository.get_available_symbols()
 
-		for chart in source_repository.get_available_charts(
+		for chart in source_repository.get_filtered_charts(
 			filter = self.get_chart_filter_from_arguments()
 		):
 			simulation_repository.backfill(

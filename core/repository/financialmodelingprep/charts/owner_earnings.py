@@ -28,7 +28,7 @@ class OwnerEarningsChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol' ], axis = 1, errors = 'ignore')
 		dataframe = dataframe.rename(
 			columns = {
 				'date' : 'timestamp',

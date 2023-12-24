@@ -18,7 +18,6 @@ class IncomeStatementChart(Chart):
 	class Record(Chart.Record):
 		reported_currency: str = None
 		filing_date: pandas.Timestamp = None
-		accepted_date: pandas.Timestamp = None
 		calendar_year: pandas.Timestamp = None
 		period: str = None
 		revenue: float = None
@@ -71,13 +70,12 @@ class IncomeStatementChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol', 'cik', 'link', 'finalLink' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'cik', 'link', 'finalLink', 'date' ], axis = 1)
 		dataframe = dataframe.rename(
 			columns = {
-				'date' : 'timestamp',
+				'acceptedDate' : 'timestamp',
 				'reportedCurrency' : 'reported_currency',
 				'fillingDate' : 'filing_date',
-				'acceptedDate' : 'accepted_date',
 				'calendarYear' : 'calendar_year',
 				'period' : 'period',
 				'revenue' : 'revenue',

@@ -19,7 +19,7 @@ class AlphaVantageRepository(Repository):
 	api_key: str = field(default = os.getenv('ALPHAVANTAGE_API_KEY'))
 	serializers = AlphaVantageSerializers()
 
-	def get_all_available_charts(self, **kwargs):
+	def get_charts(self, **kwargs):
 		combinations = [
 			{
 				'symbol': [ 'REAL_GDP' ],

@@ -17,7 +17,7 @@ class MagicCrystalPreprocessorService(PreprocessorService):
 	strategy_config: MagicCrystalStrategyConfig = None
 
 	def to_model_input(self, input_chart_groups: dict[Interval, ChartGroup]):
-		for interval, chart_group in input_chart_groups.items():
+		for chart_class, chart_group in input_chart_groups.items():
 			nan_columns = chart_group.dataframe.columns[chart_group.dataframe.isna().all().tolist()]
 			if len(nan_columns):
 				logger.debug(f'Full NaN columns at {chart_group.dataframe.index[0]}:\n{nan_columns}\n\n{chart_group.dataframe}')

@@ -5,6 +5,7 @@ import itertools
 from dataclasses import dataclass, field
 from keras.utils.data_utils import Sequence
 
+from core.chart import CandleStickChart
 from core.repository import SimulationRepository
 from core.utils.logging import Logger
 from core.interval import Interval
@@ -18,6 +19,7 @@ logger = Logger(__name__)
 @dataclass(**sequence_dataclass_kwargs)
 class MagicCrystalSequence(Sequence):
 	strategy_config: MagicCrystalStrategyConfig = None
+	repository_lag = pandas.Timedelta(1, 'day')
 	preprocessor_service: MagicCrystalPreprocessorService = None
 	repository: SimulationRepository = field(default_factory = SimulationRepository)
 
@@ -29,20 +31,20 @@ class MagicCrystalSequence(Sequence):
 		output_chart_group = self.strategy_config.action.build_chart_group()
 		timestamp = self.timestamps[index]
 
-		for chart_group in input_chart_groups.values():
+		for chart_class, chart_group in input_chart_groups.items():
+			to_timestamp = timestamp
+			if chart_class != CandleStickChart:
+				to_timestamp -= self.repository_lag
+
 			chart_group.read(
 				repository = self.repository,
-				to_timestamp = timestamp, #inclusive
-				count = self.strategy_config.observation.bars + 1,
+				to_timestamp = to_timestamp,
 			)
-			chart_group.dataframe = chart_group.dataframe[:-1] # remove the inclusive end to prevent hindsight
 
 		output_chart_group.read(
 			repository = self.repository,
-			from_timestamp = timestamp, # inclusive
-			count = self.strategy_config.action.bars + 1,
+			from_timestamp = timestamp,
 		)
-		output_chart_group.dataframe = output_chart_group.dataframe[1:] # remove the inclusive end to prevent hindsight
 
 		x = self.preprocessor_service.to_model_input(input_chart_groups)
 		if type(x) == type(None):

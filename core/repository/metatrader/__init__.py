@@ -41,7 +41,7 @@ class MetaTraderRepository(Repository):
 			for symbol in MetaTrader5.symbols_get()
 		]
 
-	def get_all_available_charts(self, **kwargs):
+	def get_charts(self, **kwargs):
 		symbols = self.get_available_symbols()
 		for symbol in symbols:
 			for interval in self.serializers.interval.mapping.keys():

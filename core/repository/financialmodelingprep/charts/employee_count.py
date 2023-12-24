@@ -28,7 +28,7 @@ class EmployeeCountChartSerializer(ChartRecordsSerializer):
 
 	def to_dataframe(self, records, *args, **kwargs):
 		dataframe = pandas.DataFrame.from_records(records)
-		dataframe = dataframe.drop([ 'symbol', 'companyName' ], axis = 1)
+		dataframe = dataframe.drop([ 'symbol', 'companyName' ], axis = 1, errors = 'ignore')
 		dataframe = dataframe.rename(
 			columns = {
 				'filingDate': 'timestamp',
