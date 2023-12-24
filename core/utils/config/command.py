@@ -1,10 +1,10 @@
 from dataclasses import dataclass, fields
 from . import Config
 
-from core.utils.cls.command import ClassCommandSession
+from core.utils.cls.command import ClassCommandSessionMixin
 
 @dataclass
-class ConfigCommandSession(ClassCommandSession):
+class ConfigCommandSessionMixin(ClassCommandSessionMixin):
 	config: Config = None
 
 	@property

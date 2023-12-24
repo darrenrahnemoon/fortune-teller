@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 from argparse import ArgumentParser, Namespace
-from core.utils.logging.command import LoggingCommandSession
-from core.utils.environment.command import EnvironmentCommandSession
+from core.utils.logging.command import LoggingCommandSessionMixin
+from core.utils.environment.command import EnvironmentCommandSessionMixin
 
 @dataclass
 class _CommandSession:
@@ -25,8 +25,8 @@ class _CommandSession:
 
 @dataclass
 class CommandSession(
-	LoggingCommandSession,
-	EnvironmentCommandSession,
+	LoggingCommandSessionMixin,
+	EnvironmentCommandSessionMixin,
 	_CommandSession
 ):
 	pass

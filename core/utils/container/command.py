@@ -1,12 +1,19 @@
-from dependency_injector.containers import DynamicContainer
+from dependency_injector.containers import DeclarativeContainer
+
 from dataclasses import dataclass, fields
-from core.utils.config.command import ConfigCommandSession
+from core.utils.config.command import ConfigCommandSessionMixin
+from core.utils.container import to_dependency_injector_configuration
 
 @dataclass
-class ContainerCommandSession(ConfigCommandSession):
-	container: DynamicContainer = None
+class ContainerCommandSessionMixin(ConfigCommandSessionMixin):
+	container: DeclarativeContainer = None
+
+	@property
+	def container_cls(self):
+		return next(field.type for field in fields(type(self)) if field.name == 'container')
 
 	def run(self):
 		super().run()
-		container_cls = next(field.type for field in fields(type(self)) if field.name == 'container')
-		self.container = container_cls(config = self.config)
+		self.container = self.container_cls(
+			config = to_dependency_injector_configuration(self.config)
+		)

@@ -8,7 +8,7 @@ from pymongo.errors import BulkWriteError
 from pymongo.collection import Collection
 from dataclasses import dataclass
 
-from core.chart import Chart
+from core.trading.chart import Chart
 from core.utils.logging import Logger
 
 logger = Logger(__name__)

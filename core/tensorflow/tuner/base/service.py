@@ -53,7 +53,11 @@ class TunerService(ArtifactService):
 
 	def get_trial(self, trial_id: str or Literal['best']) -> Trial:
 		if (trial_id == 'best'):
-			return self.tuner.oracle.get_best_trials(1)[0]
+			trials = self.tuner.oracle.get_best_trials(1)
+			if len(trials) == 0:
+				return Trial(HyperParameters())
+			else:
+				return trials[0]
 		return self.tuner.oracle.get_trial(trial_id)
 
 	def get_hyperparameters(self, trial_id: str or Literal['best']) -> HyperParameters:

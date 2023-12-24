@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from core.tensorflow.preprocessor.prediction import Prediction
 
 class PreprocessorService:
 	@abstractmethod
@@ -12,6 +13,6 @@ class PreprocessorService:
 		pass
 
 	@abstractmethod
-	def from_model_output(self, *args, **kwargs):
+	def to_prediction(self, *args, **kwargs) -> Prediction or list[Prediction]:
 		"""Processes the model output to a format that is consumable"""
 		pass

@@ -7,7 +7,7 @@ from core.utils.collection import is_any_of
 from core.utils.serializer import RepresentationSerializer
 
 @dataclass
-class ClassCommandSession:
+class ClassCommandSessionMixin:
 	def add_class_fields_to_arguments(
 		self,
 		cls,

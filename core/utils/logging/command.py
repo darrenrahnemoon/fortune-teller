@@ -6,7 +6,7 @@ from core.utils.serializer import MappingSerializer
 from core.utils.cls.repr import pretty_repr
 
 @dataclass
-class LoggingCommandSession:
+class LoggingCommandSessionMixin:
 	logging_handlers = MappingSerializer({
 		'file' : JSONFileHandler,
 		'stdout' : STDOUTHandler,
