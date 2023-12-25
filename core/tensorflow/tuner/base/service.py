@@ -2,7 +2,7 @@ from typing import Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from keras import Model
 from keras_tuner import Tuner, HyperParameters
-from keras_tuner.engine.trial import Trial
+from keras_tuner.engine.trial import Trial, TrialStatus
 
 if TYPE_CHECKING:
 	from core.tensorflow.trainer.service import TrainerService
@@ -55,7 +55,7 @@ class TunerService(ArtifactService):
 		if (trial_id == 'best'):
 			trials = self.tuner.oracle.get_best_trials(1)
 			if len(trials) == 0:
-				return Trial(HyperParameters())
+				return Trial(HyperParameters(), '0001', TrialStatus.COMPLETED)
 			else:
 				return trials[0]
 		return self.tuner.oracle.get_trial(trial_id)

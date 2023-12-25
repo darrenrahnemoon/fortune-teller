@@ -3,6 +3,8 @@ __pycache__
 .DS_Store
 core/artifacts/logs/*
 core/artifacts/pycache/*
+core/artifacts/pycache/*
+core/artifacts/tensorflow/*
 !core/artifacts/**/.gitignore
 
 apps/**/artifacts/tensorboard/**/*

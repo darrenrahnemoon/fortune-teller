@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from keras import Model
 from keras.optimizers import Adam
 from keras_tuner import HyperParameters
-from keras.losses import mean_squared_error, categorical_crossentropy
+from keras.losses import mean_squared_error, binary_crossentropy
 import keras.backend as backend
 
 from apps.ave_maria.config import AveMariaTradingConfig
@@ -25,11 +25,11 @@ class AveMariaTrainerService(TrainerService):
 	):
 		model.compile(
 			optimizer = Adam(
-				learning_rate = self.config.learning_rate or 0.0001
+				learning_rate = self.config.learning_rate or 0.001,
 			),
-			metrics = {
-				'direction' : [ self.direction_accuracy ],
-			},
+			# metrics = {
+			# 	'direction' : [ self.direction_accuracy ],
+			# },
 			loss = {
 				'direction' : self.direction_loss,
 				'high_low' : self.high_low_loss,
@@ -41,29 +41,21 @@ class AveMariaTrainerService(TrainerService):
 		)
 
 	def high_low_loss(self, y_true: Tensor, y_pred: Tensor):
-		high_low_true = y_true[:, :, :]
-		high_low_pred = y_pred[:, :, :]
-
-		loss = mean_squared_error(high_low_true, high_low_pred)
-		loss = tensorflow.reduce_mean(loss, axis = 1)
+		loss = mean_squared_error(y_true, y_pred)
+		loss = tensorflow.reduce_mean(loss, axis=[1, 2])
 		return loss
 
 	def direction_loss(self, y_true: Tensor, y_pred: Tensor):
-		direction_true = y_true[:, :, :]
-		direction_pred = y_pred[:, :, :]
-
-		loss = categorical_crossentropy(direction_true, direction_pred)
-		loss = tensorflow.reduce_mean(loss, axis = 1)
+		# loss = binary_crossentropy(y_true, y_pred, from_logits=True)
+		loss = mean_squared_error(y_true, y_pred)
+		loss = tensorflow.reduce_mean(loss, axis=-1)
 		return loss
 
-	def direction_accuracy(self, y_true: Tensor, y_pred: Tensor):
-		direction_true = y_true[:, :, :]
-		direction_true = math.greater(direction_true, 0.5)
+	# def direction_accuracy(self, y_true: Tensor, y_pred: Tensor):
+	# 	direction_true = math.greater(y_true, 0)
+	# 	direction_pred = math.greater(y_pred, 0)
 
-		direction_pred = y_pred[:, :, :]
-		direction_pred = math.greater(direction_pred, 0.5)
+	# 	accuracy = tensorflow.cast(tensorflow.equal(direction_true, direction_pred), backend.floatx())
+	# 	accuracy = tensorflow.reduce_mean(accuracy, axis = [1, 2])
 
-		accuracy = tensorflow.cast(tensorflow.equal(direction_true, direction_pred), backend.floatx())
-		accuracy = tensorflow.reduce_mean(accuracy)
-
-		return accuracy
+	# 	return accuracy

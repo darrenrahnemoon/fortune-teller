@@ -39,17 +39,17 @@ class AveMariaPreprocessorService(PreprocessorService):
 						data['volume_tick'] = data['volume_tick'] + 2 # to prevent log returning 0 when volume is `1`
 						data['volume_tick'] = numpy.log(data['volume_tick'])
 
-				# # Convert to `change`
-				# data = data.pct_change()
+				# Convert to `change`
+				data = data.pct_change()
 
 				chart.data = data
-			chart_group.dataframe = chart_group.dataframe.ffill()
 			chart_group.dataframe = chart_group.dataframe.fillna(0)
 			chart_group.dataframe = chart_group.dataframe.tail(self.trading_config.observation.bars)
-		return {
+		inputs = {
 			str(interval): chart_group.dataframe.to_numpy()
 			for interval, chart_group in input_chart_groups.items()
 		}
+		return inputs
 
 	def to_model_output(self, output_chart_group: ChartGroup):
 		outputs = {
@@ -57,7 +57,6 @@ class AveMariaPreprocessorService(PreprocessorService):
 			'high_low' : []
 		}
 
-		output_chart_group.dataframe = output_chart_group.dataframe.head(self.trading_config.action.bars)
 		output_chart_group.dataframe = output_chart_group.dataframe.fillna(method = 'ffill')
 
 		nan_columns = output_chart_group.dataframe.columns[output_chart_group.dataframe.isna().any().tolist()]
@@ -65,38 +64,31 @@ class AveMariaPreprocessorService(PreprocessorService):
 			logger.debug(f'Full NaN columns at {output_chart_group.dataframe.index[0]}:\n{nan_columns}')
 			return
 
+		output_chart_group.dataframe = output_chart_group.dataframe.head(self.trading_config.action.bars)
+		output_chart_group.dataframe = output_chart_group.dataframe.fillna(0)
+
 		output_chart_group.dataframe = output_chart_group.dataframe.reset_index(drop = True)
 		for chart in output_chart_group.charts:
-			top_datapoints_count = int(0.1 * len(chart.data))
+			high_low = []
+			direction = []
+			for window_length in self.trading_config.action.window_lengths:
+				min_low = chart.data['low'].iloc[0:window_length].min() / chart.data['low'].iloc[0] - 1
+				min_low_index = chart.data['low'].iloc[0:window_length].idxmin()
+				max_high = chart.data['high'].iloc[0:window_length].max() / chart.data['high'].iloc[0] - 1
+				max_high_index = chart.data['high'].iloc[0:window_length].idxmax()
+				high_low.append([
+					max_high,
+					min_low,
+				])
+				if min_low_index < max_high_index:
+					direction.append(min_low)
+				elif min_low_index > max_high_index:
+					direction.append(max_high)
+				else:
+					direction.append(0)
 
-			high = chart.data['high']
-			high_index_sorted = high.argsort()
-			high_sorted = numpy.sort(high)
-			median_max_high_index = numpy.median(high_index_sorted[-1 * top_datapoints_count:])
-			median_max_high_change = numpy.median(high_sorted[-1 * top_datapoints_count:]) / high.iloc[0] - 1
-
-			low = chart.data['low']
-			low_index_sorted = low.argsort()
-			low_sorted = numpy.sort(low)
-			median_min_low_index = numpy.median(low_index_sorted[:top_datapoints_count])
-			median_min_low_change = numpy.median(low_sorted[:top_datapoints_count]) / low.iloc[0] - 1
-
-			is_uncertain = numpy.isclose(median_max_high_index, median_min_low_index, atol = top_datapoints_count)
-			if is_uncertain:
-				is_long = 0
-				is_short = 0
-			else:
-				is_long = int(median_max_high_index < median_min_low_index)
-				is_short = int(not median_max_high_index)
-
-			outputs['high_low'].append([
-				median_max_high_change,
-				median_min_low_change,
-			])
-			outputs['direction'].append([
-				is_long,
-				is_short
-			])
+			outputs['high_low'].append(high_low)
+			outputs['direction'].append(direction)
 		outputs = {
 			key: numpy.array(value)
 			for key, value in outputs.items()

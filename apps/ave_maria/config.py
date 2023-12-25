@@ -1,7 +1,7 @@
 from dataclasses import field, dataclass
 from core.utils.config import Config
-from .trading.config import AveMariaTradingConfig
-from .tensorflow.config import AveMariaTensorflowConfig
+from apps.ave_maria.trading.config import AveMariaTradingConfig
+from apps.ave_maria.tensorflow.config import AveMariaTensorflowConfig
 
 @dataclass
 class AveMariaConfig(Config):

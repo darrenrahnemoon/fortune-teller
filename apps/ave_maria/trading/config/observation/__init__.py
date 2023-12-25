@@ -66,7 +66,6 @@ class AveMariaObservationConfig(Config):
 			Interval.Hour(6),
 			Interval.Hour(12),
 			Interval.Day(1),
-			Interval.Week(1),
 		]
 	)
 
@@ -80,11 +79,12 @@ class AveMariaObservationConfig(Config):
 	def build_chart_group(self) -> dict[Interval, ChartGroup]:
 		chart_groups = {
 			interval : ChartGroup(
-				name = 'MagicCrystalInputChartGroup',
+				name = 'AveMariaInputChartGroup',
 				charts = [
 					CandleStickChart(
 						symbol = symbol,
 						interval = interval,
+						select = [ 'open', 'high', 'low', 'close' ],
 						repository = self.repository,
 					)
 					for symbol in self.symbols
