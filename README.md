@@ -1,4 +1,4 @@
-![Fortune Teller](./wiki/assets/fortune-teller.jpg)
+![Fortune Teller](./assets/fortune-teller.jpg)
 # Fortune Teller
 An all in one framework for:
 * Researching and designing automated trading strategies
