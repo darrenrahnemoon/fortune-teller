@@ -6,7 +6,7 @@ If collections require an implementation of a special feature for example for co
 
 Some useful utilities are:
 
-# Command Sessions ([command.py](./command.py))
+## Command Sessions ([command.py](./command.py))
 Used extensively around this framework to simplify writing CLI args and options, command sessions allow reusing args and options across multiple commands by mixing in different command sessions together. 
 
 Managing logging and environment/stage is already baked into the `CommandSession` class.
@@ -30,10 +30,10 @@ class CookLasagnaCommandSession(CommandSession):
 		print(f"Cooking for {self.args.for}")
 ```
 
-# Test Management ([test/](./test/README.md))
+## Test Management ([test/](./test/README.md))
 Adds a functional pattern for writing tests similar to mocha, chai libraries. Read more [here](./test/README.md).
 
-# Serializers ([serializer.py](./serializer.py))
+## Serializers ([serializer.py](./serializer.py))
 Standardizes the flow of serializing data and deserializing data in the entire framework by implementing a base `Serializer` class that has a `serialize` and `deserialize` method. You can extend this class to implement your own serializers as well.
 
 ```python
@@ -49,11 +49,20 @@ class MySerializer(Serializer):
 		# Deserialize the value
 ```
 
-# Timestamps ([time.py](./time.py))
+## Timestamps ([time.py](./time.py))
 Standardizes timestamp management by normalizing any timestamp-like data into a `pandas.Timestamp`.
 
-# Dictionary ([dict.py](./dict.py))
+## Dictionary ([dict.py](./dict.py))
 Adds support for recursive (nested) dictionaries.
 
-# DataFrame Containers ([dataframe_container.py](./dataframe_container.py))
+## DataFrame Containers ([dataframe_container.py](./dataframe_container.py))
 Wrapper around `pandas.DataFrame` that DRYs out common logic between `Charts` and `Indicators`. Read more about them [here](../trading/chart/README.md).
+
+## Dataclasses ([cls/](./cls/))
+Adds some additional functionality for python dataclasses:
+* Pretty repr of dataclasses (Automatic reflection)
+* Mapping a dataclass to CLI options using the `CommandSession` pattern with proper type inference
+
+## Config ([config/](./config/))
+Adds a standardized way to define config objects for your projects.
+SHOULD DO: Add more detail about configs.

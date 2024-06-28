@@ -9,7 +9,7 @@ An all in one framework for:
 **Disclaimer:** The information contained on this framework and the resources available for download through this framework is not intended as, and shall not be understood or construed as, financial advice.
 
 # Getting Started
-Please visit the wiki page to get started.
+For API Documentations see [./core](./core/).
 
 # Contributions
 Contributions are most welcome!
