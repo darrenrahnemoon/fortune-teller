@@ -1,4 +1,4 @@
-if __name__ == '__main__':
+def main():
 	import inspect
 	import sys
 	import core.utils.environment # To setup pycache, .env, etc.
@@ -15,3 +15,6 @@ if __name__ == '__main__':
 
 			command.build(sys.argv[2:]) # HACK: since python always starts from run.py ignore the first arg
 			break
+
+if __name__ == '__main__':
+	main()

@@ -1,0 +1,27 @@
+[project]
+name = "fortune-teller"
+version = "1.0.0"
+authors = [
+  { name="Darren Rahnemoon", email="darrenrahnemoon@gmail.com" },
+]
+license = { file = "LICENSE.txt" }
+description = "An AIO framework for creating trading bots and using tensorflow models in trading"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/darrenrahnemoon/fortune-teller"
+Issues = "https://github.com/darrenrahnemoon/fortune-teller/issues"
+
+[project.scripts]
+fortune-teller = "run:main"
