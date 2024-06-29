@@ -9,10 +9,12 @@ Charts are at the heart of the Fortune Teller library. They encapsulate the stru
 * `count`: number of data points to query. Must be used with either `from_timestamp` or `to_timestamp`. 
 * `select`: list of columns that are needed. Everything else is omitted. 
 
-## CandleStick Chart
+## Chart Types
+
+### CandleStick Chart
 CandleStickChart is a common chart type for periodic financial data with fields such as `Open`, `High`, `Low`, `Close` baked in.
 
-### Example
+#### Example
 ```python
 from fortune_teller.core.trading.repository import MetaTraderRepository
 from fortune_teller.core.trading.chart import CandleStickChart
@@ -30,10 +32,10 @@ chart.read()
 print(chart.data)
 ```
 
-## Line Chart
+### Line Chart
 LineChart is a chart type with only one value, commonly used for economical indicators, etc.
 
-### Example
+#### Example
 ```python
 from fortune_teller.core.trading.repository import AlphaVantageRepository
 from fortune_teller.core.trading.chart import LineChart
@@ -50,10 +52,10 @@ chart.read()
 print(chart.data)
 ```
 
-## Tick Chart
+### Tick Chart
 TickChart is a common chart type used for encapsulating market tick data with fields such as `Bid`, `Ask`, `Last` baked in.
 
-### Example
+#### Example
 ```python
 from fortune_teller.core.trading.repository import MetaTraderRepository
 from fortune_teller.core.trading.chart import TickChart
@@ -69,7 +71,8 @@ chart.read()
 print(chart.data)
 ```
 
+### Custom Chart Types
+Should you need a custom chart type with specific data fields you can extend the base `Chart` class and replicate the pattern from one of the other implemented chart types to define your query parameters and the data structure for each record in the financial data acquired. See example [here](./types/candlestick.py).
 
-**Note:** Should you need a custom chart type with specific data fields you can extend the base `Chart` class and replicate the pattern from one of the other implemented chart types to define your query parameters and the data structure for each record in the financial data acquired. See example [here](./types/candlestick.py).
-
-**Note:** Since Charts are wrappers for `pandas.DataFrames` that add additional capabilities to them it might be tempting to put derived columns directly inside the dataframe. Please use `Indicators` for adding any columns that needs to be derived.
+## Notes
+Since Charts are wrappers for `pandas.DataFrames` that add additional capabilities to them it might be tempting to put derived columns directly inside the dataframe. Please use `Indicators` ([../indicator/README.md](../indicator/README.md)) for adding any columns that needs to be derived.
