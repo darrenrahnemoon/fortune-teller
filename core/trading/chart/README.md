@@ -2,6 +2,13 @@
 
 Charts are at the heart of the Fortune Teller library. They encapsulate the structure of the financial data on the class level, the query that lead to acquiring the financial data and the data itself on the instance level.
 
+## Common Querying Parameters
+* `symbol`: the name of the instrument or data being queried 
+* `from_timestamp`: Inclusive starting point of the time period being queried
+* `to_timestamp`: Inclusive end point of the time period being queried
+* `count`: number of data points to query. Must be used with either `from_timestamp` or `to_timestamp`. 
+* `select`: list of columns that are needed. Everything else is omitted. 
+
 ## CandleStick Chart
 CandleStickChart is a common chart type for periodic financial data with fields such as `Open`, `High`, `Low`, `Close` baked in.
 
