@@ -1,8 +1,8 @@
 from dependency_injector.providers import Container, Configuration
 from dependency_injector.containers import DeclarativeContainer
 from core.utils.container import to_dependency_injector_configuration
-from apps.ave_maria.tensorflow.container import AveMariaTensorflowContainer
-from apps.ave_maria.trading.container import AveMariaTradingContainer
+from examples.ave_maria.tensorflow.container import AveMariaTensorflowContainer
+from examples.ave_maria.trading.container import AveMariaTradingContainer
 
 class AveMariaContainer(DeclarativeContainer):
 	config = Configuration()

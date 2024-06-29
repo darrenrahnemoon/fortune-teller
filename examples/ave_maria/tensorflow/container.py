@@ -1,12 +1,12 @@
 from dependency_injector.providers import Singleton, Configuration
 
 from core.tensorflow.container import TensorflowContainer
-from apps.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
-from apps.ave_maria.tensorflow.dataset.service import AveMariaDatasetService
-from apps.ave_maria.tensorflow.trainer.service import AveMariaTrainerService
-from apps.ave_maria.tensorflow.predictor.service import AveMariaPredictorService
-from apps.ave_maria.tensorflow.tuner.service import AveMariaTunerService
-from apps.ave_maria.tensorflow.model.service import AveMariaModelService
+from examples.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
+from examples.ave_maria.tensorflow.dataset.service import AveMariaDatasetService
+from examples.ave_maria.tensorflow.trainer.service import AveMariaTrainerService
+from examples.ave_maria.tensorflow.predictor.service import AveMariaPredictorService
+from examples.ave_maria.tensorflow.tuner.service import AveMariaTunerService
+from examples.ave_maria.tensorflow.model.service import AveMariaModelService
 
 class AveMariaTensorflowContainer(TensorflowContainer):
 	trading_config = Configuration()

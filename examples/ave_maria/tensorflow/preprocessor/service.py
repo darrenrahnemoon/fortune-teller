@@ -6,8 +6,8 @@ from core.trading.chart import ChartGroup
 from core.trading.interval import Interval
 from core.utils.logging import Logger
 
-from apps.ave_maria.config import AveMariaTradingConfig
-from apps.ave_maria.tensorflow.preprocessor.prediction import AveMariaPrediction, AveMariaModelOutput
+from examples.ave_maria.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.preprocessor.prediction import AveMariaPrediction, AveMariaModelOutput
 
 from core.tensorflow.preprocessor.service import PreprocessorService
 

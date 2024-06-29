@@ -1,7 +1,7 @@
 from argparse import BooleanOptionalAction
 from dataclasses import dataclass, field
-from apps.ave_maria.container import AveMariaContainer
-from apps.ave_maria.config import AveMariaConfig
+from examples.ave_maria.container import AveMariaContainer
+from examples.ave_maria.config import AveMariaConfig
 
 from core.utils.os import open_file
 from core.utils.command import CommandSession

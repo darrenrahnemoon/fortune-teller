@@ -8,9 +8,9 @@ from core.tensorflow.dataset.sequence.partial import PartialSequence
 from core.tensorflow.dataset.sequence.shuffled import ShuffledSequence
 from core.tensorflow.dataset.sequence.skippable import SkippableSequence
 
-from apps.ave_maria.trading.config import AveMariaTradingConfig
-from apps.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
-from apps.ave_maria.tensorflow.dataset.sequence import AveMariaSequence
+from examples.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
+from examples.ave_maria.tensorflow.dataset.sequence import AveMariaSequence
 
 @dataclass
 class AveMariaDatasetService(DatasetService):

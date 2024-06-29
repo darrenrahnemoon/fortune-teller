@@ -6,7 +6,7 @@ from keras import Model
 from keras.layers import Input, Dense, Conv1D, Flatten, LSTM, Reshape, Concatenate, MultiHeadAttention
 from keras_tuner import HyperParameters
 
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 from core.tensorflow.model.service import ModelService
 
 @dataclass

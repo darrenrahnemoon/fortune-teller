@@ -1,8 +1,8 @@
 from dependency_injector.providers import Singleton, DependenciesContainer, Configuration
 from dependency_injector.containers import DeclarativeContainer
 
-from apps.ave_maria.trading.strategy import AveMariaStrategy
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.trading.strategy import AveMariaStrategy
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 
 class AveMariaTradingContainer(DeclarativeContainer):
 	config = Configuration()

@@ -9,8 +9,8 @@ from keras_tuner import HyperParameters
 from keras.losses import mean_squared_error, binary_crossentropy
 import keras.backend as backend
 
-from apps.ave_maria.config import AveMariaTradingConfig
-from apps.ave_maria.tensorflow.trainer.config import AveMariaTrainerConfig
+from examples.ave_maria.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.trainer.config import AveMariaTrainerConfig
 from core.tensorflow.trainer.service import TrainerService
 
 @dataclass

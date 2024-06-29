@@ -8,8 +8,8 @@ from keras.utils.data_utils import Sequence
 from core.trading.repository import SimulationRepository
 from core.utils.logging import Logger
 
-from apps.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 from core.tensorflow.dataset.sequence import sequence_dataclass_kwargs
 
 logger = Logger(__name__)

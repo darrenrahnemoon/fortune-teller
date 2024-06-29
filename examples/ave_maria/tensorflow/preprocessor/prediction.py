@@ -1,7 +1,7 @@
 import pandas
 from dataclasses import dataclass, field
 
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 from core.trading.chart import Symbol
 from core.trading.broker import Broker
 from core.utils.time import now

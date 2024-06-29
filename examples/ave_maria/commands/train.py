@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from apps.ave_maria.container import AveMariaContainer
-from apps.ave_maria.config import AveMariaConfig
+from examples.ave_maria.container import AveMariaContainer
+from examples.ave_maria.config import AveMariaConfig
 
 from core.utils.cls.repr import pretty_repr
 from core.utils.command import CommandSession

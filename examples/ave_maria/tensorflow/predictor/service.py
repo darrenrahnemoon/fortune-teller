@@ -3,8 +3,8 @@ import pandas
 from keras import Model
 from dataclasses import dataclass
 
-from apps.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.preprocessor.service import AveMariaPreprocessorService
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 from core.tensorflow.predictor.service import PredictorService
 
 @dataclass

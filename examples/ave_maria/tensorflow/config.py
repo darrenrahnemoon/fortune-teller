@@ -1,8 +1,8 @@
 from dataclasses import field, dataclass
 
 from core.tensorflow.config import TensorflowConfig
-from apps.ave_maria.tensorflow.trainer.config import AveMariaTrainerConfig
-from apps.ave_maria.tensorflow.tuner.config import AveMariaTunerConfig
+from examples.ave_maria.tensorflow.trainer.config import AveMariaTrainerConfig
+from examples.ave_maria.tensorflow.tuner.config import AveMariaTunerConfig
 
 @dataclass
 class AveMariaTensorflowConfig(TensorflowConfig):

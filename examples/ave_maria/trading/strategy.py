@@ -6,11 +6,11 @@ from core.trading.size import Size
 from core.utils.logging import Logger
 from core.utils.config import FloatRangeConfig
 
-from apps.ave_maria.tensorflow.trainer.service import AveMariaTrainerService
-from apps.ave_maria.tensorflow.tuner.service import AveMariaTunerService
-from apps.ave_maria.tensorflow.predictor.service import AveMariaPredictorService
-from apps.ave_maria.tensorflow.preprocessor.prediction import AveMariaPrediction
-from apps.ave_maria.trading.config import AveMariaTradingConfig
+from examples.ave_maria.tensorflow.trainer.service import AveMariaTrainerService
+from examples.ave_maria.tensorflow.tuner.service import AveMariaTunerService
+from examples.ave_maria.tensorflow.predictor.service import AveMariaPredictorService
+from examples.ave_maria.tensorflow.preprocessor.prediction import AveMariaPrediction
+from examples.ave_maria.trading.config import AveMariaTradingConfig
 
 logger = Logger(__name__)
 
